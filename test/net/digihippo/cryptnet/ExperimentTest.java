@@ -11,8 +11,8 @@ public class ExperimentTest
     @Test
     public void nearestConnection()
     {
-        Line yEqualsX = new Line(0, 10, 0, 10);
-        Line yEqualsTenMinusX = new Line(0, 10, 10, 0);
+        Line yEqualsX = Line.createLine(0, 10, 0, 10);
+        Line yEqualsTenMinusX = Line.createLine(0, 10, 10, 0);
 
         Connection connection =
             Experiment.nearestConnection(2, 10, Arrays.asList(yEqualsX, yEqualsTenMinusX));
@@ -25,8 +25,8 @@ public class ExperimentTest
     {
         final List<Line> lines = new ArrayList<>();
 
-        lines.add(new Line(30, 40, 60, 100));
-        lines.add(new Line(20, 50, 100, 60));
+        lines.add(Line.createLine(30, 40, 60, 100));
+        lines.add(Line.createLine(20, 50, 100, 60));
 
         Connection connection =
             Experiment.nearestConnection(22, 90, lines);

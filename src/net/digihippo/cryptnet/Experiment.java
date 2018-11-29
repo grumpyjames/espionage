@@ -24,8 +24,8 @@ public class Experiment
     {
         final List<Line> lines = new ArrayList<>();
 
-        lines.add(new Line(30, 40, 60, 100));
-        lines.add(new Line(20, 50, 100, 60));
+        lines.add(Line.createLine(30, 40, 60, 100));
+        lines.add(Line.createLine(20, 50, 100, 60));
 
         return new Model(lines);
     }
@@ -68,11 +68,7 @@ public class Experiment
                 for (int j = i + 1; j < lines.size(); j++)
                 {
                     final Line lineTwo = lines.get(j);
-
-                    Point intersection =
-                        intersection(lineOne.intersect, lineTwo.intersect, lineOne.gradient, lineTwo.gradient);
-
-                    results.add(intersection);
+                    lineOne.intersectionWith(lineTwo).visit(results);
                 }
             }
 

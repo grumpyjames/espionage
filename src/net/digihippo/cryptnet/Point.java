@@ -1,6 +1,8 @@
 package net.digihippo.cryptnet;
 
-class Point
+import java.util.List;
+
+class Point implements LineIntersection
 {
     final int x, y;
 
@@ -24,5 +26,11 @@ class Point
     public boolean isEqualTo(Point connectionPoint)
     {
         return this.x == connectionPoint.x && this.y == connectionPoint.y;
+    }
+
+    @Override
+    public void visit(List<Point> results)
+    {
+        results.add(this);
     }
 }
