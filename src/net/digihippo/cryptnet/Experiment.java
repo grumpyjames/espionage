@@ -6,6 +6,7 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 
 public class Experiment
 {
@@ -230,20 +231,46 @@ public class Experiment
         }
 
         @Override
-        public void paint(Graphics g)
+        public void paint(final Graphics g)
         {
             model.tick();
 
-            model.lines.forEach(line -> drawLine(g, line));
-            model.intersections.forEach(point -> drawPoint(g, point));
-            model.sentries.forEach(sentry -> {
-                drawPoint(g, sentry.point);
-                g.drawLine(
-                    sentry.point.x, sentry.point.y,
-                    sentry.connection.connectionPoint.x, sentry.connection.connectionPoint.y);
+            model.lines.forEach(new Consumer<Line>()
+            {
+                @Override
+                public void accept(Line line)
+                {
+                    Viewer.this.drawLine(g, line);
+                }
+            });
+            model.intersections.forEach(new Consumer<Point>()
+            {
+                @Override
+                public void accept(Point point)
+                {
+                    Viewer.this.drawPoint(g, point);
+                }
+            });
+            model.sentries.forEach(new Consumer<Model.Sentry>()
+            {
+                @Override
+                public void accept(Model.Sentry sentry)
+                {
+                    Viewer.this.drawPoint(g, sentry.point);
+                    g.drawLine(
+                        sentry.point.x, sentry.point.y,
+                        sentry.connection.connectionPoint.x, sentry.connection.connectionPoint.y);
+                }
             });
 
-            SwingUtilities.invokeLater(this::repaint);
+            SwingUtilities.invokeLater(new Runnable()
+            {
+                @Override
+                public void run()
+                {
+                    Viewer.this.repaint();
+                }
+            });
         }
 
         private void drawLine(Graphics g, Line line)
@@ -268,13 +295,18 @@ public class Experiment
 
     public static void main(String[] args)
     {
-        SwingUtilities.invokeLater(() -> {
-            final Viewer viewer = new Viewer(startingModel());
-            JFrame f = new JFrame("Lines and intersections");
-            f.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
-            f.add(viewer);
-            f.pack();
-            f.setVisible(true);
+        SwingUtilities.invokeLater(new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                final Viewer viewer = new Viewer(startingModel());
+                JFrame f = new JFrame("Lines and intersections");
+                f.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+                f.add(viewer);
+                f.pack();
+                f.setVisible(true);
+            }
         });
     }
 
