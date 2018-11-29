@@ -6,6 +6,9 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 public class Experiment
@@ -30,7 +33,7 @@ public class Experiment
         {
             if (((gradient * point.x) + intersect) == point.y)
             {
-                return new Connection(point, point, this);
+                return new Connection(point, point);
             }
 
             // otherwise: shortest distance is length of line perpendicular to this one joining us to point.
@@ -41,7 +44,7 @@ public class Experiment
             Point intersection =
                 intersection(this.intersect, inverseIntersection, this.gradient, inverseGradient);
 
-            return new Connection(point, intersection, this);
+            return new Connection(point, intersection);
         }
 
         @Override
@@ -68,6 +71,38 @@ public class Experiment
         return new Model(lines);
     }
 
+    private static class DoublePoint
+    {
+        private double x;
+        private double y;
+
+        public DoublePoint(double x, double y)
+        {
+            this.x = x;
+            this.y = y;
+        }
+
+        public DoublePoint over(int i)
+        {
+            return new DoublePoint(x / i, y / i);
+        }
+
+        public DoublePoint plus(DoublePoint delta)
+        {
+            return new DoublePoint(delta.x + x, delta.y + y);
+        }
+
+        public DoublePoint minus(DoublePoint delta)
+        {
+            return new DoublePoint(x - delta.x, y - delta.y);
+        }
+
+        public Point round()
+        {
+            return new Point((int) Math.round(x), (int) Math.round(y));
+        }
+    }
+
     private static class Point
     {
         private final int x, y;
@@ -83,20 +118,26 @@ public class Experiment
         {
             return "( " + x + ", " + y + " )";
         }
+
+        public DoublePoint asDoublePoint()
+        {
+            return new DoublePoint((double) x, (double) y);
+        }
+
+        public boolean isEqualTo(Point connectionPoint)
+        {
+            return this.x == connectionPoint.x && this.y == connectionPoint.y;
+        }
     }
 
     static class Connection
     {
-        private final Point point;
         private final Point connectionPoint;
-        private final Line connectedTo;
         private final double distance;
 
-        private Connection(Point point, Point connectionPoint, Line connectedTo)
+        private Connection(Point point, Point connectionPoint)
         {
-            this.point = point;
             this.connectionPoint = connectionPoint;
-            this.connectedTo = connectedTo;
             this.distance = distanceBetween(point, connectionPoint);
         }
     }
@@ -158,7 +199,10 @@ public class Experiment
 
         public void tick()
         {
-
+            for (Sentry sentry : sentries)
+            {
+                sentry.tick();
+            }
         }
 
         public void addSentry(int x, int y)
@@ -170,13 +214,25 @@ public class Experiment
 
         private class Sentry
         {
-            private final Point point;
             private final Connection connection;
+
+            private DoublePoint delta;
+            private DoublePoint point;
 
             public Sentry(Point point, Connection connection)
             {
-                this.point = point;
+                this.point = point.asDoublePoint();
+                this.delta = connection.connectionPoint.asDoublePoint().minus(this.point).over(50);
                 this.connection = connection;
+            }
+
+            public void tick()
+            {
+                this.point = this.point.plus(delta);
+                if (this.point.round().isEqualTo(this.connection.connectionPoint))
+                {
+                    this.delta = new DoublePoint(0, 0);
+                }
             }
         }
     }
@@ -256,9 +312,10 @@ public class Experiment
                 @Override
                 public void accept(Model.Sentry sentry)
                 {
-                    Viewer.this.drawPoint(g, sentry.point);
+                    final Point renderable = sentry.point.round();
+                    Viewer.this.drawPoint(g, renderable);
                     g.drawLine(
-                        sentry.point.x, sentry.point.y,
+                        renderable.x, renderable.y,
                         sentry.connection.connectionPoint.x, sentry.connection.connectionPoint.y);
                 }
             });
@@ -295,17 +352,31 @@ public class Experiment
 
     public static void main(String[] args)
     {
+        final Model model = startingModel();
+        final Viewer viewer = new Viewer(model);
+
+        final ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
+
         SwingUtilities.invokeLater(new Runnable()
         {
             @Override
             public void run()
             {
-                final Viewer viewer = new Viewer(startingModel());
                 JFrame f = new JFrame("Lines and intersections");
                 f.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
                 f.add(viewer);
                 f.pack();
                 f.setVisible(true);
+
+                scheduledExecutorService.scheduleWithFixedDelay(new Runnable()
+                {
+                    @Override
+                    public void run()
+                    {
+                        model.tick();
+                        viewer.repaint();
+                    }
+                }, 40, 40, TimeUnit.MILLISECONDS);
             }
         });
     }
