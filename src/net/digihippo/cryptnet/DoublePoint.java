@@ -60,4 +60,9 @@ class DoublePoint
         double newOrientation = angle + orientation;
         return new DoublePoint(Math.cos(newOrientation), Math.sin(newOrientation));
     }
+
+    public DoublePoint flip()
+    {
+        return new DoublePoint(-x, -y);
+    }
 }

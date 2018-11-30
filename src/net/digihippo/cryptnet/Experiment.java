@@ -98,9 +98,16 @@ public class Experiment
             return 250;
         }
 
+        enum SentryState
+        {
+            Joining,
+            Patrolling
+        }
+
         private class Sentry
         {
             private final Connection connection;
+            private SentryState sentryState;
             private DoublePoint delta;
             private DoublePoint point;
 
@@ -109,14 +116,20 @@ public class Experiment
                 this.point = point.asDoublePoint();
                 this.delta = connection.connectionPoint.asDoublePoint().minus(this.point).over(50);
                 this.connection = connection;
+                sentryState = SentryState.Joining;
             }
 
             public void tick()
             {
                 this.point = this.point.plus(delta);
-                if (this.point.round().isEqualTo(this.connection.connectionPoint))
+                if (sentryState == SentryState.Joining && this.point.round().isEqualTo(this.connection.connectionPoint))
                 {
-                    this.delta = new DoublePoint(0, 0);
+                    this.delta = this.connection.line.direction();
+                    this.sentryState = SentryState.Patrolling;
+                }
+                else if (sentryState == SentryState.Patrolling && this.connection.line.isLineEnding(this.point.round()))
+                {
+                    this.delta = this.delta.flip();
                 }
             }
         }
@@ -259,7 +272,7 @@ public class Experiment
                         model.tick();
                         viewer.repaint();
                     }
-                }, 100, 100, TimeUnit.MILLISECONDS);
+                }, 40, 40, TimeUnit.MILLISECONDS);
             }
         });
     }

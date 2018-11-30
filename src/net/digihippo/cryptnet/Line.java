@@ -60,7 +60,7 @@ final class Line implements LineIntersection
 
         if (withinBounds(perpendicularIntersection))
         {
-            return new Connection(point, perpendicularIntersection);
+            return new Connection(point, perpendicularIntersection, this);
         }
 
         final Point start = new Point(x1, y1);
@@ -69,11 +69,11 @@ final class Line implements LineIntersection
         final double distanceTwo = Point.distanceBetween(point, end);
         if (distanceOne <= distanceTwo)
         {
-            return new Connection(point, start);
+            return new Connection(point, start, this);
         }
         else
         {
-            return new Connection(point, end);
+            return new Connection(point, end, this);
         }
     }
 
@@ -162,5 +162,17 @@ final class Line implements LineIntersection
     public void visit(List<Point> results)
     {
         // Well, we're not going to send it infinite points, are we.
+    }
+
+    public DoublePoint direction()
+    {
+        return new DoublePoint(x2 - x1, y2 - y1).toUnit();
+    }
+
+    public boolean isLineEnding(Point point)
+    {
+        return
+            (point.x == x1 && point.y == y1) ||
+            (point.x == x2 && point.y == y2);
     }
 }
