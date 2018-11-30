@@ -21,6 +21,16 @@ public class Experiment
         lines.add(Line.createLine(30, 40, 60, 100));
         lines.add(Line.createLine(20, 50, 100, 60));
 
+        lines.add(Line.createLine(10, 10, 0, 250));
+        lines.add(Line.createLine(60, 60, 0, 250));
+        lines.add(Line.createLine(140, 140, 0, 250));
+        lines.add(Line.createLine(220, 220, 0, 250));
+
+        lines.add(Line.createLine(0, 250, 10, 10));
+        lines.add(Line.createLine(0, 250, 60, 60));
+        lines.add(Line.createLine(0, 250, 90, 90));
+        lines.add(Line.createLine(0, 250, 180, 180));
+
         return new Model(lines);
     }
 
@@ -82,6 +92,11 @@ public class Experiment
             Connection best = nearestConnection(x, y, lines);
 
             sentries.add(new Sentry(new Point(x, y), best));
+        }
+
+        public int size()
+        {
+            return 250;
         }
 
         private class Sentry
@@ -205,7 +220,7 @@ public class Experiment
         }
 
         public Dimension getPreferredSize() {
-            return new Dimension(250,250);
+            return new Dimension(model.size(), model.size());
         }
 
         public void onClick(int x, int y)
