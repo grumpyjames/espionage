@@ -8,7 +8,8 @@ final class Model
 {
     final Map<Point, Intersection> intersections;
     final List<Line> lines;
-    final List<Sentry> sentries = new ArrayList<>();
+    final List<JoiningSentry> joiningSentries = new ArrayList<>();
+    final List<Patrol> patrols = new ArrayList<>();
 
     public static Model createModel(List<Line> lines)
     {
@@ -56,21 +57,38 @@ final class Model
 
     public void tick(Random random)
     {
-        for (Sentry sentry : sentries)
+        DeferredModelActions modelActions = new DeferredModelActions();
+        for (JoiningSentry sentry : joiningSentries)
         {
-            sentry.tick(intersections, random);
+            sentry.tick(modelActions);
         }
+        for (Patrol patrol : patrols)
+        {
+            patrol.tick(intersections, random);
+        }
+
+        modelActions.enact(this);
     }
 
     public void addSentry(int x, int y)
     {
         Connection best = Connection.nearestConnection(lines, new Point(x, y));
 
-        sentries.add(new Sentry(new Point(x, y), best));
+        joiningSentries.add(new JoiningSentry(new Point(x, y), best));
     }
 
     public int size()
     {
         return 250;
+    }
+
+    public void removeJoining(List<JoiningSentry> outgoing)
+    {
+        this.joiningSentries.removeAll(outgoing);
+    }
+
+    public void addPatrols(List<Patrol> incoming)
+    {
+        this.patrols.addAll(incoming);
     }
 }

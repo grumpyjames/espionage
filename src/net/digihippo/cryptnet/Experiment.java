@@ -96,40 +96,51 @@ public class Experiment
                         4);
                 }
             });
-            model.sentries.forEach(new Consumer<Sentry>()
+            model.joiningSentries.forEach(new Consumer<JoiningSentry>()
             {
                 @Override
-                public void accept(Sentry sentry)
+                public void accept(JoiningSentry sentry)
                 {
                     final Point renderable = sentry.point.round();
+                    final DoublePoint direction = sentry.delta;
+                    renderSentry(renderable, direction, g);
 
-                    final double orientation = sentry.delta.orientation();
-                    final Point tView = sentry.delta.rotate(Math.PI / 12).times(10).round();
-                    int radius = 3;
-                    int tx1 = (int) Math.round(renderable.x + (radius * Math.cos(orientation + (Math.PI / 2))));
-                    int ty1 = (int) Math.round(renderable.y + (radius * Math.sin(orientation + (Math.PI / 2))));
-                    int tx2 = tView.x + tx1;
-                    int ty2 = tView.y + ty1;
-
-                    final Point uView = sentry.delta.rotate(-Math.PI / 12).times(10).round();
-                    int ux1 = (int) Math.round(renderable.x - (radius * Math.cos(orientation + (Math.PI / 2))));
-                    int uy1 = (int) Math.round(renderable.y - (radius * Math.sin(orientation + (Math.PI / 2))));
-                    int ux2 = uView.x + ux1;
-                    int uy2 = uView.y + uy1;
-
-                    g.drawOval(renderable.x - radius, renderable.y - radius, radius * 2, radius * 2);
-                    if (sentry.sentryState == Sentry.SentryState.Joining)
-                    {
-                        g.drawLine(
-                            renderable.x,
-                            renderable.y,
-                            sentry.connection.connectionPoint.x,
-                            sentry.connection.connectionPoint.y);
-                    }
-                    g.drawLine(tx1, ty1, tx2, ty2);
-                    g.drawLine(ux1, uy1, ux2, uy2);
+                    g.drawLine(
+                        renderable.x,
+                        renderable.y,
+                        sentry.connection.connectionPoint.x,
+                        sentry.connection.connectionPoint.y);
                 }
             });
+            model.patrols.forEach(new Consumer<Patrol>()
+            {
+                @Override
+                public void accept(Patrol patrol)
+                {
+                    renderSentry(patrol.point.round(), patrol.delta, g);
+                }
+            });
+        }
+
+        private void renderSentry(Point renderable, DoublePoint direction, Graphics g)
+        {
+            final double orientation = direction.orientation();
+            final Point tView = direction.rotate(Math.PI / 12).times(10).round();
+            int radius = 3;
+            int tx1 = (int) Math.round(renderable.x + (radius * Math.cos(orientation + (Math.PI / 2))));
+            int ty1 = (int) Math.round(renderable.y + (radius * Math.sin(orientation + (Math.PI / 2))));
+            int tx2 = tView.x + tx1;
+            int ty2 = tView.y + ty1;
+
+            final Point uView = direction.rotate(-Math.PI / 12).times(10).round();
+            int ux1 = (int) Math.round(renderable.x - (radius * Math.cos(orientation + (Math.PI / 2))));
+            int uy1 = (int) Math.round(renderable.y - (radius * Math.sin(orientation + (Math.PI / 2))));
+            int ux2 = uView.x + ux1;
+            int uy2 = uView.y + uy1;
+
+            g.drawOval(renderable.x - radius, renderable.y - radius, radius * 2, radius * 2);
+            g.drawLine(tx1, ty1, tx2, ty2);
+            g.drawLine(ux1, uy1, ux2, uy2);
         }
 
         private void drawLine(Graphics g, Line line)
