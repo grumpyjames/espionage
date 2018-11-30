@@ -2,6 +2,9 @@ package net.digihippo.cryptnet;
 
 import org.junit.Test;
 
+import java.util.Arrays;
+import java.util.Collections;
+
 import static org.junit.Assert.assertEquals;
 
 public class LineTest
@@ -98,5 +101,82 @@ public class LineTest
         Point point = (Point) horizontal.intersectionWith(xEqualsY);
         assertEquals(5, point.x);
         assertEquals(5, point.y);
+    }
+
+    @Test
+    public void nearestConnection()
+    {
+        Line yEqualsX = Line.createLine(0, 10, 0, 10);
+        Line yEqualsTenMinusX = Line.createLine(0, 10, 10, 0);
+
+        Connection connection =
+            Experiment.nearestConnection(2, 10, Arrays.asList(yEqualsX, yEqualsTenMinusX));
+
+        assertEquals(1, connection.connectionPoint.x);
+        assertEquals(9, connection.connectionPoint.y);
+    }
+
+    @Test
+    public void nearestConnectionWhenPerpendicularLineJoinPointIsOutsideOfBounds()
+    {
+        Line yEqualsX = Line.createLine(0, 10, 0, 10);
+
+        Connection connection =
+            Experiment.nearestConnection(11, 15, Collections.singletonList(yEqualsX));
+
+        assertEquals(10, connection.connectionPoint.x);
+        assertEquals(10, connection.connectionPoint.y);
+    }
+
+    @Test
+    public void nearestConnectionWhenPointIsOnLineButOutsideOfBounds()
+    {
+        Line yEqualsX = Line.createLine(0, 10, 0, 10);
+
+        Connection connection =
+            Experiment.nearestConnection(11, 11, Collections.singletonList(yEqualsX));
+
+        assertEquals(10, connection.connectionPoint.x);
+        assertEquals(10, connection.connectionPoint.y);
+    }
+
+    @Test
+    public void nearestConnectionToVerticalLine()
+    {
+        Line vertical = Line.createLine(5, 5, 0, 100);
+        Connection connection = vertical.connectionTo(new Point(10, 50));
+        assertEquals(5, connection.connectionPoint.x);
+        assertEquals(50, connection.connectionPoint.y);
+        assertEquals(5D, connection.distance, 0D);
+    }
+
+    @Test
+    public void nearestConnectionToHorizontalLine()
+    {
+        Line vertical = Line.createLine(0, 100, 10, 10);
+        Connection connection = vertical.connectionTo(new Point(10, 50));
+        assertEquals(10, connection.connectionPoint.x);
+        assertEquals(10, connection.connectionPoint.y);
+        assertEquals(40D, connection.distance, 0D);
+    }
+
+    @Test
+    public void nearestConnectionToHorizontalLineWhenPerpendicularIntersectOutOfBounds()
+    {
+        Line vertical = Line.createLine(0, 8, 10, 10);
+        Connection connection = vertical.connectionTo(new Point(10, 50));
+        assertEquals(8, connection.connectionPoint.x);
+        assertEquals(10, connection.connectionPoint.y);
+    }
+
+    @Test public void enforceSomeInvariants()
+    {
+        Line reversed = Line.createLine(10, 0, 10, 0);
+        assertEquals(reversed.x1, 0);
+        assertEquals(reversed.x2, 10);
+        assertEquals(reversed.y1, 0);
+        assertEquals(reversed.y2, 10);
+        assertEquals(reversed.gradient, 1D, 0);
+        assertEquals(reversed.intersect, 0D, 0);
     }
 }

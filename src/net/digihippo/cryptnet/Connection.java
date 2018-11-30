@@ -8,6 +8,6 @@ class Connection
     Connection(Point point, Point connectionPoint)
     {
         this.connectionPoint = connectionPoint;
-        this.distance = Experiment.distanceBetween(point, connectionPoint);
+        this.distance = Point.distanceBetween(point, connectionPoint);
     }
 }

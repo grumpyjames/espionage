@@ -13,12 +13,6 @@ import java.util.function.Consumer;
 
 public class Experiment
 {
-    static double distanceBetween(Point pOne, Point pTwo)
-    {
-        double dxSquared = Math.pow(pOne.x - pTwo.x, 2);
-        double dySquared = Math.pow(pOne.y - pTwo.y, 2);
-        return Math.sqrt(dxSquared + dySquared);
-    }
 
     private static Model startingModel()
     {
@@ -113,20 +107,6 @@ public class Experiment
                 }
             }
         }
-    }
-
-    static Point intersection(
-        double intersectOne, double intersectTwo, double gradientOne, double gradientTwo)
-    {
-        // TODO: Watch out for:
-        //   vertical lines
-        //   horizontal lines
-        //   parallel lines
-        //   lines where x2 < x1
-        //   points outside the bounds of the lines
-        final double x = (intersectOne - intersectTwo) / (gradientTwo - gradientOne);
-        final double y = (gradientOne * x) + intersectOne;
-        return new Point((int) Math.round(x), (int) Math.round(y));
     }
 
     private static final class Viewer extends Component

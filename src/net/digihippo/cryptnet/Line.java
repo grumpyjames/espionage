@@ -20,26 +20,66 @@ final class Line implements LineIntersection
 
     static Line createLine(int x1, int x2, int y1, int y2)
     {
-        double gradient = ((double) y2 - y1) / ((double) x2 - x1);
-        return new Line(x1, x2, y1, y2, gradient, ((double) y1) - (gradient * x1));
+        if (x1 > x2)
+        {
+            double gradient = ((double) y1 - y2) / ((double) x1 - x2);
+            return new Line(x2, x1, y2, y1, gradient, ((double) y2) - (gradient * x2));
+        }
+        else
+        {
+            double gradient = ((double) y2 - y1) / ((double) x2 - x1);
+            return new Line(x1, x2, y1, y2, gradient, ((double) y1) - (gradient * x1));
+        }
     }
 
     public Connection connectionTo(Point point)
     {
-        if (((gradient * point.x) + intersect) == point.y)
+        final Point perpendicularIntersection;
+        if (vertical())
         {
-            return new Connection(point, point);
+            perpendicularIntersection = new Point(x1, point.y);
+        }
+        else if (gradient == 0)
+        {
+            perpendicularIntersection = new Point(point.x, y1);
+        }
+        else if (computeY(point.x) == point.y)
+        {
+            perpendicularIntersection = point;
+        }
+        else
+        {
+            // otherwise: shortest distance is length of line perpendicular to this one joining us to point.
+            final double inverseGradient = -1 / gradient;
+            final double inverseIntersection = (double) point.y - (inverseGradient * point.x);
+
+            // now we need the intersection with that line and us...
+            perpendicularIntersection =
+                intersection(this.intersect, inverseIntersection, this.gradient, inverseGradient);
         }
 
-        // otherwise: shortest distance is length of line perpendicular to this one joining us to point.
-        final double inverseGradient = -1 / gradient;
-        final double inverseIntersection = (double) point.y - (inverseGradient * point.x);
+        if (withinBounds(perpendicularIntersection))
+        {
+            return new Connection(point, perpendicularIntersection);
+        }
 
-        // now we need the intersection with that line and us...
-        Point intersection =
-            Experiment.intersection(this.intersect, inverseIntersection, this.gradient, inverseGradient);
+        final Point start = new Point(x1, y1);
+        final Point end = new Point(x2, y2);
+        final double distanceOne = Point.distanceBetween(point, start);
+        final double distanceTwo = Point.distanceBetween(point, end);
+        if (distanceOne <= distanceTwo)
+        {
+            return new Connection(point, start);
+        }
+        else
+        {
+            return new Connection(point, end);
+        }
+    }
 
-        return new Connection(point, intersection);
+    private boolean withinBounds(Point point)
+    {
+        return x1 <= point.x && point.x <= x2 && Math.min(y1, y2) <= point.y && point.y <= Math.max(y1, y2);
     }
 
     @Override
@@ -50,7 +90,7 @@ final class Line implements LineIntersection
 
     public LineIntersection intersectionWith(Line other)
     {
-        // FIXME: could simplify be enforcing all infinity gradient lines be positive
+        // FIXME: could simplify by enforcing all infinity gradient lines be positive
         if (vertical() && other.vertical())
         {
             if (this.x1 == other.x1)
@@ -84,10 +124,17 @@ final class Line implements LineIntersection
             return new Point(other.x1, computeY(other.x1));
         }
 
-        final double x = (this.intersect - other.intersect) / (other.gradient - this.gradient);
-        final int y = computeY(x);
-        return new Point((int) Math.round(x), y);
+        return intersection(this.intersect, other.intersect, this.gradient, other.gradient);
     }
+
+    private static Point intersection(
+        double intersectOne, double intersectTwo, double gradientOne, double gradientTwo)
+    {
+        final double x = (intersectOne - intersectTwo) / (gradientTwo - gradientOne);
+        final double y = (gradientOne * x) + intersectOne;
+        return new Point((int) Math.round(x), (int) Math.round(y));
+    }
+
 
     private boolean vertical()
     {

@@ -12,6 +12,13 @@ class Point implements LineIntersection
         this.y = y;
     }
 
+    static double distanceBetween(Point pOne, Point pTwo)
+    {
+        double dxSquared = Math.pow(pOne.x - pTwo.x, 2);
+        double dySquared = Math.pow(pOne.y - pTwo.y, 2);
+        return Math.sqrt(dxSquared + dySquared);
+    }
+
     @Override
     public String toString()
     {
