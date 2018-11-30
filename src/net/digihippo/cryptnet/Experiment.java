@@ -186,6 +186,8 @@ public class Experiment
             private DoublePoint delta;
             private DoublePoint point;
 
+            private Intersection previous;
+
             public Sentry(Point point, Connection connection)
             {
                 this.point = point.asDoublePoint();
@@ -217,6 +219,11 @@ public class Experiment
                         Intersection intersection = intersections.get(pixel);
                         if (intersection != null)
                         {
+                            if (intersection.equals(previous))
+                            {
+                                continue;
+                            }
+                            previous = intersection;
                             IntersectionEntry[] lines =
                                 intersection.entries.toArray(new IntersectionEntry[intersection.entries.size()]);
                             IntersectionEntry entry =
@@ -253,13 +260,13 @@ public class Experiment
                         else
                         {
                             // problems with very short lines here...
-                            if (this.line.startsAt(pixel))
+                            if (this.line.startsAt(pixel) && !this.delta.equals(this.line.direction()))
                             {
                                 this.delta = this.line.direction();
                                 this.point = pixel.asDoublePoint();
                                 break;
                             }
-                            else if (this.line.endsAt(pixel))
+                            else if (this.line.endsAt(pixel) && !this.delta.equals(this.line.direction().flip()))
                             {
                                 this.delta = this.line.direction().flip();
                                 this.point = pixel.asDoublePoint();
