@@ -26,8 +26,38 @@ class DoublePoint
         return new DoublePoint(x - delta.x, y - delta.y);
     }
 
+    public DoublePoint toUnit()
+    {
+        double size = size();
+
+        return new DoublePoint(x / size, y / size);
+    }
+
+    private double size()
+    {
+        return Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2));
+    }
+
     public Point round()
     {
         return new Point((int) Math.round(x), (int) Math.round(y));
+    }
+
+    // w.r.t the x axis, in radians, anticlockwise being the positive direction.
+    public double orientation()
+    {
+        return Math.atan2(y, x);
+    }
+
+    public DoublePoint times(int i)
+    {
+        return new DoublePoint(x * i, y * i);
+    }
+
+    public DoublePoint rotate(double angle)
+    {
+        double orientation = orientation();
+        double newOrientation = angle + orientation;
+        return new DoublePoint(Math.cos(newOrientation), Math.sin(newOrientation));
     }
 }

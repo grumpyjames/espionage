@@ -101,7 +101,6 @@ public class Experiment
         private class Sentry
         {
             private final Connection connection;
-
             private DoublePoint delta;
             private DoublePoint point;
 
@@ -167,8 +166,6 @@ public class Experiment
         @Override
         public void paint(final Graphics g)
         {
-            model.tick();
-
             model.lines.forEach(new Consumer<Line>()
             {
                 @Override
@@ -182,7 +179,10 @@ public class Experiment
                 @Override
                 public void accept(Point point)
                 {
-                    Viewer.this.drawPoint(g, point);
+                    g.drawPolygon(
+                        new int[] {point.x - 2, point.x + 2, point.x + 2, point.x - 2},
+                        new int[] {point.y + 2, point.y + 2, point.y - 2, point.y - 2},
+                        4);
                 }
             });
             model.sentries.forEach(new Consumer<Model.Sentry>()
@@ -191,19 +191,29 @@ public class Experiment
                 public void accept(Model.Sentry sentry)
                 {
                     final Point renderable = sentry.point.round();
-                    Viewer.this.drawPoint(g, renderable);
-                    g.drawLine(
-                        renderable.x, renderable.y,
-                        sentry.connection.connectionPoint.x, sentry.connection.connectionPoint.y);
-                }
-            });
 
-            SwingUtilities.invokeLater(new Runnable()
-            {
-                @Override
-                public void run()
-                {
-                    Viewer.this.repaint();
+                    final double orientation = sentry.delta.orientation();
+                    final Point tView = sentry.delta.rotate(Math.PI / 12).times(10).round();
+                    int radius = 3;
+                    int tx1 = (int) Math.round(renderable.x + (radius * Math.cos(orientation + (Math.PI / 2))));
+                    int ty1 = (int) Math.round(renderable.y + (radius * Math.sin(orientation + (Math.PI / 2))));
+                    int tx2 = tView.x + tx1;
+                    int ty2 = tView.y + ty1;
+
+                    final Point uView = sentry.delta.rotate(-Math.PI / 12).times(10).round();
+                    int ux1 = (int) Math.round(renderable.x - (radius * Math.cos(orientation + (Math.PI / 2))));
+                    int uy1 = (int) Math.round(renderable.y - (radius * Math.sin(orientation + (Math.PI / 2))));
+                    int ux2 = uView.x + ux1;
+                    int uy2 = uView.y + uy1;
+
+                    g.drawOval(renderable.x - radius, renderable.y - radius, radius * 2, radius * 2);
+                    g.drawLine(
+                        renderable.x,
+                        renderable.y,
+                        sentry.connection.connectionPoint.x,
+                        sentry.connection.connectionPoint.y);
+                    g.drawLine(tx1, ty1, tx2, ty2);
+                    g.drawLine(ux1, uy1, ux2, uy2);
                 }
             });
         }
@@ -211,11 +221,6 @@ public class Experiment
         private void drawLine(Graphics g, Line line)
         {
             g.drawLine(line.x1, line.y1, line.x2, line.y2);
-        }
-
-        private void drawPoint(Graphics g, Point point)
-        {
-            g.drawOval(point.x - 5, point.y - 5, 10, 10);
         }
 
         public Dimension getPreferredSize() {
@@ -254,7 +259,7 @@ public class Experiment
                         model.tick();
                         viewer.repaint();
                     }
-                }, 40, 40, TimeUnit.MILLISECONDS);
+                }, 100, 100, TimeUnit.MILLISECONDS);
             }
         });
     }
