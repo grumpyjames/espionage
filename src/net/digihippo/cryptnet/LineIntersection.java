@@ -1,8 +1,8 @@
 package net.digihippo.cryptnet;
 
-import java.util.List;
+import java.util.function.Consumer;
 
 public interface LineIntersection
 {
-    void visit(List<Point> results);
+    void visit(Consumer<Point> results);
 }

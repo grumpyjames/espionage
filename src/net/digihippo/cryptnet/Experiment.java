@@ -4,12 +4,13 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
-import java.util.ArrayList;
+import java.util.*;
 import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 public class Experiment
 {
@@ -50,9 +51,65 @@ public class Experiment
         return result;
     }
 
+    private static class IntersectionEntry
+    {
+        private final Line line;
+        private final boolean startsHere;
+        private final boolean endsHere;
+
+        private IntersectionEntry(Line line, boolean startsHere, boolean endsHere)
+        {
+            this.line = line;
+            this.startsHere = startsHere;
+            this.endsHere = endsHere;
+        }
+
+        @Override
+        public boolean equals(Object o)
+        {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            IntersectionEntry that = (IntersectionEntry) o;
+
+            if (startsHere != that.startsHere) return false;
+            if (endsHere != that.endsHere) return false;
+            return !(line != null ? !line.equals(that.line) : that.line != null);
+
+        }
+
+        @Override
+        public int hashCode()
+        {
+            int result = line != null ? line.hashCode() : 0;
+            result = 31 * result + (startsHere ? 1 : 0);
+            result = 31 * result + (endsHere ? 1 : 0);
+            return result;
+        }
+    }
+
+    private static class Intersection
+    {
+        private final Set<IntersectionEntry> entries = new HashSet<>();
+        private final Point point;
+
+        public Intersection(Point point)
+        {
+            this.point = point;
+        }
+
+        public void addAll(Line...lines)
+        {
+            for (Line line : lines)
+            {
+                this.entries.add(new IntersectionEntry(line, line.startsAt(point), line.endsAt(point)));
+            }
+        }
+    }
+
     private static final class Model
     {
-        private final List<Point> intersections;
+        private final Map<Point, Intersection> intersections;
         private final List<Line> lines;
         private final List<Sentry> sentries = new ArrayList<>();
 
@@ -62,27 +119,44 @@ public class Experiment
             this.intersections = intersections(lines);
         }
 
-        private List<Point> intersections(List<Line> lines)
+        private Map<Point, Intersection> intersections(List<Line> lines)
         {
-            final List<Point> results = new ArrayList<>();
+            final Map<Point, Intersection> results = new HashMap<>();
             for (int i = 0; i < lines.size(); i++)
             {
                 final Line lineOne = lines.get(i);
                 for (int j = i + 1; j < lines.size(); j++)
                 {
                     final Line lineTwo = lines.get(j);
-                    lineOne.intersectionWith(lineTwo).visit(results);
+                    lineOne.intersectionWith(lineTwo).visit(new Consumer<Point>()
+                    {
+                        @Override
+                        public void accept(Point point)
+                        {
+                            Intersection intersection = results.computeIfAbsent(
+                                point,
+                                new Function<Point, Intersection>()
+                                {
+                                    @Override
+                                    public Intersection apply(Point point)
+                                    {
+                                        return new Intersection(point);
+                                    }
+                                });
+                            intersection.addAll(lineOne, lineTwo);
+                        }
+                    });
                 }
             }
 
             return results;
         }
 
-        public void tick()
+        public void tick(Random random)
         {
             for (Sentry sentry : sentries)
             {
-                sentry.tick();
+                sentry.tick(intersections, random);
             }
         }
 
@@ -107,6 +181,7 @@ public class Experiment
         private class Sentry
         {
             private final Connection connection;
+            private Line line;
             private SentryState sentryState;
             private DoublePoint delta;
             private DoublePoint point;
@@ -116,20 +191,82 @@ public class Experiment
                 this.point = point.asDoublePoint();
                 this.delta = connection.connectionPoint.asDoublePoint().minus(this.point).over(50);
                 this.connection = connection;
+                this.line = connection.line;
                 sentryState = SentryState.Joining;
             }
 
-            public void tick()
+            public void tick(
+                final Map<Point, Intersection> intersections,
+                final Random random)
             {
                 this.point = this.point.plus(delta);
-                if (sentryState == SentryState.Joining && this.point.round().isEqualTo(this.connection.connectionPoint))
+
+                final Iterable<Point> pixels = this.point.pixelBounds();
+                for (Point pixel : pixels)
                 {
-                    this.delta = this.connection.line.direction();
-                    this.sentryState = SentryState.Patrolling;
-                }
-                else if (sentryState == SentryState.Patrolling && this.connection.line.isLineEnding(this.point.round()))
-                {
-                    this.delta = this.delta.flip();
+                    // FIXME: may have joined at an end.
+                    if (sentryState == SentryState.Joining && pixel.isEqualTo(this.connection.connectionPoint))
+                    {
+                        this.delta = this.line.direction();
+                        this.sentryState = SentryState.Patrolling;
+                        this.point = pixel.asDoublePoint();
+                        break;
+                    }
+                    else if (sentryState == SentryState.Patrolling)
+                    {
+                        Intersection intersection = intersections.get(pixel);
+                        if (intersection != null)
+                        {
+                            IntersectionEntry[] lines =
+                                intersection.entries.toArray(new IntersectionEntry[intersection.entries.size()]);
+                            IntersectionEntry entry =
+                                lines[random.nextInt(lines.length)];
+                            if (entry.startsHere && entry.endsHere)
+                            {
+                                // wtf is this, a point road?
+                                throw new UnsupportedOperationException();
+                            }
+                            else if (entry.startsHere)
+                            {
+                                this.delta = entry.line.direction();
+                            }
+                            else if (entry.endsHere)
+                            {
+                                this.delta = entry.line.direction().flip();
+                            }
+                            else
+                            {
+                                if (random.nextBoolean())
+                                {
+                                    this.delta = entry.line.direction();
+                                }
+                                else
+                                {
+                                    this.delta = entry.line.direction().flip();
+                                }
+                            }
+
+                            this.line = entry.line;
+                            this.point = pixel.asDoublePoint();
+                            break;
+                        }
+                        else
+                        {
+                            // problems with very short lines here...
+                            if (this.line.startsAt(pixel))
+                            {
+                                this.delta = this.line.direction();
+                                this.point = pixel.asDoublePoint();
+                                break;
+                            }
+                            else if (this.line.endsAt(pixel))
+                            {
+                                this.delta = this.line.direction().flip();
+                                this.point = pixel.asDoublePoint();
+                                break;
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -187,7 +324,7 @@ public class Experiment
                     Viewer.this.drawLine(g, line);
                 }
             });
-            model.intersections.forEach(new Consumer<Point>()
+            model.intersections.keySet().forEach(new Consumer<Point>()
             {
                 @Override
                 public void accept(Point point)
@@ -220,11 +357,14 @@ public class Experiment
                     int uy2 = uView.y + uy1;
 
                     g.drawOval(renderable.x - radius, renderable.y - radius, radius * 2, radius * 2);
-                    g.drawLine(
-                        renderable.x,
-                        renderable.y,
-                        sentry.connection.connectionPoint.x,
-                        sentry.connection.connectionPoint.y);
+                    if (sentry.sentryState == Model.SentryState.Joining)
+                    {
+                        g.drawLine(
+                            renderable.x,
+                            renderable.y,
+                            sentry.connection.connectionPoint.x,
+                            sentry.connection.connectionPoint.y);
+                    }
                     g.drawLine(tx1, ty1, tx2, ty2);
                     g.drawLine(ux1, uy1, ux2, uy2);
                 }
@@ -250,6 +390,7 @@ public class Experiment
     {
         final Model model = startingModel();
         final Viewer viewer = new Viewer(model);
+        final Random random = new Random(238824982L);
 
         final ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
 
@@ -269,7 +410,7 @@ public class Experiment
                     @Override
                     public void run()
                     {
-                        model.tick();
+                        model.tick(random);
                         viewer.repaint();
                     }
                 }, 40, 40, TimeUnit.MILLISECONDS);

@@ -1,5 +1,7 @@
 package net.digihippo.cryptnet;
 
+import java.util.Arrays;
+
 class DoublePoint
 {
     private double x;
@@ -40,7 +42,7 @@ class DoublePoint
 
     public Point round()
     {
-        return new Point((int) Math.round(x), (int) Math.round(y));
+        return new Point(Maths.round(x), Maths.round(y));
     }
 
     // w.r.t the x axis, in radians, anticlockwise being the positive direction.
@@ -64,5 +66,20 @@ class DoublePoint
     public DoublePoint flip()
     {
         return new DoublePoint(-x, -y);
+    }
+
+    @Override
+    public String toString()
+    {
+        return "(" + x + ", " + y + ")";
+    }
+
+    public Iterable<Point> pixelBounds()
+    {
+        return Arrays.asList(
+            new Point(Maths.floor(x), Maths.floor(y)),
+            new Point(Maths.floor(x), Maths.ceil(y)),
+            new Point(Maths.ceil(x), Maths.floor(y)),
+            new Point(Maths.ceil(x), Maths.ceil(y)));
     }
 }

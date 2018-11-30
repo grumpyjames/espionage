@@ -1,6 +1,6 @@
 package net.digihippo.cryptnet;
 
-import java.util.List;
+import java.util.function.Consumer;
 
 final class Line implements LineIntersection
 {
@@ -144,7 +144,7 @@ final class Line implements LineIntersection
     {
         final double x = (intersectOne - intersectTwo) / (gradientTwo - gradientOne);
         final double y = (gradientOne * x) + intersectOne;
-        return new Point((int) Math.round(x), (int) Math.round(y));
+        return new Point(Maths.round(x), Maths.round(y));
     }
 
 
@@ -155,11 +155,11 @@ final class Line implements LineIntersection
 
     private int computeY(double x)
     {
-        return (int) Math.round((this.gradient * x) + this.intersect);
+        return Maths.round((this.gradient * x) + this.intersect);
     }
 
     @Override
-    public void visit(List<Point> results)
+    public void visit(Consumer<Point> results)
     {
         // Well, we're not going to send it infinite points, are we.
     }
@@ -171,8 +171,16 @@ final class Line implements LineIntersection
 
     public boolean isLineEnding(Point point)
     {
-        return
-            (point.x == x1 && point.y == y1) ||
-            (point.x == x2 && point.y == y2);
+        return startsAt(point) || endsAt(point);
+    }
+
+    public boolean endsAt(Point point)
+    {
+        return point.x == x2 && point.y == y2;
+    }
+
+    public boolean startsAt(Point point)
+    {
+        return (point.x == x1 && point.y == y1);
     }
 }

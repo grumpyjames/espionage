@@ -1,6 +1,6 @@
 package net.digihippo.cryptnet;
 
-import java.util.List;
+import java.util.function.Consumer;
 
 class Point implements LineIntersection
 {
@@ -36,8 +36,28 @@ class Point implements LineIntersection
     }
 
     @Override
-    public void visit(List<Point> results)
+    public void visit(Consumer<Point> results)
     {
-        results.add(this);
+        results.accept(this);
+    }
+
+    @Override
+    public boolean equals(Object o)
+    {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        Point point = (Point) o;
+
+        if (x != point.x) return false;
+        return y == point.y;
+    }
+
+    @Override
+    public int hashCode()
+    {
+        int result = x;
+        result = 31 * result + y;
+        return result;
     }
 }

@@ -1,13 +1,13 @@
 package net.digihippo.cryptnet;
 
-import java.util.List;
+import java.util.function.Consumer;
 
 public enum Empty implements LineIntersection
 {
     INSTANCE
         {
             @Override
-            public void visit(List<Point> results)
+            public void visit(Consumer<Point> results)
             {
 
             }
