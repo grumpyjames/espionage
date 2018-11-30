@@ -13,7 +13,6 @@ import java.util.function.Consumer;
 
 public class Experiment
 {
-
     private static Model startingModel()
     {
         final List<Line> lines = new ArrayList<>();

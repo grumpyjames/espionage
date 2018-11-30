@@ -115,16 +115,28 @@ final class Line implements LineIntersection
             return Empty.INSTANCE;
         }
 
+        final Point candidate;
         if (vertical())
         {
-            return new Point(this.x1, other.computeY(this.x1));
+            candidate = new Point(this.x1, other.computeY(this.x1));
         }
         else if (other.vertical())
         {
-            return new Point(other.x1, computeY(other.x1));
+            candidate = new Point(other.x1, computeY(other.x1));
+        }
+        else
+        {
+            candidate = intersection(this.intersect, other.intersect, this.gradient, other.gradient);
         }
 
-        return intersection(this.intersect, other.intersect, this.gradient, other.gradient);
+        if (withinBounds(candidate) && other.withinBounds(candidate))
+        {
+            return candidate;
+        }
+        else
+        {
+            return Empty.INSTANCE;
+        }
     }
 
     private static Point intersection(

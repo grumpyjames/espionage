@@ -26,6 +26,14 @@ public class LineTest
     }
 
     @Test
+    public void intersectionOutOfBounds()
+    {
+        Line one = Line.createLine(0, 10, 0, 10);
+        Line two = Line.createLine(0, 4, 10, 6);
+        assertEquals(Empty.INSTANCE, one.intersectionWith(two));
+    }
+
+    @Test
     public void intersectionOfVerticalAndHorizontal()
     {
         Line vertical = Line.createLine(5, 5, 0, 10);
