@@ -11,7 +11,7 @@ final class JoiningSentry
     public JoiningSentry(Point point, Connection connection)
     {
         this.point = point.asDoublePoint();
-        this.delta = connection.connectionPoint.asDoublePoint().minus(this.point).over(50);
+        this.delta = connection.connectionPoint.minus(this.point).over(50);
         this.connection = connection;
         this.line = connection.line;
     }
@@ -24,7 +24,8 @@ final class JoiningSentry
         final Iterable<Point> pixels = this.point.pixelBounds();
         for (Point pixel : pixels)
         {
-            if (pixel.equals(this.connection.connectionPoint))
+            Point rounded = this.connection.connectionPoint.round();
+            if (pixel.equals(rounded))
             {
                 this.delta = this.line.direction();
                 this.point = pixel.asDoublePoint();
@@ -32,6 +33,7 @@ final class JoiningSentry
                 modelActions.joined(
                     this,
                     pixel,
+                    this.connection.connectionPoint,
                     this.connection.line,
                     this.connection.line.direction().toUnit());
                 break;

@@ -23,35 +23,35 @@ final class Line implements LineIntersection
         if (x1 > x2)
         {
             double gradient = ((double) y1 - y2) / ((double) x1 - x2);
-            return new Line(x2, x1, y2, y1, gradient, ((double) y2) - (gradient * x2));
+            return new Line(x2, x1, y2, y1, gradient, ((double) y2) - (gradient * (double) x2));
         }
         else
         {
             double gradient = ((double) y2 - y1) / ((double) x2 - x1);
-            return new Line(x1, x2, y1, y2, gradient, ((double) y1) - (gradient * x1));
+            return new Line(x1, x2, y1, y2, gradient, ((double) y1) - (gradient * (double) x1));
         }
     }
 
     public Connection connectionTo(Point point)
     {
-        final Point perpendicularIntersection;
+        final DoublePoint perpendicularIntersection;
         if (vertical())
         {
-            perpendicularIntersection = new Point(x1, point.y);
+            perpendicularIntersection = new DoublePoint(x1, point.y);
         }
         else if (gradient == 0)
         {
-            perpendicularIntersection = new Point(point.x, y1);
+            perpendicularIntersection = new DoublePoint(point.x, y1);
         }
         else if (computeY(point.x) == point.y)
         {
-            perpendicularIntersection = point;
+            perpendicularIntersection = point.asDoublePoint();
         }
         else
         {
             // otherwise: shortest distance is length of line perpendicular to this one joining us to point.
-            final double inverseGradient = -1 / gradient;
-            final double inverseIntersection = (double) point.y - (inverseGradient * point.x);
+            final double inverseGradient = -1D / gradient;
+            final double inverseIntersection = (double) point.y - (inverseGradient * ((double) point.x));
 
             // now we need the intersection with that line and us...
             perpendicularIntersection =
@@ -69,15 +69,20 @@ final class Line implements LineIntersection
         final double distanceTwo = Point.distanceBetween(point, end);
         if (distanceOne <= distanceTwo)
         {
-            return new Connection(point, start, this);
+            return new Connection(point, start.asDoublePoint(), this);
         }
         else
         {
-            return new Connection(point, end, this);
+            return new Connection(point, end.asDoublePoint(), this);
         }
     }
 
     private boolean withinBounds(Point point)
+    {
+        return x1 <= point.x && point.x <= x2 && Math.min(y1, y2) <= point.y && point.y <= Math.max(y1, y2);
+    }
+
+    private boolean withinBounds(DoublePoint point)
     {
         return x1 <= point.x && point.x <= x2 && Math.min(y1, y2) <= point.y && point.y <= Math.max(y1, y2);
     }
@@ -126,7 +131,10 @@ final class Line implements LineIntersection
         }
         else
         {
-            candidate = intersection(this.intersect, other.intersect, this.gradient, other.gradient);
+            candidate =
+                intersection(
+                    this.intersect, other.intersect,
+                    this.gradient, other.gradient).round();
         }
 
         if (withinBounds(candidate) && other.withinBounds(candidate))
@@ -139,12 +147,12 @@ final class Line implements LineIntersection
         }
     }
 
-    private static Point intersection(
+    private static DoublePoint intersection(
         double intersectOne, double intersectTwo, double gradientOne, double gradientTwo)
     {
         final double x = (intersectOne - intersectTwo) / (gradientTwo - gradientOne);
         final double y = (gradientOne * x) + intersectOne;
-        return new Point(Maths.round(x), Maths.round(y));
+        return new DoublePoint(x, y);
     }
 
 
@@ -167,11 +175,6 @@ final class Line implements LineIntersection
     public DoublePoint direction()
     {
         return new DoublePoint(x2 - x1, y2 - y1).toUnit();
-    }
-
-    public boolean isLineEnding(Point point)
-    {
-        return startsAt(point) || endsAt(point);
     }
 
     public boolean endsAt(Point point)

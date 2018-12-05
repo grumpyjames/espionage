@@ -4,8 +4,8 @@ import java.util.Arrays;
 
 class DoublePoint
 {
-    private double x;
-    private double y;
+    double x;
+    double y;
 
     public DoublePoint(double x, double y)
     {
@@ -106,5 +106,10 @@ class DoublePoint
         temp = Double.doubleToLongBits(y);
         result = 31 * result + (int) (temp ^ (temp >>> 32));
         return result;
+    }
+
+    public static double distanceBetween(DoublePoint one, DoublePoint two)
+    {
+        return new DoublePoint(one.x - two.x, one.y - two.y).size();
     }
 }

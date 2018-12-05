@@ -120,8 +120,8 @@ public class LineTest
         Connection connection =
             Connection.nearestConnection(Arrays.asList(yEqualsX, yEqualsTenMinusX), new Point(2, 10));
 
-        assertEquals(1, connection.connectionPoint.x);
-        assertEquals(9, connection.connectionPoint.y);
+        assertEquals(1, connection.connectionPoint.x, 0);
+        assertEquals(9, connection.connectionPoint.y, 0);
     }
 
     @Test
@@ -132,8 +132,8 @@ public class LineTest
         Connection connection =
             Connection.nearestConnection(Collections.singletonList(yEqualsX), new Point(11, 15));
 
-        assertEquals(10, connection.connectionPoint.x);
-        assertEquals(10, connection.connectionPoint.y);
+        assertEquals(10, connection.connectionPoint.x, 0);
+        assertEquals(10, connection.connectionPoint.y, 0);
     }
 
     @Test
@@ -144,8 +144,8 @@ public class LineTest
         Connection connection =
             Connection.nearestConnection(Collections.singletonList(yEqualsX), new Point(11, 11));
 
-        assertEquals(10, connection.connectionPoint.x);
-        assertEquals(10, connection.connectionPoint.y);
+        assertEquals(10, connection.connectionPoint.x, 0);
+        assertEquals(10, connection.connectionPoint.y, 0);
     }
 
     @Test
@@ -153,8 +153,8 @@ public class LineTest
     {
         Line vertical = Line.createLine(5, 5, 0, 100);
         Connection connection = vertical.connectionTo(new Point(10, 50));
-        assertEquals(5, connection.connectionPoint.x);
-        assertEquals(50, connection.connectionPoint.y);
+        assertEquals(5, connection.connectionPoint.x, 0);
+        assertEquals(50, connection.connectionPoint.y, 0);
         assertEquals(5D, connection.distance, 0D);
     }
 
@@ -163,8 +163,8 @@ public class LineTest
     {
         Line vertical = Line.createLine(0, 100, 10, 10);
         Connection connection = vertical.connectionTo(new Point(10, 50));
-        assertEquals(10, connection.connectionPoint.x);
-        assertEquals(10, connection.connectionPoint.y);
+        assertEquals(10, connection.connectionPoint.x, 0);
+        assertEquals(10, connection.connectionPoint.y, 0);
         assertEquals(40D, connection.distance, 0D);
     }
 
@@ -173,8 +173,8 @@ public class LineTest
     {
         Line vertical = Line.createLine(0, 8, 10, 10);
         Connection connection = vertical.connectionTo(new Point(10, 50));
-        assertEquals(8, connection.connectionPoint.x);
-        assertEquals(10, connection.connectionPoint.y);
+        assertEquals(8, connection.connectionPoint.x, 0);
+        assertEquals(10, connection.connectionPoint.y, 0);
     }
 
     @Test public void enforceSomeInvariants()

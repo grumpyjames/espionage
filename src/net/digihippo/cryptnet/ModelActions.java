@@ -2,5 +2,5 @@ package net.digihippo.cryptnet;
 
 public interface ModelActions
 {
-    void joined(final JoiningSentry sentry, final Point pixel, final Line line, DoublePoint delta);
+    void joined(JoiningSentry sentry, Point pixel, DoublePoint point, Line line, DoublePoint delta);
 }

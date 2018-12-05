@@ -11,9 +11,9 @@ final class Patrol
 
     private Intersection previous;
 
-    public Patrol(Point point, Line line, DoublePoint delta)
+    public Patrol(DoublePoint doublePoint, Line line, DoublePoint delta)
     {
-        this.point = point.asDoublePoint();
+        this.point = doublePoint;
         this.delta = delta;
         this.line = line;
     }
@@ -75,12 +75,14 @@ final class Patrol
                 {
                     this.delta = this.line.direction();
                     this.point = pixel.asDoublePoint();
+                    this.previous = null;
                     break;
                 }
                 else if (this.line.endsAt(pixel) && !this.delta.equals(this.line.direction().flip()))
                 {
                     this.delta = this.line.direction().flip();
                     this.point = pixel.asDoublePoint();
+                    this.previous = null;
                     break;
                 }
             }

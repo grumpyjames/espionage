@@ -9,10 +9,11 @@ public class DeferredModelActions implements ModelActions
     private final List<JoiningSentry> outgoing = new ArrayList<>();
 
     @Override
-    public void joined(JoiningSentry sentry, Point pixel, Line line, DoublePoint delta)
+    public void joined(
+        JoiningSentry sentry, Point pixel, DoublePoint point, Line line, DoublePoint delta)
     {
         outgoing.add(sentry);
-        incoming.add(new Patrol(pixel, line, delta));
+        incoming.add(new Patrol(point, line, delta));
     }
 
     void enact(final Model model)

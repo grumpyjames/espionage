@@ -17,6 +17,9 @@ public class Experiment
     {
         final List<Line> lines = new ArrayList<>();
 
+        lines.add(Line.createLine(102, 104, 0, 250));
+        lines.add(Line.createLine(0, 250, 102, 104));
+
         lines.add(Line.createLine(30, 40, 60, 100));
         lines.add(Line.createLine(20, 50, 100, 60));
 
@@ -108,8 +111,8 @@ public class Experiment
                     g.drawLine(
                         renderable.x,
                         renderable.y,
-                        sentry.connection.connectionPoint.x,
-                        sentry.connection.connectionPoint.y);
+                        Maths.round(sentry.connection.connectionPoint.x),
+                        Maths.round(sentry.connection.connectionPoint.y));
                 }
             });
             model.patrols.forEach(new Consumer<Patrol>()
