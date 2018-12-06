@@ -10,16 +10,19 @@ final class Model
     final List<Line> lines;
     final List<JoiningSentry> joiningSentries = new ArrayList<>();
     final List<Patrol> patrols = new ArrayList<>();
+    private final int size;
+    DoublePoint player = null;
 
-    public static Model createModel(List<Line> lines)
+    public static Model createModel(List<Line> lines, int size)
     {
-        return new Model(lines, intersections(lines));
+        return new Model(lines, intersections(lines), size);
     }
 
-    private Model(List<Line> lines, Map<Point, Intersection> intersections)
+    private Model(List<Line> lines, Map<Point, Intersection> intersections, int size)
     {
         this.lines = lines;
         this.intersections = intersections;
+        this.size = size;
     }
 
     private static Map<Point, Intersection> intersections(List<Line> lines)
@@ -65,6 +68,15 @@ final class Model
         for (Patrol patrol : patrols)
         {
             patrol.tick(intersections, random);
+
+            if (player != null)
+            {
+                double distanceToPlayer = DoublePoint.distanceBetween(patrol.point, player);
+                if (distanceToPlayer < 5)
+                {
+                    System.out.println("Game over man!");
+                }
+            }
         }
 
         modelActions.enact(this);
@@ -77,9 +89,17 @@ final class Model
         joiningSentries.add(new JoiningSentry(new Point(x, y), best));
     }
 
+
+    public void addPlayer(int x, int y)
+    {
+        Connection connection = Connection.nearestConnection(lines, new Point(x, y));
+
+        player = connection.connectionPoint;
+    }
+
     public int size()
     {
-        return 250;
+        return size;
     }
 
     public void removeJoining(List<JoiningSentry> outgoing)

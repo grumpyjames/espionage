@@ -2,7 +2,7 @@ package net.digihippo.cryptnet;
 
 import java.util.Arrays;
 
-class DoublePoint
+public class DoublePoint
 {
     double x;
     double y;

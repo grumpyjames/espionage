@@ -1,11 +1,16 @@
 package net.digihippo.cryptnet;
 
+import net.digihippo.cryptnet.roadmap.NormalizedWay;
+import net.digihippo.cryptnet.roadmap.OsmSource;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
-import java.util.*;
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -15,25 +20,46 @@ public class Experiment
 {
     private static Model startingModel()
     {
-        final List<Line> lines = new ArrayList<>();
+        try
+        {
+            int dimension = 400;
+            List<NormalizedWay> normalizedWays = OsmSource.fetchWays(dimension);
 
-        lines.add(Line.createLine(102, 104, 0, 250));
-        lines.add(Line.createLine(0, 250, 102, 104));
+            final List<Line> lines = new ArrayList<>();
 
-        lines.add(Line.createLine(30, 40, 60, 100));
-        lines.add(Line.createLine(20, 50, 100, 60));
+            for (NormalizedWay normalizedWay : normalizedWays)
+            {
+                for (int i = 0; i < normalizedWay.doublePoints.size() - 1; i++)
+                {
+                    Point start =
+                        normalizedWay.doublePoints.get(i).round();
+                    Point end = normalizedWay.doublePoints.get(i + 1).round();
+                    lines.add(Line.createLine(start.x, end.x, start.y, end.y));
+                }
+            }
 
-        lines.add(Line.createLine(10, 10, 0, 250));
-        lines.add(Line.createLine(60, 60, 0, 250));
-        lines.add(Line.createLine(140, 140, 0, 250));
-        lines.add(Line.createLine(220, 220, 0, 250));
+//            lines.add(Line.createLine(102, 104, 0, 250));
+//            lines.add(Line.createLine(0, 250, 102, 104));
+//
+//            lines.add(Line.createLine(30, 40, 60, 100));
+//            lines.add(Line.createLine(20, 50, 100, 60));
+//
+//            lines.add(Line.createLine(10, 10, 0, 250));
+//            lines.add(Line.createLine(60, 60, 0, 250));
+//            lines.add(Line.createLine(140, 140, 0, 250));
+//            lines.add(Line.createLine(220, 220, 0, 250));
+//
+//            lines.add(Line.createLine(0, 250, 10, 10));
+//            lines.add(Line.createLine(0, 250, 60, 60));
+//            lines.add(Line.createLine(0, 250, 90, 90));
+//            lines.add(Line.createLine(0, 250, 180, 180));
 
-        lines.add(Line.createLine(0, 250, 10, 10));
-        lines.add(Line.createLine(0, 250, 60, 60));
-        lines.add(Line.createLine(0, 250, 90, 90));
-        lines.add(Line.createLine(0, 250, 180, 180));
+            return Model.createModel(lines, dimension);
 
-        return Model.createModel(lines);
+        } catch (IOException e)
+        {
+            throw new RuntimeException(e);
+        }
     }
 
     private static final class Viewer extends Component
@@ -43,6 +69,7 @@ public class Experiment
         private Viewer(Model model)
         {
             this.model = model;
+
             addMouseListener(new MouseListener()
             {
                 @Override
@@ -123,6 +150,12 @@ public class Experiment
                     renderSentry(patrol.point.round(), patrol.delta, g);
                 }
             });
+
+            if (model.player != null)
+            {
+                Point round = model.player.round();
+                drawCircle(round, g, 2);
+            }
         }
 
         private void renderSentry(Point renderable, DoublePoint direction, Graphics g)
@@ -141,9 +174,14 @@ public class Experiment
             int ux2 = uView.x + ux1;
             int uy2 = uView.y + uy1;
 
-            g.drawOval(renderable.x - radius, renderable.y - radius, radius * 2, radius * 2);
+            drawCircle(renderable, g, radius);
             g.drawLine(tx1, ty1, tx2, ty2);
             g.drawLine(ux1, uy1, ux2, uy2);
+        }
+
+        private void drawCircle(Point renderable, Graphics g, int radius)
+        {
+            g.drawOval(renderable.x - radius, renderable.y - radius, radius * 2, radius * 2);
         }
 
         private void drawLine(Graphics g, Line line)
@@ -157,7 +195,14 @@ public class Experiment
 
         public void onClick(int x, int y)
         {
-            model.addSentry(x, y);
+            if (model.joiningSentries.size() + model.patrols.size() > 3)
+            {
+                model.addPlayer(x, y);
+            }
+            else
+            {
+                model.addSentry(x, y);
+            }
         }
     }
 
