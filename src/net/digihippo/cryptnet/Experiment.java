@@ -3,11 +3,14 @@ package net.digihippo.cryptnet;
 import net.digihippo.cryptnet.roadmap.NormalizedWay;
 import net.digihippo.cryptnet.roadmap.OsmSource;
 
+import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.awt.image.BufferedImage;
 import java.io.IOException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -22,8 +25,13 @@ public class Experiment
     {
         try
         {
-            int dimension = 400;
-            List<NormalizedWay> normalizedWays = OsmSource.fetchWays(dimension);
+            int dimension = 256;
+            List<NormalizedWay> normalizedWays =
+                OsmSource.fetchWays(
+                    OsmSource.lat(43583 * 256, 17),
+                    OsmSource.lat((43583 - 1) * 256, 17),
+                    OsmSource.lon(65486 * 256, 17),
+                    OsmSource.lon((65486 + 1) * 256, 17));
 
             final List<Line> lines = new ArrayList<>();
 
@@ -38,23 +46,10 @@ public class Experiment
                 }
             }
 
-//            lines.add(Line.createLine(102, 104, 0, 250));
-//            lines.add(Line.createLine(0, 250, 102, 104));
-//
-//            lines.add(Line.createLine(30, 40, 60, 100));
-//            lines.add(Line.createLine(20, 50, 100, 60));
-//
-//            lines.add(Line.createLine(10, 10, 0, 250));
-//            lines.add(Line.createLine(60, 60, 0, 250));
-//            lines.add(Line.createLine(140, 140, 0, 250));
-//            lines.add(Line.createLine(220, 220, 0, 250));
-//
-//            lines.add(Line.createLine(0, 250, 10, 10));
-//            lines.add(Line.createLine(0, 250, 60, 60));
-//            lines.add(Line.createLine(0, 250, 90, 90));
-//            lines.add(Line.createLine(0, 250, 180, 180));
+            // FIXME: there's an off by one here.
+            final BufferedImage image = ImageIO.read(new URL("http://c.tile.openstreetmap.org/17/65486/43582.png"));
 
-            return Model.createModel(lines, dimension);
+            return Model.createModel(lines, dimension, image);
 
         } catch (IOException e)
         {
@@ -107,6 +102,7 @@ public class Experiment
         @Override
         public void paint(final Graphics g)
         {
+            g.drawImage(model.image, 0, 0, null);
             model.lines.forEach(new Consumer<Line>()
             {
                 @Override

@@ -1,5 +1,6 @@
 package net.digihippo.cryptnet;
 
+import java.awt.image.BufferedImage;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -11,18 +12,20 @@ final class Model
     final List<JoiningSentry> joiningSentries = new ArrayList<>();
     final List<Patrol> patrols = new ArrayList<>();
     private final int size;
+    final BufferedImage image;
     DoublePoint player = null;
 
-    public static Model createModel(List<Line> lines, int size)
+    public static Model createModel(List<Line> lines, int size, BufferedImage image)
     {
-        return new Model(lines, intersections(lines), size);
+        return new Model(lines, intersections(lines), size, image);
     }
 
-    private Model(List<Line> lines, Map<Point, Intersection> intersections, int size)
+    private Model(List<Line> lines, Map<Point, Intersection> intersections, int size, BufferedImage image)
     {
         this.lines = lines;
         this.intersections = intersections;
         this.size = size;
+        this.image = image;
     }
 
     private static Map<Point, Intersection> intersections(List<Line> lines)

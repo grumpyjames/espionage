@@ -3,7 +3,6 @@ package net.digihippo.cryptnet.roadmap;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
-import net.digihippo.cryptnet.DoublePoint;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -35,189 +34,174 @@ public class OsmSource
     */
     public static void main(String[] args) throws IOException
     {
-        fetchWays(600);
-    }
+        double latYOrig = 3545567.64;
+        double latRads = lat(latYOrig, 17);
 
-    private static final class LatLn
-    {
-        final double lat, lon;
+        System.out.printf("%s %s %s\n", latYOrig, latRads, y(latRads, 17));
 
-        LatLn(double lat, double lon)
+        double lonXOrig = 3637774.66774;
+        double lonRads = lon(lonXOrig, 17);
+
+        System.out.printf("%s %s %s\n", lonXOrig, lonRads, x(lonRads, 17));
+
+        System.out.println(overpassApiBody(51.51045188624859, 51.50874245880335, -0.1373291015625049, -0.13458251953125938));
+        System.out.println(overpassApiBody(51.50874245880335, 51.51045188624859, -0.13458251953125938, -0.1373291015625049));
+        System.out.println(overpassApiBody(51.50874245880335, 51.51045188624859, -0.1373291015625049, -0.13458251953125938));
+
+        final byte[] bytes = new byte[1024];
+        try (final InputStream is = requestVectorData(51.50874245880335, 51.51045188624859, -0.1373291015625049, -0.13458251953125938))
         {
-            this.lat = lat;
-            this.lon = lon;
-        }
-
-        @Override
-        public String toString()
-        {
-            return "(" + lon + ", " + lat + ")";
-        }
-    }
-
-    private static final class Node
-    {
-        LatLn latLn;
-
-        @Override
-        public String toString()
-        {
-            return latLn != null ? latLn.toString() : "()";
-        }
-    }
-
-    private static final class Way
-    {
-        private final List<Node> nodes;
-
-        Way(List<Node> nodes)
-        {
-            this.nodes = nodes;
-        }
-
-        @Override
-        public String toString()
-        {
-            return nodes.toString();
-        }
-
-        public NormalizedWay translate(double originX, double originLonRads, double originY, double originLatRads, int zoomLevel)
-        {
-            final List<DoublePoint> result = new ArrayList<>(nodes.size());
-            for (Node node : nodes)
+            int read;
+            while ((read = is.read(bytes, 0, bytes.length)) > 0)
             {
-                double ourXPixel = x(node.latLn.lon, zoomLevel);
-                double x = ourXPixel - originX;
-                double ourYPixel = y(node.latLn.lat, zoomLevel);
-                double y = ourYPixel - originY;
-                result.add(new DoublePoint(x, y));
+                System.out.write(bytes, 0, read);
+            }
+        }
+    }
+
+    public static List<NormalizedWay> fetchWays(
+        double latitudeMin, double latitudeMax, double longitudeMin, double longitudeMax) throws IOException
+    {
+        double latSt = Math.toDegrees(latitudeMin);
+        double latEnd = Math.toDegrees(latitudeMax);
+        double lonSt  = Math.toDegrees(longitudeMin);
+        double lonEnd = Math.toDegrees(longitudeMax);
+
+        System.out.printf("%s %s %s %s\n", latSt, latEnd, lonSt, lonEnd);
+
+        try (final InputStream inputStream = requestVectorData(latSt, latEnd, lonSt, lonEnd))
+        {
+
+            JsonFactory jfactory = new JsonFactory();
+            JsonParser jParser = jfactory.createParser(inputStream);
+
+            final Map<Long, Node> nodes = new HashMap<>();
+
+
+            final List<Way> ways = new ArrayList<>();
+            int nodeCount = 0;
+            // FIXME: infinite loop on empty 'elements'
+            while (true)
+            {
+                skipTo(jParser, "type");
+
+                String type = jParser.getText();
+                if ("way".equals(type))
+                {
+                    skipTo(jParser, "nodes");
+
+                    final List<Node> ids = new ArrayList<>();
+                    while (jParser.nextToken() != JsonToken.END_ARRAY)
+                    {
+                        long nodeId = jParser.getLongValue();
+                        final Node forPath = nodes.computeIfAbsent(nodeId, new Function<Long, Node>()
+                        {
+                            @Override
+                            public Node apply(Long aLong)
+                            {
+                                return new Node();
+                            }
+                        });
+                        ids.add(forPath);
+                    }
+
+                    ways.add(new Way(ids));
+                }
+                else if ("node".equals(type))
+                {
+                    skipTo(jParser, "id");
+                    long nodeId = jParser.getLongValue();
+                    skipTo(jParser, "lat");
+                    double lat = Math.toRadians(jParser.getDoubleValue());
+                    skipTo(jParser, "lon");
+                    double lng = Math.toRadians(jParser.getDoubleValue());
+
+                    Node node = nodes.get(nodeId);
+                    if (node == null)
+                    {
+                        throw new IllegalStateException("Node not found for id: " + nodeId);
+                    }
+                    node.latLn = new LatLn(lat, lng);
+
+                    nodeCount++;
+
+                    if (nodeCount == nodes.keySet().size())
+                    {
+                        break;
+                    }
+                }
+            }
+            jParser.close();
+
+            final List<NormalizedWay> normalizedWays = new ArrayList<>(ways.size());
+
+            final double originLonRads = Math.toRadians(lonSt);
+            final double originX = x(originLonRads, 17);
+            final double originLatRads = Math.toRadians(latEnd);
+            final double originY = y(originLatRads, 17);
+
+            for (Way way : ways)
+            {
+                NormalizedWay translate = way.translate(originX, originLonRads, originY, originLatRads, 17);
+                System.out.println(translate);
+                normalizedWays.add(translate);
             }
 
-            return new NormalizedWay(result);
+            return normalizedWays;
         }
     }
 
-    public static List<NormalizedWay> fetchWays(int pixels) throws IOException
+    private static InputStream requestVectorData(double latSt, double latEnd, double lonSt, double lonEnd) throws IOException
     {
-        URLConnection urlConnection =
+        final URLConnection urlConnection =
             new URL("http://overpass-api.de/api/interpreter").openConnection();
-        HttpURLConnection connection = (HttpURLConnection) urlConnection;
+        final HttpURLConnection connection = (HttpURLConnection) urlConnection;
         connection.setDoOutput(true);
         connection.setDoInput(true);
         // Content-Type: application/x-www-form-urlencoded; charset=UTF-8
         connection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
         connection.setRequestMethod("POST");
 
-        // 51.50568402624203,-0.14539718627929685,51.513670243545285
-        double latSt  = 51.50568402624203;
-        double latEnd = 51.513670243545285;
-        double latDiff = latEnd - latSt;
-        double lonSt  = -0.14539718627929685;
-        double lonEnd = lonSt + latDiff;
-
-        System.out.println(latEnd - latSt);
-        System.out.println(lonEnd - lonSt);
-
         String builder = encode("data") +
             "=" +
-            encode("[out:json][timeout:25];\n" +
-                "(\n" +
-                "  way[\"highway\"](" + latSt + "," + lonSt + "," + latEnd + "," + lonEnd + ");\n" +
-                ");\n" +
-                "out body;\n" +
-                ">;\n" +
-                "out skel qt;");
+            encode(overpassApiBody(latSt, latEnd, lonSt, lonEnd));
 
         connection.getOutputStream()
             .write(
                 builder.getBytes(StandardCharsets.UTF_8));
 
-        InputStream inputStream = connection.getInputStream();
-
-        JsonFactory jfactory = new JsonFactory();
-        JsonParser jParser = jfactory.createParser(inputStream);
-
-        final Map<Long, Node> nodes = new HashMap<>();
-
-
-        final List<Way> ways = new ArrayList<>();
-        int nodeCount = 0;
-        while (true) {
-            skipTo(jParser, "type");
-
-            String type = jParser.getText();
-            if ("way".equals(type))
-            {
-                skipTo(jParser, "nodes");
-
-                final List<Node> ids = new ArrayList<>();
-                while (jParser.nextToken() != JsonToken.END_ARRAY)
-                {
-                    long nodeId = jParser.getLongValue();
-                    final Node forPath = nodes.computeIfAbsent(nodeId, new Function<Long, Node>()
-                    {
-                        @Override
-                        public Node apply(Long aLong)
-                        {
-                            return new Node();
-                        }
-                    });
-                    ids.add(forPath);
-                }
-
-                ways.add(new Way(ids));
-            }
-            else if ("node".equals(type))
-            {
-                skipTo(jParser, "id");
-                long nodeId = jParser.getLongValue();
-                skipTo(jParser, "lat");
-                double lat = Math.toRadians(jParser.getDoubleValue());
-                skipTo(jParser, "lon");
-                double lng = Math.toRadians(jParser.getDoubleValue());
-
-                Node node = nodes.get(nodeId);
-                if (node == null)
-                {
-                    throw new IllegalStateException("Node not found for id: " + nodeId);
-                }
-                node.latLn = new LatLn(lat, lng);
-
-                nodeCount++;
-
-                if (nodeCount == nodes.keySet().size())
-                {
-                    break;
-                }
-            }
-        }
-        jParser.close();
-
-        final List<NormalizedWay> normalizedWays = new ArrayList<>(ways.size());
-
-        final double originLonRads = Math.toRadians(lonSt);
-        final double originX = x(originLonRads, 17);
-        final double originLatRads = Math.toRadians(latEnd);
-        final double originY = y(originLatRads, 17);
-
-        for (Way way: ways)
-        {
-            NormalizedWay translate = way.translate(originX, originLonRads, originY, originLatRads, 17);
-            System.out.println(translate);
-            normalizedWays.add(translate);
-        }
-
-        return normalizedWays;
+        return connection.getInputStream();
     }
 
-    private static double y(double latRads, int zoomLevel)
+    private static String overpassApiBody(double latSt, double latEnd, double lonSt, double lonEnd)
+    {
+        return "[out:json][timeout:25];\n" +
+            "(\n" +
+            "  way[\"highway\"](" + latSt + "," + lonSt + "," + latEnd + "," + lonEnd + ");\n" +
+            ");\n" +
+            "out body;\n" +
+            ">;\n" +
+            "out skel qt;";
+    }
+
+    static double y(double latRads, int zoomLevel)
     {
         return multiplier(zoomLevel) * (Math.PI - Math.log(Math.tan((Math.PI / 4) + (latRads / 2))));
     }
 
-    private static double x(double lonRads, int zoomLevel)
+    public static double lat(double y, int zoomLevel)
+    {
+        return 2 * (Math.atan(Math.exp(Math.PI - (y / multiplier(zoomLevel)))) - (Math.PI / 4));
+    }
+
+    static double x(double lonRads, int zoomLevel)
     {
         return multiplier(zoomLevel) * (lonRads + Math.PI);
+    }
+
+    public static double lon(double x, int zoomLevel)
+    {
+        return (x / multiplier(zoomLevel)) - Math.PI;
     }
 
     private static double multiplier(int zoomLevel)
