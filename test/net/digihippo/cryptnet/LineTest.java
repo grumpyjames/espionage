@@ -182,15 +182,4 @@ public class LineTest
         assertEquals(8, connection.connectionPoint.x, 0);
         assertEquals(10, connection.connectionPoint.y, 0);
     }
-
-    @Test public void enforceSomeInvariants()
-    {
-        Line reversed = Line.createLine(10, 0, 10, 0);
-        assertEquals(reversed.x1, 0);
-        assertEquals(reversed.x2, 10);
-        assertEquals(reversed.y1, 0);
-        assertEquals(reversed.y2, 10);
-        assertEquals(reversed.gradient, 1D, 0);
-        assertEquals(reversed.intersect, 0D, 0);
-    }
 }
