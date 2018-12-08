@@ -143,7 +143,6 @@ public class OsmSource
             for (Way way : ways)
             {
                 NormalizedWay translate = way.translate(originX, originLonRads, originY, originLatRads, 17);
-                System.out.println(translate);
                 normalizedWays.add(translate);
             }
 

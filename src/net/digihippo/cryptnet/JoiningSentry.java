@@ -30,12 +30,16 @@ final class JoiningSentry
                 this.delta = this.line.direction();
                 this.point = pixel.asDoublePoint();
                 // FIXME: what if we join at start/end?
+                final Direction direction =
+                    line.endsAt(pixel) ? Direction.Backwards : line.startsAt(pixel) ? Direction.Forwards : Direction.Backwards;
                 modelActions.joined(
                     this,
                     pixel,
                     this.connection.connectionPoint,
+                    this.connection.path,
                     this.connection.line,
-                    this.connection.line.direction().toUnit());
+                    direction.orient(this.connection.line.direction()),
+                    direction);
                 break;
             }
         }

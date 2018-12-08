@@ -33,23 +33,26 @@ public class Experiment
                     OsmSource.lon(65486 * 256, 17),
                     OsmSource.lon((65486 + 1) * 256, 17));
 
-            final List<Line> lines = new ArrayList<>();
+            final List<Path> paths = new ArrayList<>();
 
             for (NormalizedWay normalizedWay : normalizedWays)
             {
-                for (int i = 0; i < normalizedWay.doublePoints.size() - 1; i++)
+                int lineCount = normalizedWay.doublePoints.size() - 1;
+                final List<Line> pieces = new ArrayList<>(lineCount);
+                for (int i = 0; i < lineCount; i++)
                 {
                     Point start =
                         normalizedWay.doublePoints.get(i).round();
                     Point end = normalizedWay.doublePoints.get(i + 1).round();
-                    lines.add(Line.createLine(start.x, end.x, start.y, end.y));
+                    pieces.add(Line.createLine(start.x, end.x, start.y, end.y));
                 }
+                paths.add(new Path(pieces));
             }
 
             // FIXME: there's an off by one here.
             final BufferedImage image = ImageIO.read(new URL("http://c.tile.openstreetmap.org/17/65486/43582.png"));
 
-            return Model.createModel(lines, dimension, image);
+            return Model.createModel(paths, dimension, image);
 
         } catch (IOException e)
         {

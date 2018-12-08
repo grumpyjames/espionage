@@ -1,8 +1,9 @@
 package net.digihippo.cryptnet;
 
+import java.util.Collections;
 import java.util.function.Consumer;
 
-final class Line implements LineIntersection
+final class Line implements LineIntersection, HasLines
 {
     public final int x1, x2, y1, y2;
     public final double gradient, intersect;
@@ -20,19 +21,11 @@ final class Line implements LineIntersection
 
     static Line createLine(int x1, int x2, int y1, int y2)
     {
-        if (x1 > x2)
-        {
-            double gradient = ((double) y1 - y2) / ((double) x1 - x2);
-            return new Line(x2, x1, y2, y1, gradient, ((double) y2) - (gradient * (double) x2));
-        }
-        else
-        {
-            double gradient = ((double) y2 - y1) / ((double) x2 - x1);
-            return new Line(x1, x2, y1, y2, gradient, ((double) y1) - (gradient * (double) x1));
-        }
+        double gradient = ((double) y2 - y1) / ((double) x2 - x1);
+        return new Line(x1, x2, y1, y2, gradient, ((double) y1) - (gradient * (double) x1));
     }
 
-    public Connection connectionTo(Point point)
+    public Connection connectionTo(Path path, Point point)
     {
         final DoublePoint perpendicularIntersection;
         if (vertical())
@@ -60,7 +53,7 @@ final class Line implements LineIntersection
 
         if (withinBounds(perpendicularIntersection))
         {
-            return new Connection(point, perpendicularIntersection, this);
+            return new Connection(point, perpendicularIntersection, this, path);
         }
 
         final Point start = new Point(x1, y1);
@@ -69,11 +62,11 @@ final class Line implements LineIntersection
         final double distanceTwo = Point.distanceBetween(point, end);
         if (distanceOne <= distanceTwo)
         {
-            return new Connection(point, start.asDoublePoint(), this);
+            return new Connection(point, start.asDoublePoint(), this, path);
         }
         else
         {
-            return new Connection(point, end.asDoublePoint(), this);
+            return new Connection(point, end.asDoublePoint(), this, path);
         }
     }
 
@@ -90,6 +83,14 @@ final class Line implements LineIntersection
     @Override
     public String toString()
     {
+        if (vertical())
+        {
+            return "x = " + x1;
+        }
+        else if (gradient == 0)
+        {
+            return "y = " + y1;
+        }
         return "y = " + gradient + "x + " + intersect;
     }
 
@@ -185,5 +186,11 @@ final class Line implements LineIntersection
     public boolean startsAt(Point point)
     {
         return (point.x == x1 && point.y == y1);
+    }
+
+    @Override
+    public Iterable<Line> lines()
+    {
+        return Collections.singletonList(this);
     }
 }
