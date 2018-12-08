@@ -72,12 +72,12 @@ final class Line implements LineIntersection, HasLines
 
     private boolean withinBounds(Point point)
     {
-        return x1 <= point.x && point.x <= x2 && Math.min(y1, y2) <= point.y && point.y <= Math.max(y1, y2);
+        return Math.min(x1, x2) <= point.x && point.x <= Math.max(x1, x2) && Math.min(y1, y2) <= point.y && point.y <= Math.max(y1, y2);
     }
 
     private boolean withinBounds(DoublePoint point)
     {
-        return x1 <= point.x && point.x <= x2 && Math.min(y1, y2) <= point.y && point.y <= Math.max(y1, y2);
+        return Math.min(x1, x2) <= point.x && point.x <= Math.max(x1, x2) && Math.min(y1, y2) <= point.y && point.y <= Math.max(y1, y2);
     }
 
     @Override
