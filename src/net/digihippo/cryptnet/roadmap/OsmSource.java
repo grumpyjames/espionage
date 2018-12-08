@@ -59,6 +59,64 @@ public class OsmSource
         }
     }
 
+    private static final class WayCollector
+    {
+        final Map<Long, Node> nodes = new HashMap<>();
+        final List<Way> ways = new ArrayList<>();
+
+        List<Node> accumulating = null;
+        int nodeCount = 0;
+
+        void wayStart()
+        {
+            accumulating = new ArrayList<>();
+        }
+
+        void waypoint(final long nodeId)
+        {
+            final Node forPath = nodes.computeIfAbsent(nodeId, new Function<Long, Node>()
+            {
+                @Override
+                public Node apply(Long aLong)
+                {
+                    return new Node();
+                }
+            });
+            accumulating.add(forPath);
+        }
+
+        void wayEnd()
+        {
+            ways.add(new Way(accumulating));
+        }
+
+        boolean node(final long nodeId, final LatLn location)
+        {
+            nodeCount++;
+            Node node = nodes.get(nodeId);
+            if (node == null)
+            {
+                throw new IllegalStateException("Node not found for id: " + nodeId);
+            }
+            node.latLn = location;
+
+            return nodeCount == nodes.keySet().size();
+        }
+
+        public List<NormalizedWay> normalizedWays(double originX, double originY, int zoomLevel)
+        {
+            final List<NormalizedWay> normalizedWays = new ArrayList<>(ways.size());
+
+            for (Way way : ways)
+            {
+                NormalizedWay translate = way.translate(originX, originY, zoomLevel);
+                normalizedWays.add(translate);
+            }
+
+            return normalizedWays;
+        }
+    }
+
     public static List<NormalizedWay> fetchWays(
         double latitudeMin, double latitudeMax, double longitudeMin, double longitudeMax) throws IOException
     {
@@ -75,11 +133,8 @@ public class OsmSource
             JsonFactory jfactory = new JsonFactory();
             JsonParser jParser = jfactory.createParser(inputStream);
 
-            final Map<Long, Node> nodes = new HashMap<>();
+            final WayCollector wayCollector = new WayCollector();
 
-
-            final List<Way> ways = new ArrayList<>();
-            int nodeCount = 0;
             // FIXME: infinite loop on empty 'elements'
             while (true)
             {
@@ -90,22 +145,12 @@ public class OsmSource
                 {
                     skipTo(jParser, "nodes");
 
-                    final List<Node> ids = new ArrayList<>();
+                    wayCollector.wayStart();
                     while (jParser.nextToken() != JsonToken.END_ARRAY)
                     {
-                        long nodeId = jParser.getLongValue();
-                        final Node forPath = nodes.computeIfAbsent(nodeId, new Function<Long, Node>()
-                        {
-                            @Override
-                            public Node apply(Long aLong)
-                            {
-                                return new Node();
-                            }
-                        });
-                        ids.add(forPath);
+                        wayCollector.waypoint(jParser.getLongValue());
                     }
-
-                    ways.add(new Way(ids));
+                    wayCollector.wayEnd();
                 }
                 else if ("node".equals(type))
                 {
@@ -116,16 +161,9 @@ public class OsmSource
                     skipTo(jParser, "lon");
                     double lng = Math.toRadians(jParser.getDoubleValue());
 
-                    Node node = nodes.get(nodeId);
-                    if (node == null)
-                    {
-                        throw new IllegalStateException("Node not found for id: " + nodeId);
-                    }
-                    node.latLn = new LatLn(lat, lng);
+                    boolean done = wayCollector.node(nodeId, new LatLn(lat, lng));
 
-                    nodeCount++;
-
-                    if (nodeCount == nodes.keySet().size())
+                    if (done)
                     {
                         break;
                     }
@@ -133,20 +171,7 @@ public class OsmSource
             }
             jParser.close();
 
-            final List<NormalizedWay> normalizedWays = new ArrayList<>(ways.size());
-
-            final double originLonRads = Math.toRadians(lonSt);
-            final double originX = x(originLonRads, 17);
-            final double originLatRads = Math.toRadians(latEnd);
-            final double originY = y(originLatRads, 17);
-
-            for (Way way : ways)
-            {
-                NormalizedWay translate = way.translate(originX, originLonRads, originY, originLatRads, 17);
-                normalizedWays.add(translate);
-            }
-
-            return normalizedWays;
+            return wayCollector.normalizedWays(x(Math.toRadians(lonSt), 17), y(Math.toRadians(latEnd), 17), 17);
         }
     }
 

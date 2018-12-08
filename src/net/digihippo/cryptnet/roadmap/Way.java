@@ -20,7 +20,7 @@ final class Way
         return nodes.toString();
     }
 
-    public NormalizedWay translate(double originX, double originLonRads, double originY, double originLatRads, int zoomLevel)
+    public NormalizedWay translate(double originX, double originY, int zoomLevel)
     {
         final List<DoublePoint> result = new ArrayList<>(nodes.size());
         for (Node node : nodes)
