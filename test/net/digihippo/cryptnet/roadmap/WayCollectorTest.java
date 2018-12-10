@@ -153,4 +153,40 @@ public class WayCollectorTest
         }
         Assert.assertEquals(Arrays.asList(1L, 2L, 3L, 4L, 5L), nodeIds);
     }
+
+    @Test
+    public void oneJoinOnlyVassili()
+    {
+        WayCollector wayCollector = new WayCollector();
+
+        wayCollector.wayStart();
+        wayCollector.waypoint(1);
+        wayCollector.waypoint(2);
+        wayCollector.waypoint(3);
+        wayCollector.wayEnd();
+
+        wayCollector.wayStart();
+        wayCollector.waypoint(3);
+        wayCollector.waypoint(4);
+        wayCollector.wayEnd();
+
+        wayCollector.wayStart();
+        wayCollector.waypoint(4);
+        wayCollector.waypoint(5);
+        wayCollector.waypoint(6);
+        wayCollector.wayEnd();
+
+
+        wayCollector.node(1, new LatLn(1, 2));
+        wayCollector.node(2, new LatLn(1, 3));
+        wayCollector.node(3, new LatLn(1, 4));
+        wayCollector.node(4, new LatLn(1, 5));
+        wayCollector.node(5, new LatLn(1, 6));
+        wayCollector.node(6, new LatLn(1, 7));
+
+        Collection<Way> ways = wayCollector.reducedWays();
+
+        System.out.println(ways);
+    }
+
 }

@@ -66,21 +66,50 @@ final class WayCollector
 
     public Collection<Way> reducedWays()
     {
-        for (Map.Entry<Long, Set<Way>> longSetEntry : edgeNodeToWay.entrySet())
+        final List<Way> results = new ArrayList<>();
+        while (!ways.isEmpty())
         {
-            Set<Way> ways = longSetEntry.getValue();
-            if (ways.size() == 2)
-            {
-                Way[] wayArray = ways.toArray(new Way[2]);
+            Iterator<Way> iterator = ways.iterator();
+            Way originalWay = iterator.next();
+            iterator.remove();
 
-                Way wayOne = wayArray[0];
-                Way wayTwo = wayArray[1];
-                this.ways.remove(wayOne);
-                this.ways.remove(wayTwo);
-                this.ways.add(wayOne.concat(longSetEntry.getKey(), wayTwo));
+            long start = originalWay.firstNodeId();
+            long end = originalWay.lastNodeId();
+            Set<Way> startWays = edgeNodeToWay.get(start);
+            Set<Way> endWays = edgeNodeToWay.get(end);
+            while (startWays.size() == 2 || endWays.size() == 2)
+            {
+                boolean startCondition = startWays.size() == 2;
+                boolean endCondition = endWays.size() == 2;
+                if (startCondition)
+                {
+                    Way[] waysArray = startWays.toArray(new Way[2]);
+                    Way other = waysArray[0] == originalWay ? waysArray[1] : waysArray[0];
+                    ways.remove(other);
+                    originalWay = originalWay.concat(start, other);
+                    Set<Way> ways = edgeNodeToWay.get(other.oppositeEndTo(start));
+                    ways.remove(other);
+                    ways.add(originalWay);
+                }
+                else if (endCondition)
+                {
+                    Way[] waysArray = endWays.toArray(new Way[2]);
+                    Way other = waysArray[0] == originalWay ? waysArray[1] : waysArray[0];
+                    ways.remove(other);
+                    originalWay = originalWay.concat(end, other);
+                    Set<Way> ways = edgeNodeToWay.get(other.oppositeEndTo(start));
+                    ways.remove(other);
+                    ways.add(originalWay);
+                }
+                start = originalWay.firstNodeId();
+                end = originalWay.lastNodeId();
+                startWays = edgeNodeToWay.get(start);
+                endWays = edgeNodeToWay.get(end);
             }
+
+            results.add(originalWay);
         }
 
-        return this.ways;
+        return results;
     }
 }

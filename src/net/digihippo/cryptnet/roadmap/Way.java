@@ -81,13 +81,22 @@ final class Way
         return new Way(nodes);
     }
 
-    private long lastNodeId()
+    public long lastNodeId()
     {
         return nodes.get(nodes.size() - 1).nodeId;
     }
 
-    private long firstNodeId()
+    public long firstNodeId()
     {
         return this.nodes.get(0).nodeId;
+    }
+
+    public long oppositeEndTo(long nodeId)
+    {
+        if (firstNodeId() == nodeId)
+        {
+            return lastNodeId();
+        }
+        return firstNodeId();
     }
 }
