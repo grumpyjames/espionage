@@ -44,27 +44,30 @@ final class Patrol
                 performTurn(random, pixel, intersection);
                 break;
             }
-            else if (this.path.startsAt(pixel) && this.direction == Direction.Backwards)
+            else if (this.path.startsAt(pixel) && this.path.endsAt(pixel) && !pixel.equals(previousTurn))
             {
-                // FIXME: problems with very short lines here, I suspect...
-                this.delta = this.line.direction();
-                this.point = pixel.asDoublePoint();
-                this.previous = null;
-                this.previousTurn = null;
-                this.direction = Direction.Forwards;
+                boolean forwards = random.nextBoolean();
+                if (forwards)
+                {
+                    pickLine(pixel, this.path.lines.get(0), Direction.Forwards);
+                }
+                else
+                {
+                    pickLine(pixel, this.path.lines.get(this.path.lines.size() - 1), Direction.Backwards);
+                }
+            }
+            else if (this.path.startsAt(pixel) && this.direction == Direction.Backwards && !pixel.equals(previousTurn))
+            {
+                pickLine(pixel, this.line, Direction.Forwards);
                 System.out.printf(
                     "Start of line %s reached at %s, switching to direction %s\n", line, pixel, delta);
                 break;
             }
-            else if (this.path.endsAt(pixel) && this.direction == Direction.Forwards)
+            else if (this.path.endsAt(pixel) && this.direction == Direction.Forwards && !pixel.equals(previousTurn))
             {
-                this.direction = Direction.Backwards;
-                this.delta = this.direction.orient(this.line.direction());
-                this.point = pixel.asDoublePoint();
-                this.previous = null;
-                this.previousTurn = null;
+                pickLine(pixel, this.line, Direction.Backwards);
                 System.out.printf(
-                    "End of line %s reached at %s, switching to direction %s\n", line, pixel, delta);
+                    "End of line %s reached at %s, switching to direction %s\n", this.line, pixel, delta);
                 break;
             }
             else if (!pixel.equals(previousTurn) && this.path.turnsAt(pixel))
@@ -78,6 +81,15 @@ final class Patrol
                 break;
             }
         }
+    }
+
+    private void pickLine(Point pixel, Line line, Direction dir)
+    {
+        this.direction = dir;
+        this.delta = this.direction.orient(line.direction());
+        this.point = pixel.asDoublePoint();
+        this.previous = null;
+        this.previousTurn = pixel;
     }
 
     private void performTurn(Random random, Point pixel, Intersection intersection)

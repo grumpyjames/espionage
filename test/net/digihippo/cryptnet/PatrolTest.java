@@ -15,7 +15,27 @@ public class PatrolTest
     private final Path pathTwo = new Path(Collections.singletonList(lineTwo));
     private final Map<Point, Intersection> intersections = Model.intersections(Arrays.asList(pathOne, pathTwo));
 
-    // FIXME: assertions, maybe?
+
+    @Test
+    public void somePathsAreCircuits()
+    {
+        Line one = Line.createLine(0, 1, 0, 1);
+        Line two = Line.createLine(1, 1, 0, 1);
+        Line three = Line.createLine(1, 0, 1, 1);
+        Line four = Line.createLine(0, 0, 1, 0);
+
+        Path circuit = new Path(Arrays.asList(one, two, three, four));
+
+        Patrol patrol = new Patrol(new DoublePoint(0, 0), circuit, one, one.direction(), Direction.Forwards);
+        Random random = new Random(22357L);
+        tickPrint(Collections.<Point, Intersection>emptyMap(), patrol, random);
+        tickPrint(Collections.<Point, Intersection>emptyMap(), patrol, random);
+        tickPrint(Collections.<Point, Intersection>emptyMap(), patrol, random);
+        tickPrint(Collections.<Point, Intersection>emptyMap(), patrol, random);
+        tickPrint(Collections.<Point, Intersection>emptyMap(), patrol, random);
+        tickPrint(Collections.<Point, Intersection>emptyMap(), patrol, random);
+    }
+
 
     @Test
     public void reverseAtEndOfLine()

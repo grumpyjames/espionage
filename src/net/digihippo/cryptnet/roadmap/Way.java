@@ -7,7 +7,7 @@ import java.util.List;
 
 final class Way
 {
-    private final List<Node> nodes;
+    final List<Node> nodes;
 
     Way(List<Node> nodes)
     {
@@ -33,5 +33,61 @@ final class Way
         }
 
         return new NormalizedWay(result);
+    }
+
+    public Way concat(long joiningNode, Way another)
+    {
+        final List<Node> nodes = new ArrayList<>(this.nodes.size() + another.nodes.size());
+        if (
+            joiningNode == this.lastNodeId() &&
+            joiningNode == another.firstNodeId())
+        {
+            nodes.addAll(this.nodes);
+            nodes.remove(nodes.size() - 1);
+            nodes.addAll(another.nodes);
+        }
+        else if (
+            joiningNode == this.firstNodeId() &&
+            joiningNode == another.lastNodeId())
+        {
+            nodes.addAll(another.nodes);
+            nodes.remove(nodes.size() - 1);
+            nodes.addAll(this.nodes);
+        }
+        else if (
+            joiningNode == this.lastNodeId() &&
+            joiningNode == another.lastNodeId()
+            )
+        {
+            nodes.addAll(this.nodes);
+            for (int i = another.nodes.size() - 2; i >= 0; i--)
+            {
+                 nodes.add(another.nodes.get(i));
+            }
+        }
+        else if (
+            joiningNode == this.firstNodeId() &&
+            joiningNode == another.firstNodeId()
+            )
+        {
+            for (int i = this.nodes.size() - 1; i > 0; i--)
+            {
+                nodes.add(this.nodes.get(i));
+            }
+            nodes.addAll(another.nodes);
+        }
+
+
+        return new Way(nodes);
+    }
+
+    private long lastNodeId()
+    {
+        return nodes.get(nodes.size() - 1).nodeId;
+    }
+
+    private long firstNodeId()
+    {
+        return this.nodes.get(0).nodeId;
     }
 }

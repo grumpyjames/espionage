@@ -10,10 +10,8 @@ import java.io.UnsupportedEncodingException;
 import java.net.*;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Collection;
 import java.util.List;
-import java.util.Map;
-import java.util.function.Function;
 
 public class OsmSource
 {
@@ -56,64 +54,6 @@ public class OsmSource
             {
                 System.out.write(bytes, 0, read);
             }
-        }
-    }
-
-    private static final class WayCollector
-    {
-        final Map<Long, Node> nodes = new HashMap<>();
-        final List<Way> ways = new ArrayList<>();
-
-        List<Node> accumulating = null;
-        int nodeCount = 0;
-
-        void wayStart()
-        {
-            accumulating = new ArrayList<>();
-        }
-
-        void waypoint(final long nodeId)
-        {
-            final Node forPath = nodes.computeIfAbsent(nodeId, new Function<Long, Node>()
-            {
-                @Override
-                public Node apply(Long aLong)
-                {
-                    return new Node();
-                }
-            });
-            accumulating.add(forPath);
-        }
-
-        void wayEnd()
-        {
-            ways.add(new Way(accumulating));
-        }
-
-        boolean node(final long nodeId, final LatLn location)
-        {
-            nodeCount++;
-            Node node = nodes.get(nodeId);
-            if (node == null)
-            {
-                throw new IllegalStateException("Node not found for id: " + nodeId);
-            }
-            node.latLn = location;
-
-            return nodeCount == nodes.keySet().size();
-        }
-
-        public List<NormalizedWay> normalizedWays(double originX, double originY, int zoomLevel)
-        {
-            final List<NormalizedWay> normalizedWays = new ArrayList<>(ways.size());
-
-            for (Way way : ways)
-            {
-                NormalizedWay translate = way.translate(originX, originY, zoomLevel);
-                normalizedWays.add(translate);
-            }
-
-            return normalizedWays;
         }
     }
 
@@ -171,7 +111,19 @@ public class OsmSource
             }
             jParser.close();
 
-            return wayCollector.normalizedWays(x(Math.toRadians(lonSt), 17), y(Math.toRadians(latEnd), 17), 17);
+            Collection<Way> ways = wayCollector.reducedWays();
+
+
+
+            final List<NormalizedWay> normalizedWays = new ArrayList<>(ways.size());
+
+            for (Way way : ways)
+            {
+                NormalizedWay translate = way.translate(x(Math.toRadians(lonSt), 17), y(Math.toRadians(latEnd), 17), 17);
+                normalizedWays.add(translate);
+            }
+
+            return normalizedWays;
         }
     }
 
