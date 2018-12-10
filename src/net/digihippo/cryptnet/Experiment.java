@@ -26,12 +26,14 @@ public class Experiment
         try
         {
             int dimension = 256;
+            int yTile = 43583;
+            int xTile = 65486;
             List<NormalizedWay> normalizedWays =
                 OsmSource.fetchWays(
-                    OsmSource.lat(43583 * 256, 17),
-                    OsmSource.lat((43583 - 1) * 256, 17),
-                    OsmSource.lon(65486 * 256, 17),
-                    OsmSource.lon((65486 + 1) * 256, 17));
+                    OsmSource.lat((yTile + 1) * 256, 17),
+                    OsmSource.lat(yTile * 256, 17),
+                    OsmSource.lon(xTile * 256, 17),
+                    OsmSource.lon((xTile + 1) * 256, 17));
 
             final List<Path> paths = new ArrayList<>();
 
@@ -49,8 +51,8 @@ public class Experiment
                 paths.add(new Path(pieces));
             }
 
-            // FIXME: there's an off by one here.
-            final BufferedImage image = ImageIO.read(new URL("http://c.tile.openstreetmap.org/17/65486/43582.png"));
+
+            final BufferedImage image = ImageIO.read(new URL("http://c.tile.openstreetmap.org/17/" + xTile + "/" + yTile + ".png"));
 
             return Model.createModel(paths, dimension, image);
 
