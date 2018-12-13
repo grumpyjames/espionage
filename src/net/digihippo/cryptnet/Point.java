@@ -22,7 +22,7 @@ class Point implements LineIntersection
     @Override
     public String toString()
     {
-        return "( " + x + ", " + y + " )";
+        return "(" + x + "," + y + ")";
     }
 
     public DoublePoint asDoublePoint()
@@ -41,6 +41,7 @@ class Point implements LineIntersection
         results.accept(this);
     }
 
+    @SuppressWarnings("SimplifiableIfStatement")
     @Override
     public boolean equals(Object o)
     {
@@ -59,5 +60,13 @@ class Point implements LineIntersection
         int result = x;
         result = 31 * result + y;
         return result;
+    }
+
+    public static Point parse(String point)
+    {
+        String[] coords = point.split(",");
+        return new Point(
+            Integer.parseInt(coords[0].substring(1)),
+            Integer.parseInt(coords[1].substring(0, coords[1].indexOf(")"))));
     }
 }

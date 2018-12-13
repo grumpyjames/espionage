@@ -151,7 +151,7 @@ public class WayCollectorTest
         {
             nodeIds.add(node.nodeId);
         }
-        Assert.assertEquals(Arrays.asList(1L, 2L, 3L, 4L, 5L), nodeIds);
+        Assert.assertEquals(Arrays.asList(5L, 4L, 3L, 2L, 1L), nodeIds);
     }
 
     @Test

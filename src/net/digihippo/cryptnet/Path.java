@@ -1,5 +1,6 @@
 package net.digihippo.cryptnet;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public final class Path implements HasLines
@@ -69,8 +70,59 @@ public final class Path implements HasLines
     @Override
     public String toString()
     {
-        return "Path{" +
-            "lines=" + lines +
-            '}';
+        return highlighting(null);
+    }
+
+    public String highlighting(Line toHighlight)
+    {
+        Line line = lines.get(0);
+        String result = line.toString(toHighlight);
+
+        for (int i = 1; i < lines.size(); i++)
+        {
+            line = lines.get(i);
+            if (line.equals(toHighlight))
+            {
+                result += "_->_";
+            }
+            else
+            {
+                result += "->";
+            }
+            result += new Point(line.x2, line.y2);
+        }
+
+        return result;
+    }
+
+    public static Path parse(String path)
+    {
+        String[] points = path.split("->");
+        final List<Line> segments = new ArrayList<>(points.length - 1);
+        for (int i = 0; i < points.length - 1; i++)
+        {
+            String start = points[i];
+            String end = points[i + 1];
+            segments.add(Line.createLine(Point.parse(start), Point.parse(end)));
+        }
+        return new Path(segments);
+    }
+
+    @Override
+    public boolean equals(Object o)
+    {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        Path path = (Path) o;
+
+        return !(lines != null ? !lines.equals(path.lines) : path.lines != null);
+
+    }
+
+    @Override
+    public int hashCode()
+    {
+        return lines != null ? lines.hashCode() : 0;
     }
 }

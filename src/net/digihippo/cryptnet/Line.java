@@ -25,6 +25,11 @@ final class Line implements LineIntersection, HasLines
         return new Line(x1, x2, y1, y2, gradient, ((double) y1) - (gradient * (double) x1));
     }
 
+    static Line createLine(Point start, Point finish)
+    {
+        return createLine(start.x, finish.x, start.y, finish.y);
+    }
+
     public Connection connectionTo(Path path, Point point)
     {
         final DoublePoint perpendicularIntersection;
@@ -78,20 +83,6 @@ final class Line implements LineIntersection, HasLines
     private boolean withinBounds(DoublePoint point)
     {
         return Math.min(x1, x2) <= point.x && point.x <= Math.max(x1, x2) && Math.min(y1, y2) <= point.y && point.y <= Math.max(y1, y2);
-    }
-
-    @Override
-    public String toString()
-    {
-        if (vertical())
-        {
-            return "x = " + x1;
-        }
-        else if (gradient == 0)
-        {
-            return "y = " + y1;
-        }
-        return "y = " + gradient + "x + " + intersect;
     }
 
     public LineIntersection intersectionWith(Line other)
@@ -156,11 +147,11 @@ final class Line implements LineIntersection, HasLines
         return new DoublePoint(x, y);
     }
 
-
     private boolean vertical()
     {
         return Double.isInfinite(this.gradient);
     }
+
 
     private int computeY(double x)
     {
@@ -192,5 +183,57 @@ final class Line implements LineIntersection, HasLines
     public Iterable<Line> lines()
     {
         return Collections.singletonList(this);
+    }
+
+    @SuppressWarnings("SimplifiableIfStatement")
+    @Override
+    public boolean equals(Object o)
+    {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        Line line = (Line) o;
+
+        if (x1 != line.x1) return false;
+        if (x2 != line.x2) return false;
+        if (y1 != line.y1) return false;
+        if (y2 != line.y2) return false;
+        if (Double.compare(line.gradient, gradient) != 0) return false;
+        return Double.compare(line.intersect, intersect) == 0;
+
+    }
+
+    @Override
+    public int hashCode()
+    {
+        int result;
+        long temp;
+        result = x1;
+        result = 31 * result + x2;
+        result = 31 * result + y1;
+        result = 31 * result + y2;
+        temp = Double.doubleToLongBits(gradient);
+        result = 31 * result + (int) (temp ^ (temp >>> 32));
+        temp = Double.doubleToLongBits(intersect);
+        result = 31 * result + (int) (temp ^ (temp >>> 32));
+        return result;
+    }
+
+    @Override
+    public String toString()
+    {
+        return new Point(x1, y1).toString() + "->" + new Point(x2, y2).toString();
+    }
+
+    public static Line parse(String asString)
+    {
+        String[] points = asString.split("->");
+        return Line.createLine(Point.parse(points[0]), Point.parse(points[1]));
+    }
+
+    public String toString(Line toHighlight)
+    {
+        String sep = this.equals(toHighlight) ? "_->_" : "->";
+        return new Point(x1, y1).toString() + sep + new Point(x2, y2).toString();
     }
 }

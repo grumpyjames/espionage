@@ -83,6 +83,7 @@ public class DoublePoint
             new Point(Maths.ceil(x), Maths.ceil(y)));
     }
 
+    @SuppressWarnings("SimplifiableIfStatement")
     @Override
     public boolean equals(Object o)
     {
@@ -111,5 +112,13 @@ public class DoublePoint
     public static double distanceBetween(DoublePoint one, DoublePoint two)
     {
         return new DoublePoint(one.x - two.x, one.y - two.y).size();
+    }
+
+    public static DoublePoint parse(String point)
+    {
+        String[] coords = point.split(",");
+        return new DoublePoint(
+            Double.parseDouble(coords[0].substring(1)),
+            Double.parseDouble(coords[1].substring(0, coords[1].indexOf(")"))));
     }
 }

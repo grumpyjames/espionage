@@ -65,7 +65,8 @@ final class Model
                                                 return new Intersection(point);
                                             }
                                         });
-                                    intersection.add(pathOne, lineOne, pathTwo, lineTwo);
+                                    intersection.add(pathOne, lineOne);
+                                    intersection.add(pathTwo, lineTwo);
                                 }
                             });
                         }

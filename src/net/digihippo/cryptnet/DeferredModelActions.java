@@ -14,7 +14,7 @@ public class DeferredModelActions implements ModelActions
         Path path, Line line, DoublePoint delta, Direction direction)
     {
         outgoing.add(sentry);
-        incoming.add(new Patrol(point, path, line, delta, direction));
+        incoming.add(new Patrol(path, line, delta, point, direction));
     }
 
     void enact(final Model model)

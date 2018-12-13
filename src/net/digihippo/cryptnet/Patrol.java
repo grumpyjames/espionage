@@ -1,5 +1,9 @@
 package net.digihippo.cryptnet;
 
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonParser;
+
+import java.io.IOException;
 import java.util.Map;
 import java.util.Random;
 
@@ -9,18 +13,18 @@ final class Patrol
     Line line;
     DoublePoint delta;
     DoublePoint point;
-
     private Direction direction;
+
     private Intersection previous;
     private Point previousTurn;
 
     public Patrol(
-        DoublePoint doublePoint, Path path, Line line, DoublePoint delta, Direction direction)
+        Path path, Line line, DoublePoint delta, DoublePoint doublePoint, Direction direction)
     {
-        this.point = doublePoint;
+        this.path = path;
         this.line = line;
         this.delta = delta;
-        this.path = path;
+        this.point = doublePoint;
         this.direction = direction;
     }
 
@@ -113,13 +117,101 @@ final class Patrol
     @Override
     public String toString()
     {
-        return "Patrol{" +
-            "path=" + path +
-            ", line=" + line +
-            ", delta=" + delta +
-            ", point=" + point +
-            ", direction=" + direction +
-            ", previous=" + previous +
-            '}';
+        return "{\n\t" +
+            "   \"path\": \"" + path.toString() + "\",\n\t" +
+            "   \"line\": \"" + line.toString() + "\",\n\t" +
+            "   \"delta\": \"" + delta.toString() + "\",\n\t" +
+            "   \"point\": \"" + point.toString() + "\",\n\t" +
+            "   \"direction\": \"" + direction.toString() + "\",\n\t" +
+            "   \"previous\": \"" + (previous == null ? "null" : previous.toString()) + "\",\n\t" +
+            "   \"previousTurn\": \"" + (previousTurn == null ? "null" : previousTurn.toString()) + "\"\n" +
+            "}";
+    }
+
+    public static Patrol parse(String s)
+    {
+        JsonFactory jfactory = new JsonFactory();
+        try
+        {
+            JsonParser jParser = jfactory.createParser(s);
+
+            jParser.nextToken();
+            skipTo(jParser, "path");
+            final Path path = Path.parse(jParser.getValueAsString());
+
+            skipTo(jParser, "line");
+            final Line line = Line.parse(jParser.getValueAsString());
+
+            skipTo(jParser, "delta");
+            final DoublePoint delta = DoublePoint.parse(jParser.getValueAsString());
+
+            skipTo(jParser, "point");
+            final DoublePoint point = DoublePoint.parse(jParser.getValueAsString());
+
+            skipTo(jParser, "direction");
+            final Direction direction = Direction.valueOf(jParser.getValueAsString());
+
+            skipTo(jParser, "previous");
+            String maybeValue = jParser.getValueAsString();
+            final Intersection previous = maybeValue.equals("null") ? null : Intersection.parse(maybeValue);
+
+            skipTo(jParser, "previousTurn");
+            maybeValue = jParser.getValueAsString();
+            final Point previousTurn = maybeValue.equals("null") ? null : Point.parse(maybeValue);
+
+            Patrol patrol = new Patrol(path, line, delta, point, direction);
+
+            patrol.previous = previous;
+            patrol.previousTurn = previousTurn;
+
+            return patrol;
+
+        }
+        catch (IOException e)
+        {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static void skipTo(JsonParser jParser, String fieldName) throws IOException
+    {
+        while (!fieldName.equals(jParser.currentName()))
+        {
+            jParser.nextFieldName();
+        }
+
+        jParser.nextToken();
+    }
+
+    @SuppressWarnings("SimplifiableIfStatement")
+    @Override
+    public boolean equals(Object o)
+    {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        Patrol patrol = (Patrol) o;
+
+        if (path != null ? !path.equals(patrol.path) : patrol.path != null) return false;
+        if (line != null ? !line.equals(patrol.line) : patrol.line != null) return false;
+        if (delta != null ? !delta.equals(patrol.delta) : patrol.delta != null) return false;
+        if (point != null ? !point.equals(patrol.point) : patrol.point != null) return false;
+        if (direction != patrol.direction) return false;
+        if (previous != null ? !previous.equals(patrol.previous) : patrol.previous != null) return false;
+        return !(previousTurn != null ? !previousTurn.equals(patrol.previousTurn) : patrol.previousTurn != null);
+
+    }
+
+    @Override
+    public int hashCode()
+    {
+        int result = path != null ? path.hashCode() : 0;
+        result = 31 * result + (line != null ? line.hashCode() : 0);
+        result = 31 * result + (delta != null ? delta.hashCode() : 0);
+        result = 31 * result + (point != null ? point.hashCode() : 0);
+        result = 31 * result + (direction != null ? direction.hashCode() : 0);
+        result = 31 * result + (previous != null ? previous.hashCode() : 0);
+        result = 31 * result + (previousTurn != null ? previousTurn.hashCode() : 0);
+        return result;
     }
 }

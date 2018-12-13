@@ -5,18 +5,17 @@ import java.util.Set;
 
 class Intersection
 {
-    final Set<IntersectionEntry> entries = new HashSet<>();
     final Point point;
+    final Set<IntersectionEntry> entries = new HashSet<>();
 
     public Intersection(Point point)
     {
         this.point = point;
     }
 
-    public void add(Path pathOne, Line lineOne, Path pathTwo, Line lineTwo)
+    public void add(Path pathOne, Line lineOne)
     {
         addEntries(pathOne, lineOne);
-        addEntries(pathTwo, lineTwo);
     }
 
     private void addEntries(Path pathOne, Line lineOne)
@@ -25,46 +24,73 @@ class Intersection
         {
             this.entries.add(
                 new IntersectionEntry(
-                    pathOne, lineOne, Direction.Backwards, pathOne.startsAt(point), pathOne.endsAt(point)));
+                    pathOne, lineOne, Direction.Backwards));
             if (!pathOne.endsAt(point))
             {
                 this.entries.add(
                     new IntersectionEntry(
                         pathOne, pathOne.lineAfter(lineOne, Direction.Forwards),
-                        Direction.Forwards, pathOne.startsAt(point), pathOne.endsAt(point)));
+                        Direction.Forwards));
             }
         }
         else if (lineOne.startsAt(point))
         {
             this.entries.add(
                 new IntersectionEntry(
-                    pathOne, lineOne, Direction.Forwards, pathOne.startsAt(point), pathOne.endsAt(point)));
+                    pathOne, lineOne, Direction.Forwards));
 
             if (!pathOne.startsAt(point))
             {
                 this.entries.add(
                     new IntersectionEntry(
                         pathOne, pathOne.lineAfter(lineOne, Direction.Backwards),
-                        Direction.Backwards, pathOne.startsAt(point), pathOne.endsAt(point)));
+                        Direction.Backwards));
             }
         }
         else
         {
             this.entries.add(
                 new IntersectionEntry(
-                    pathOne, lineOne, Direction.Backwards, pathOne.startsAt(point), pathOne.endsAt(point)));
+                    pathOne, lineOne, Direction.Backwards));
             this.entries.add(
                 new IntersectionEntry(
-                    pathOne, lineOne, Direction.Forwards, pathOne.startsAt(point), pathOne.endsAt(point)));
+                    pathOne, lineOne, Direction.Forwards));
         }
     }
 
     @Override
     public String toString()
     {
-        return "Intersection{" +
-            "entries=" + entries +
-            ", point=" + point +
-            '}';
+        boolean first = true;
+        String result = "[";
+        for (IntersectionEntry entry : entries)
+        {
+            if (!first)
+            {
+                result += ", ";
+            }
+            result += entry.toString();
+            first = false;
+        }
+        result += "]";
+
+        return result + "@" + point.toString();
+    }
+
+    public static Intersection parse(String string)
+    {
+        String[] parts = string.split("@");
+        Intersection result = new Intersection(Point.parse(parts[1]));
+
+        final Set<IntersectionEntry> intersectionEntries = new HashSet<>();
+        String[] entries = parts[0].substring(1, parts[0].length() - 1).split(", ");
+        for (String entry : entries)
+        {
+            intersectionEntries.add(IntersectionEntry.parse(entry));
+        }
+
+        result.entries.addAll(intersectionEntries);
+
+        return result;
     }
 }

@@ -6,7 +6,9 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
 
 public class LineTest
 {
@@ -181,5 +183,13 @@ public class LineTest
         Connection connection = vertical.connectionTo(null, new Point(10, 50));
         assertEquals(8, connection.connectionPoint.x, 0);
         assertEquals(10, connection.connectionPoint.y, 0);
+    }
+
+    @Test
+    public void roundTripTest()
+    {
+        Line line = Line.createLine(1, 3, 5, 7);
+
+        assertThat(Line.parse(line.toString()), equalTo(line));
     }
 }
