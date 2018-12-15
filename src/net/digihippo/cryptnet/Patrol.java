@@ -135,42 +135,49 @@ final class Patrol
         {
             JsonParser jParser = jfactory.createParser(s);
 
-            jParser.nextToken();
-            skipTo(jParser, "path");
-            final Path path = Path.parse(jParser.getValueAsString());
-
-            skipTo(jParser, "line");
-            final Line line = Line.parse(jParser.getValueAsString());
-
-            skipTo(jParser, "delta");
-            final DoublePoint delta = DoublePoint.parse(jParser.getValueAsString());
-
-            skipTo(jParser, "point");
-            final DoublePoint point = DoublePoint.parse(jParser.getValueAsString());
-
-            skipTo(jParser, "direction");
-            final Direction direction = Direction.valueOf(jParser.getValueAsString());
-
-            skipTo(jParser, "previous");
-            String maybeValue = jParser.getValueAsString();
-            final Intersection previous = maybeValue.equals("null") ? null : Intersection.parse(maybeValue);
-
-            skipTo(jParser, "previousTurn");
-            maybeValue = jParser.getValueAsString();
-            final Point previousTurn = maybeValue.equals("null") ? null : Point.parse(maybeValue);
-
-            Patrol patrol = new Patrol(path, line, delta, point, direction);
-
-            patrol.previous = previous;
-            patrol.previousTurn = previousTurn;
-
-            return patrol;
+            return parse(jParser);
 
         }
         catch (IOException e)
         {
             throw new RuntimeException(e);
         }
+    }
+
+    static Patrol parse(JsonParser jParser) throws IOException
+    {
+        jParser.nextToken();
+        skipTo(jParser, "path");
+        final Path path = Path.parse(jParser.getValueAsString());
+
+        skipTo(jParser, "line");
+        final Line line = Line.parse(jParser.getValueAsString());
+
+        skipTo(jParser, "delta");
+        final DoublePoint delta = DoublePoint.parse(jParser.getValueAsString());
+
+        skipTo(jParser, "point");
+        final DoublePoint point = DoublePoint.parse(jParser.getValueAsString());
+
+        skipTo(jParser, "direction");
+        final Direction direction = Direction.valueOf(jParser.getValueAsString());
+
+        skipTo(jParser, "previous");
+        String maybeValue = jParser.getValueAsString();
+        final Intersection previous = maybeValue.equals("null") ? null : Intersection.parse(maybeValue);
+
+        skipTo(jParser, "previousTurn");
+        maybeValue = jParser.getValueAsString();
+        final Point previousTurn = maybeValue.equals("null") ? null : Point.parse(maybeValue);
+
+        Patrol patrol = new Patrol(path, line, delta, point, direction);
+
+        patrol.previous = previous;
+        patrol.previousTurn = previousTurn;
+
+        jParser.nextToken();
+
+        return patrol;
     }
 
     private static void skipTo(JsonParser jParser, String fieldName) throws IOException

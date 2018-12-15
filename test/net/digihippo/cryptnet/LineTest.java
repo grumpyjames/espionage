@@ -163,7 +163,6 @@ public class LineTest
         Connection connection = vertical.connectionTo(null, new Point(10, 50));
         assertEquals(5, connection.connectionPoint.x, 0);
         assertEquals(50, connection.connectionPoint.y, 0);
-        assertEquals(5D, connection.distance, 0D);
     }
 
     @Test
@@ -173,7 +172,6 @@ public class LineTest
         Connection connection = vertical.connectionTo(null, new Point(10, 50));
         assertEquals(10, connection.connectionPoint.x, 0);
         assertEquals(10, connection.connectionPoint.y, 0);
-        assertEquals(40D, connection.distance, 0D);
     }
 
     @Test

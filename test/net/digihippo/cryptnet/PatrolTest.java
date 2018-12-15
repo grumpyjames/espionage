@@ -16,7 +16,7 @@ public class PatrolTest
     private final Path pathOne = new Path(Collections.singletonList(lineOne));
     private final Line lineTwo = Line.createLine(5, 5, 5, 10);
     private final Path pathTwo = new Path(Collections.singletonList(lineTwo));
-    private final Map<Point, Intersection> intersections = Model.intersections(Arrays.asList(pathOne, pathTwo));
+    private final Map<Point, Intersection> intersections = Intersection.intersections(Arrays.asList(pathOne, pathTwo));
 
 
     @Test

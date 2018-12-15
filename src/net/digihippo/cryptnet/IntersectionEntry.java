@@ -49,33 +49,11 @@ class IntersectionEntry
     public static IntersectionEntry parse(String string)
     {
         String[] parts = string.split(" along ");
-
         Direction direction = Direction.valueOf(parts[0]);
+        HighlightedLine highlightedLine = HighlightedLine.parse(parts[1]);
 
-        String[] points = parts[1].split("->");
-        final List<Line> lines = new ArrayList<>(points.length - 1);
-        Line selected = null;
-        for (int i = 0; i < points.length - 1; i++)
-        {
-            String pointOne = points[i];
-            String pointTwo = points[i + 1];
-            if (pointOne.endsWith("_"))
-            {
-                final Point p = Point.parse(pointOne.substring(0, pointOne.length() - 1));
-                final Point q = Point.parse(pointTwo.substring(1));
-                Line line = Line.createLine(p, q);
-                lines.add(line);
-                selected = line;
-            }
-            else
-            {
-                final Point p = Point.parse(pointOne.replace("_", ""));
-                final Point q = Point.parse(pointTwo);
-                Line line = Line.createLine(p, q);
-                lines.add(line);
-            }
-        }
-
-        return new IntersectionEntry(new Path(lines), selected, direction);
+        return new IntersectionEntry(highlightedLine.path, highlightedLine.line, direction);
     }
+
+
 }

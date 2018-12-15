@@ -1,7 +1,8 @@
 package net.digihippo.cryptnet;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 class Intersection
 {
@@ -11,6 +12,49 @@ class Intersection
     public Intersection(Point point)
     {
         this.point = point;
+    }
+
+    public static Map<Point, Intersection> intersections(List<Path> paths)
+    {
+        final Map<Point, Intersection> results = new HashMap<>();
+        for (int i = 0; i < paths.size(); i++)
+        {
+            final Path pathOne = paths.get(i);
+            for (int j = i + 1; j < paths.size(); j++)
+            {
+                final Path pathTwo = paths.get(j);
+                if (pathOne != pathTwo)
+                {
+                    for (final Line lineOne : pathOne.lines())
+                    {
+                        for (final Line lineTwo : pathTwo.lines())
+                        {
+                            lineOne.intersectionWith(lineTwo).visit(new Consumer<Point>()
+                            {
+                                @Override
+                                public void accept(Point point)
+                                {
+                                    Intersection intersection = results.computeIfAbsent(
+                                        point,
+                                        new Function<Point, Intersection>()
+                                        {
+                                            @Override
+                                            public Intersection apply(Point point)
+                                            {
+                                                return new Intersection(point);
+                                            }
+                                        });
+                                    intersection.add(pathOne, lineOne);
+                                    intersection.add(pathTwo, lineTwo);
+                                }
+                            });
+                        }
+                    }
+                }
+            }
+        }
+
+        return results;
     }
 
     public void add(Path pathOne, Line lineOne)

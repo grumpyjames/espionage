@@ -58,7 +58,7 @@ final class Line implements LineIntersection, HasLines
 
         if (withinBounds(perpendicularIntersection))
         {
-            return new Connection(point, perpendicularIntersection, this, path);
+            return new Connection(perpendicularIntersection, this, path);
         }
 
         final Point start = new Point(x1, y1);
@@ -67,11 +67,11 @@ final class Line implements LineIntersection, HasLines
         final double distanceTwo = Point.distanceBetween(point, end);
         if (distanceOne <= distanceTwo)
         {
-            return new Connection(point, start.asDoublePoint(), this, path);
+            return new Connection(start.asDoublePoint(), this, path);
         }
         else
         {
-            return new Connection(point, end.asDoublePoint(), this, path);
+            return new Connection(end.asDoublePoint(), this, path);
         }
     }
 

@@ -1,81 +1,149 @@
 package net.digihippo.cryptnet;
 
-import java.awt.image.BufferedImage;
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonToken;
+
+import java.io.IOException;
 import java.util.*;
-import java.util.function.Consumer;
-import java.util.function.Function;
 
 final class Model
 {
+    private final int size;
+
     final Map<Point, Intersection> intersections;
     final List<JoiningSentry> joiningSentries = new ArrayList<>();
     final List<Patrol> patrols = new ArrayList<>();
-    private final int size;
-    final BufferedImage image;
     final List<Path> paths;
     final List<Line> lines;
     DoublePoint player = null;
 
-    public static Model createModel(List<Path> paths, int size, BufferedImage image)
+    public static Model createModel(List<Path> paths, int size)
     {
-        return new Model(paths, intersections(paths), lines(paths), size, image);
+        return new Model(paths, Intersection.intersections(paths), lines(paths), size);
+    }
+
+    @Override
+    public String toString()
+    {
+        return "{\n\t" +
+            "\"intersections\" : [\n\t\t" + jsonArray(intersections.values(), false) + "\n\t],\n\t" +
+            "\"joiningSentries\" : [\n\t\t" + jsonArray(joiningSentries, false) + "\n\t],\n\t" +
+            "\"patrols\" : [\n\t\t" + jsonArray(patrols, true) + "\n\t],\n\t" +
+            "\"paths\" : [\n\t\t" + jsonArray(paths, false) + "\n\t],\n\t" +
+            "\"player\" : " + player + "\n" +
+        "}";
+    }
+
+    public static Model parse(String string)
+    {
+        JsonFactory jfactory = new JsonFactory();
+        try
+        {
+            JsonParser jParser = jfactory.createParser(string);
+
+            jParser.nextToken();
+
+            skipTo(jParser, "intersections");
+            final List<Intersection> intersections = new ArrayList<>();
+            while (jParser.nextToken() != JsonToken.END_ARRAY)
+            {
+                intersections.add(Intersection.parse(jParser.getValueAsString()));
+            }
+
+
+            skipTo(jParser, "joiningSentries");
+            final List<JoiningSentry> joiningSentries = new ArrayList<>();
+            while (jParser.nextToken() != JsonToken.END_ARRAY)
+            {
+                joiningSentries.add(JoiningSentry.parse(jParser.getValueAsString()));
+            }
+
+            skipTo(jParser, "patrols");
+            final List<Patrol> patrols = new ArrayList<>();
+            while (jParser.nextToken() != JsonToken.END_ARRAY)
+            {
+                patrols.add(Patrol.parse(jParser));
+            }
+
+            skipTo(jParser, "paths");
+            final List<Path> paths = new ArrayList<>();
+            while (jParser.nextToken() != JsonToken.END_ARRAY)
+            {
+                paths.add(Path.parse(jParser.getValueAsString()));
+            }
+
+            skipTo(jParser, "player");
+            final String maybeValue = jParser.getValueAsString();
+            final DoublePoint player = maybeValue == null ? null : DoublePoint.parse(maybeValue);
+
+            Model model = new Model(paths, index(intersections), lines(paths), 256);
+            model.joiningSentries.addAll(joiningSentries);
+            model.patrols.addAll(patrols);
+            model.player = player;
+            return model;
+
+        } catch (IOException e)
+        {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static Map<Point, Intersection> index(List<Intersection> intersections)
+    {
+        final Map<Point, Intersection> result = new HashMap<>();
+        for (Intersection intersection : intersections)
+        {
+            result.put(intersection.point, intersection);
+        }
+
+        return result;
+    }
+
+    private static void skipTo(JsonParser jParser, String fieldName) throws IOException
+    {
+        while (!fieldName.equals(jParser.currentName()))
+        {
+            jParser.nextFieldName();
+        }
+
+        jParser.nextToken();
+    }
+
+    private String jsonArray(Collection<?> values, boolean object)
+    {
+        boolean first = true;
+        String result = "";
+        for (Object value : values)
+        {
+            if (!first)
+            {
+                result += ",\n\t\t";
+            }
+
+            if (object)
+            {
+                result += value.toString();
+            }
+            else
+            {
+                result += "\"" + value.toString() + "\"";
+            }
+            first = false;
+        }
+        return result;
     }
 
     private Model(
         List<Path> paths,
         Map<Point, Intersection> intersections,
         List<Line> lines,
-        int size,
-        BufferedImage image)
+        int size)
     {
         this.paths = paths;
         this.intersections = intersections;
         this.lines = lines;
         this.size = size;
-        this.image = image;
-    }
-
-    public static Map<Point, Intersection> intersections(List<Path> paths)
-    {
-        final Map<Point, Intersection> results = new HashMap<>();
-        for (int i = 0; i < paths.size(); i++)
-        {
-            final Path pathOne = paths.get(i);
-            for (int j = i + 1; j < paths.size(); j++)
-            {
-                final Path pathTwo = paths.get(j);
-                if (pathOne != pathTwo)
-                {
-                    for (final Line lineOne : pathOne.lines())
-                    {
-                        for (final Line lineTwo : pathTwo.lines())
-                        {
-                            lineOne.intersectionWith(lineTwo).visit(new Consumer<Point>()
-                            {
-                                @Override
-                                public void accept(Point point)
-                                {
-                                    Intersection intersection = results.computeIfAbsent(
-                                        point,
-                                        new Function<Point, Intersection>()
-                                        {
-                                            @Override
-                                            public Intersection apply(Point point)
-                                            {
-                                                return new Intersection(point);
-                                            }
-                                        });
-                                    intersection.add(pathOne, lineOne);
-                                    intersection.add(pathTwo, lineTwo);
-                                }
-                            });
-                        }
-                    }
-                }
-            }
-        }
-
-        return results;
     }
 
     public void tick(Random random)
@@ -107,7 +175,12 @@ final class Model
         Connection best =
             Connection.nearestConnection(paths, new Point(x, y));
 
-        joiningSentries.add(new JoiningSentry(new Point(x, y), best));
+        final Point point = new Point(x, y);
+        joiningSentries.add(
+            new JoiningSentry(
+                best,
+                point.asDoublePoint(),
+                best.connectionPoint.minus(point.asDoublePoint()).over(50)));
     }
 
     static List<Line> lines(List<Path> paths)
@@ -143,5 +216,36 @@ final class Model
     public void addPatrols(List<Patrol> incoming)
     {
         this.patrols.addAll(incoming);
+    }
+
+    @SuppressWarnings("SimplifiableIfStatement")
+    @Override
+    public boolean equals(Object o)
+    {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        Model model = (Model) o;
+
+        if (size != model.size) return false;
+        if (!intersections.equals(model.intersections)) return false;
+        if (!joiningSentries.equals(model.joiningSentries)) return false;
+        if (!patrols.equals(model.patrols)) return false;
+        if (!paths.equals(model.paths)) return false;
+        if (!lines.equals(model.lines)) return false;
+        return !(player != null ? !player.equals(model.player) : model.player != null);
+    }
+
+    @Override
+    public int hashCode()
+    {
+        int result = size;
+        result = 31 * result + intersections.hashCode();
+        result = 31 * result + joiningSentries.hashCode();
+        result = 31 * result + patrols.hashCode();
+        result = 31 * result + paths.hashCode();
+        result = 31 * result + lines.hashCode();
+        result = 31 * result + (player != null ? player.hashCode() : 0);
+        return result;
     }
 }

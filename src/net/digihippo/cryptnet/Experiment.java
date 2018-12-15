@@ -21,13 +21,11 @@ import java.util.function.Consumer;
 
 public class Experiment
 {
-    private static Model startingModel()
+    private static Model startingModel(int xTile, int yTile)
     {
         try
         {
             int dimension = 256;
-            int yTile = 43583;
-            int xTile = 65486;
             List<NormalizedWay> normalizedWays =
                 OsmSource.fetchWays(
                     OsmSource.lat((yTile + 1) * 256, 17),
@@ -52,9 +50,7 @@ public class Experiment
             }
 
 
-            final BufferedImage image = ImageIO.read(new URL("http://c.tile.openstreetmap.org/17/" + xTile + "/" + yTile + ".png"));
-
-            return Model.createModel(paths, dimension, image);
+            return Model.createModel(paths, dimension);
 
         } catch (IOException e)
         {
@@ -65,10 +61,12 @@ public class Experiment
     private static final class Viewer extends Component
     {
         private final Model model;
+        private final BufferedImage image;
 
-        private Viewer(Model model)
+        private Viewer(Model model, BufferedImage image)
         {
             this.model = model;
+            this.image = image;
 
             addMouseListener(new MouseListener()
             {
@@ -107,7 +105,7 @@ public class Experiment
         @Override
         public void paint(final Graphics g)
         {
-            g.drawImage(model.image, 0, 0, null);
+            g.drawImage(image, 0, 0, null);
             model.lines.forEach(new Consumer<Line>()
             {
                 @Override
@@ -132,7 +130,7 @@ public class Experiment
                 @Override
                 public void accept(JoiningSentry sentry)
                 {
-                    final Point renderable = sentry.point.round();
+                    final Point renderable = sentry.position.round();
                     final DoublePoint direction = sentry.delta;
                     renderSentry(renderable, direction, g);
 
@@ -207,10 +205,15 @@ public class Experiment
         }
     }
 
-    public static void main(String[] args)
+    public static void main(String[] args) throws IOException
     {
-        final Model model = startingModel();
-        final Viewer viewer = new Viewer(model);
+        int xTile = 65486;
+        int yTile = 43583;
+        final Model model = startingModel(xTile, yTile);
+        final BufferedImage image =
+            ImageIO.read(new URL("http://c.tile.openstreetmap.org/17/" + xTile + "/" + yTile + ".png"));
+
+        final Viewer viewer = new Viewer(model, image);
         final Random random = new Random(238824982L);
 
         final ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
