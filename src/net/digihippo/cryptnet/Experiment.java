@@ -21,62 +21,50 @@ import java.util.function.Consumer;
 
 public class Experiment
 {
-    private static Model startingModel(int xTile, int yTile)
+    private static Model startingModel(List<NormalizedWay> normalizedWays)
     {
-        try
+        int dimension = 256;
+
+        final List<Path> paths = new ArrayList<>();
+
+        for (NormalizedWay normalizedWay : normalizedWays)
         {
-            int dimension = 256;
-            List<NormalizedWay> normalizedWays =
-                OsmSource.fetchWays(
-                    OsmSource.lat((yTile + 1) * 256, 17),
-                    OsmSource.lat(yTile * 256, 17),
-                    OsmSource.lon(xTile * 256, 17),
-                    OsmSource.lon((xTile + 1) * 256, 17));
-
-            final List<Path> paths = new ArrayList<>();
-
-            for (NormalizedWay normalizedWay : normalizedWays)
+            int lineCount = normalizedWay.doublePoints.size() - 1;
+            final List<Line> pieces = new ArrayList<>(lineCount);
+            for (int i = 0; i < lineCount; i++)
             {
-                int lineCount = normalizedWay.doublePoints.size() - 1;
-                final List<Line> pieces = new ArrayList<>(lineCount);
-                for (int i = 0; i < lineCount; i++)
+                Point start =
+                    normalizedWay.doublePoints.get(i).round();
+                Point end = normalizedWay.doublePoints.get(i + 1).round();
+                Line line = Line.createLine(start.x, end.x, start.y, end.y);
+                if (!start.equals(end))
                 {
-                    Point start =
-                        normalizedWay.doublePoints.get(i).round();
-                    Point end = normalizedWay.doublePoints.get(i + 1).round();
-                    Line line = Line.createLine(start.x, end.x, start.y, end.y);
-                    if (!start.equals(end))
-                    {
-                        pieces.add(line);
-                    }
+                    pieces.add(line);
                 }
-                paths.add(new Path(pieces));
             }
-
-
-            return Model.createModel(paths, dimension);
-
-        } catch (IOException e)
-        {
-            throw new RuntimeException(e);
+            paths.add(new Path(pieces));
         }
+
+
+        return Model.createModel(paths, dimension);
+
     }
 
     private static final class Viewer extends Component
     {
         private final Model model;
-        private final BufferedImage image;
-        private final int offsetX = 256;
-        private final int offsetY = 256;
+        private final int offsetX = 50;
+        private final int offsetY = 50;
+        private final BufferedImage[][] images;
 
         public Dimension getPreferredSize() {
             return new Dimension(model.size() + offsetX + 100, model.size() + offsetY + 100);
         }
 
-        private Viewer(final Model model, BufferedImage image, final Random random)
+        private Viewer(final Model model, BufferedImage[][] images, final Random random)
         {
             this.model = model;
-            this.image = image;
+            this.images = images;
 
             addMouseListener(new MouseListener()
             {
@@ -126,7 +114,16 @@ public class Experiment
         @Override
         public void paint(final Graphics g)
         {
-            g.drawImage(image, offsetX, offsetY, null);
+            for (int i = 0; i < images.length; i++)
+            {
+                BufferedImage[] image = images[i];
+                for (int j = 0; j < image.length; j++)
+                {
+                    BufferedImage bufferedImage = image[j];
+
+                    g.drawImage(bufferedImage, offsetX + (i * 256), offsetY + (j * 256), null);
+                }
+            }
             model.lines.forEach(new Consumer<Line>()
             {
                 @Override
@@ -234,12 +231,30 @@ public class Experiment
     {
         int xTile = 65486;
         int yTile = 43583;
-        final Model model = startingModel(xTile, yTile);
-        final BufferedImage image =
-            ImageIO.read(new URL("http://c.tile.openstreetmap.org/17/" + xTile + "/" + yTile + ".png"));
+        // tile coords increase as latitude decreases
+        double latitudeMin = OsmSource.lat((yTile + 2) * 256, 17);
+        double latitudeMax = OsmSource.lat(yTile * 256, 17);
+
+        double longitudeMin = OsmSource.lon(xTile * 256, 17);
+        double longitudeMax = OsmSource.lon((xTile + 2) * 256, 17);
+
+        final Model model = startingModel(
+            OsmSource.fetchWays(
+                latitudeMin,
+                latitudeMax,
+                longitudeMin,
+                longitudeMax)
+        );
+        final BufferedImage[][] images =
+            new BufferedImage[2][2];
+        images[0][0] = ImageIO.read(new URL("http://c.tile.openstreetmap.org/17/" + xTile + "/" + yTile + ".png"));
+        images[1][0] = ImageIO.read(new URL("http://c.tile.openstreetmap.org/17/" + (xTile + 1) + "/" + yTile + ".png"));
+        images[0][1] = ImageIO.read(new URL("http://c.tile.openstreetmap.org/17/" + xTile + "/" + (yTile + 1) + ".png"));
+        images[1][1] = ImageIO.read(new URL("http://c.tile.openstreetmap.org/17/" + (xTile + 1) + "/" + (yTile + 1) + ".png"));
+
 
         final Random random = new Random(238824982L);
-        final Viewer viewer = new Viewer(model, image, random);
+        final Viewer viewer = new Viewer(model, images, random);
         final ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
 
         SwingUtilities.invokeLater(new Runnable()
