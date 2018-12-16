@@ -1,5 +1,9 @@
 package net.digihippo.cryptnet;
 
+import org.hamcrest.CoreMatchers;
+import org.hamcrest.Description;
+import org.hamcrest.Matcher;
+import org.hamcrest.TypeSafeDiagnosingMatcher;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -69,6 +73,76 @@ public class PatrolTest
         Patrol patrol = new Patrol(pathOne, lineOne, new DoublePoint(1, 0), new DoublePoint(3, 5), Direction.Forwards);
 
         assertThat(Patrol.parse(patrol.toString()), equalTo(patrol));
+    }
+
+    @Test
+    public void traversePath()
+    {
+        String intersectionEntry =
+            "Backwards along (250,55)->(273,38)->(281,32)->(284,27)_->_(287,22)->(281,38)->(278,43)->(275,47)->(272,51)->(263,58)->(250,70)->(245,74)->(242,78)->(241,81)->(240,86)->(239,94)->(239,100)->(238,108)";
+
+        IntersectionEntry entry = IntersectionEntry.parse(intersectionEntry);
+
+        Patrol patrol = new Patrol(
+            entry.path,
+            entry.line,
+            entry.direction.orient(entry.line.direction()),
+            new DoublePoint(284, 27),
+            entry.direction);
+
+        Random random = new Random(53454334L);
+        Map<Point, Intersection> none = Collections.emptyMap();
+        for (int i = 0; i < 50; i++)
+        {
+            tickPrint(none, patrol, random);
+        }
+    }
+
+    @Test
+    public void hmm()
+    {
+        String serialised = "{\n" +
+            "\t   \"path\": \"(250,55)->(273,38)->(281,32)->(284,27)->(287,22)->(281,38)->(278,43)->(275,47)->(272,51)->(263,58)->(250,70)->(245,74)->(242,78)->(241,81)->(240,86)->(239,94)->(239,100)->(238,108)\",\n" +
+            "\t   \"line\": \"(284,27)->(287,22)\",\n" +
+            "\t   \"delta\": \"(0.5144957554275265, -0.8574929257125441)\",\n" +
+            "\t   \"point\": \"(284.5294117647059, 26.11764705882348)\",\n" +
+            "\t   \"direction\": \"Forwards\",\n" +
+            "\t   \"previous\": \"null\",\n" +
+            "\t   \"previousTurn\": \"null\"\n" +
+            "}";
+        Patrol patrol = Patrol.parse(serialised);
+        Random random = new Random(53454334L);
+        Map<Point, Intersection> none = Collections.emptyMap();
+        for (int i = 0; i < 50; i++)
+        {
+            patrol.tick(none, random);
+            assertThat(patrol.path.distanceTo(patrol.point), lessThan(1.0D));
+        }
+    }
+
+    private Matcher<? super Double> lessThan(final double d)
+    {
+        return new TypeSafeDiagnosingMatcher<Double>()
+        {
+            @Override
+            protected boolean matchesSafely(Double aDouble, Description description)
+            {
+                boolean success = aDouble < d;
+
+                if (!success)
+                {
+                    description.appendText("was " + aDouble);
+                }
+
+                return success;
+            }
+
+            @Override
+            public void describeTo(Description description)
+            {
+                description.appendText("A double less than " + d);
+            }
+        };
     }
 
     private void tickPrint(Map<Point, Intersection> intersections, Patrol patrol, Random random)

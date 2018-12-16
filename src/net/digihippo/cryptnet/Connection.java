@@ -19,18 +19,17 @@ class Connection
         return path.highlighting(line) + "@" + connectionPoint.toString();
     }
 
-    static Connection nearestConnection(Iterable<Path> paths, Point point)
+    static Connection nearestConnection(Iterable<Path> paths, DoublePoint point)
     {
         double best = Double.MAX_VALUE;
         Connection result = null;
-        DoublePoint from = point.asDoublePoint();
         for (Path path : paths)
         {
             for (Line line : path.lines)
             {
                 Connection connection = line.connectionTo(path, point);
                 double distance =
-                    DoublePoint.distanceBetween(from, connection.connectionPoint);
+                    DoublePoint.distanceBetween(point, connection.connectionPoint);
                 if (distance < best)
                 {
                     result = connection;

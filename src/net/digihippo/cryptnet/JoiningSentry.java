@@ -61,8 +61,7 @@ final class JoiningSentry
                 // FIXME: what if we join at start/end?
                 final Direction direction =
                     connection.line.endsAt(pixel) ?
-                        Direction.Backwards : connection.line.startsAt(pixel) ?
-                        Direction.Forwards : Direction.Backwards;
+                        Direction.Backwards : Direction.Forwards;
                 modelActions.joined(
                     this,
                     pixel,

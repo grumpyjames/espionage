@@ -14,15 +14,17 @@ final class Patrol
     DoublePoint delta;
     DoublePoint point;
     private Direction direction;
-
     private Intersection previous;
     private Point previousTurn;
+
+    private transient int lineIndex;
 
     public Patrol(
         Path path, Line line, DoublePoint delta, DoublePoint doublePoint, Direction direction)
     {
         this.path = path;
         this.line = line;
+        this.lineIndex = path.indexOf(line);
         this.delta = delta;
         this.point = doublePoint;
         this.direction = direction;
@@ -59,29 +61,28 @@ final class Patrol
                 {
                     pickLine(pixel, this.path.lines.get(this.path.lines.size() - 1), Direction.Backwards);
                 }
+                break;
             }
             else if (this.path.startsAt(pixel) && this.direction == Direction.Backwards && !pixel.equals(previousTurn))
             {
                 pickLine(pixel, this.line, Direction.Forwards);
-                System.out.printf(
-                    "Start of line %s reached at %s, switching to direction %s\n", line, pixel, delta);
                 break;
             }
             else if (this.path.endsAt(pixel) && this.direction == Direction.Forwards && !pixel.equals(previousTurn))
             {
                 pickLine(pixel, this.line, Direction.Backwards);
-                System.out.printf(
-                    "End of line %s reached at %s, switching to direction %s\n", this.line, pixel, delta);
                 break;
             }
-            else if (!pixel.equals(previousTurn) && this.path.turnsAt(pixel))
+            else if (!pixel.equals(previousTurn) && direction.turnsAt(this.path, this.lineIndex, pixel))
             {
-                this.line = this.path.lineAfter(line, direction);
+                System.out.printf("Starting turn at %s, going %s along %s%n", pixel, direction, path);
+                this.lineIndex = direction.nextLineIndex(lineIndex);
+                this.line = this.path.lines.get(lineIndex);
                 this.delta = direction.orient(this.line.direction());
                 this.point = pixel.asDoublePoint();
                 this.previousTurn = pixel;
-                System.out.printf(
-                    "Turning point reached at %s, switching to %s, direction %s\n", pixel, line, delta);
+
+                System.out.printf("Finished turn at %s, now following %s using delta %s%n", pixel, line, delta);
                 break;
             }
         }
@@ -98,20 +99,20 @@ final class Patrol
 
     private void performTurn(Random random, Point pixel, Intersection intersection)
     {
-        System.out.printf("Performing turn at %s, intersection %s\n", pixel, intersection);
         previous = intersection;
         IntersectionEntry[] lines =
             intersection.entries.toArray(new IntersectionEntry[intersection.entries.size()]);
         IntersectionEntry entry =
             lines[random.nextInt(lines.length)];
-        System.out.printf("Chose %s\n", entry);
 
         this.delta = entry.direction.orient(entry.line.direction());
         this.direction = entry.direction;
         this.path = entry.path;
         this.line = entry.line;
+        this.lineIndex = entry.path.indexOf(entry.line);
         this.point = pixel.asDoublePoint();
         this.previousTurn = null;
+        System.out.printf("Chose %s along %s, going %s%n", line, path, direction);
     }
 
     @Override

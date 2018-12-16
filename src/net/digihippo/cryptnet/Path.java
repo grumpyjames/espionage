@@ -1,6 +1,7 @@
 package net.digihippo.cryptnet;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public final class Path implements HasLines
@@ -124,5 +125,16 @@ public final class Path implements HasLines
     public int hashCode()
     {
         return lines != null ? lines.hashCode() : 0;
+    }
+
+    public double distanceTo(DoublePoint point)
+    {
+        Connection connection = Connection.nearestConnection(Collections.singletonList(this), point);
+        return DoublePoint.distanceBetween(connection.connectionPoint, point);
+    }
+
+    public int indexOf(Line line)
+    {
+        return lines.indexOf(line);
     }
 }

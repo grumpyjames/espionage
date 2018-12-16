@@ -120,8 +120,9 @@ public class LineTest
         Line yEqualsX = Line.createLine(0, 10, 0, 10);
         Line yEqualsTenMinusX = Line.createLine(0, 10, 10, 0);
 
+        final Point point = new Point(2, 10);
         Connection connection =
-            Connection.nearestConnection(onePath(Arrays.asList(yEqualsX, yEqualsTenMinusX)), new Point(2, 10));
+            Connection.nearestConnection(onePath(Arrays.asList(yEqualsX, yEqualsTenMinusX)), point.asDoublePoint());
 
         assertEquals(1, connection.connectionPoint.x, 0);
         assertEquals(9, connection.connectionPoint.y, 0);
@@ -137,8 +138,9 @@ public class LineTest
     {
         Line yEqualsX = Line.createLine(0, 10, 0, 10);
 
+        final Point point = new Point(11, 15);
         Connection connection =
-            Connection.nearestConnection(onePath(Collections.singletonList(yEqualsX)), new Point(11, 15));
+            Connection.nearestConnection(onePath(Collections.singletonList(yEqualsX)), point.asDoublePoint());
 
         assertEquals(10, connection.connectionPoint.x, 0);
         assertEquals(10, connection.connectionPoint.y, 0);
@@ -149,8 +151,9 @@ public class LineTest
     {
         Line yEqualsX = Line.createLine(0, 10, 0, 10);
 
+        final Point point = new Point(11, 11);
         Connection connection =
-            Connection.nearestConnection(onePath(Collections.singletonList(yEqualsX)), new Point(11, 11));
+            Connection.nearestConnection(onePath(Collections.singletonList(yEqualsX)), point.asDoublePoint());
 
         assertEquals(10, connection.connectionPoint.x, 0);
         assertEquals(10, connection.connectionPoint.y, 0);
@@ -160,7 +163,7 @@ public class LineTest
     public void nearestConnectionToVerticalLine()
     {
         Line vertical = Line.createLine(5, 5, 0, 100);
-        Connection connection = vertical.connectionTo(null, new Point(10, 50));
+        Connection connection = vertical.connectionTo(null, new DoublePoint(10, 50));
         assertEquals(5, connection.connectionPoint.x, 0);
         assertEquals(50, connection.connectionPoint.y, 0);
     }
@@ -169,7 +172,7 @@ public class LineTest
     public void nearestConnectionToHorizontalLine()
     {
         Line vertical = Line.createLine(0, 100, 10, 10);
-        Connection connection = vertical.connectionTo(null, new Point(10, 50));
+        Connection connection = vertical.connectionTo(null, new DoublePoint(10, 50));
         assertEquals(10, connection.connectionPoint.x, 0);
         assertEquals(10, connection.connectionPoint.y, 0);
     }
@@ -178,7 +181,7 @@ public class LineTest
     public void nearestConnectionToHorizontalLineWhenPerpendicularIntersectOutOfBounds()
     {
         Line vertical = Line.createLine(0, 8, 10, 10);
-        Connection connection = vertical.connectionTo(null, new Point(10, 50));
+        Connection connection = vertical.connectionTo(null, new DoublePoint(10, 50));
         assertEquals(8, connection.connectionPoint.x, 0);
         assertEquals(10, connection.connectionPoint.y, 0);
     }

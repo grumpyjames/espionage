@@ -30,7 +30,7 @@ final class Line implements LineIntersection, HasLines
         return createLine(start.x, finish.x, start.y, finish.y);
     }
 
-    public Connection connectionTo(Path path, Point point)
+    public Connection connectionTo(Path path, DoublePoint point)
     {
         final DoublePoint perpendicularIntersection;
         if (vertical())
@@ -43,13 +43,13 @@ final class Line implements LineIntersection, HasLines
         }
         else if (computeY(point.x) == point.y)
         {
-            perpendicularIntersection = point.asDoublePoint();
+            perpendicularIntersection = point;
         }
         else
         {
             // otherwise: shortest distance is length of line perpendicular to this one joining us to point.
             final double inverseGradient = -1D / gradient;
-            final double inverseIntersection = (double) point.y - (inverseGradient * ((double) point.x));
+            final double inverseIntersection = point.y - (inverseGradient * point.x);
 
             // now we need the intersection with that line and us...
             perpendicularIntersection =
@@ -61,17 +61,17 @@ final class Line implements LineIntersection, HasLines
             return new Connection(perpendicularIntersection, this, path);
         }
 
-        final Point start = new Point(x1, y1);
-        final Point end = new Point(x2, y2);
-        final double distanceOne = Point.distanceBetween(point, start);
-        final double distanceTwo = Point.distanceBetween(point, end);
+        final DoublePoint start = new DoublePoint(x1, y1);
+        final DoublePoint end = new DoublePoint(x2, y2);
+        final double distanceOne = DoublePoint.distanceBetween(point, start);
+        final double distanceTwo = DoublePoint.distanceBetween(point, end);
         if (distanceOne <= distanceTwo)
         {
-            return new Connection(start.asDoublePoint(), this, path);
+            return new Connection(start, this, path);
         }
         else
         {
-            return new Connection(end.asDoublePoint(), this, path);
+            return new Connection(end, this, path);
         }
     }
 

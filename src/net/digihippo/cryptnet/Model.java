@@ -172,15 +172,16 @@ final class Model
 
     public void addSentry(int x, int y)
     {
+        final Point point1 = new Point(x, y);
         Connection best =
-            Connection.nearestConnection(paths, new Point(x, y));
+            Connection.nearestConnection(paths, point1.asDoublePoint());
 
         final Point point = new Point(x, y);
         joiningSentries.add(
             new JoiningSentry(
                 best,
                 point.asDoublePoint(),
-                best.connectionPoint.minus(point.asDoublePoint()).over(50)));
+                best.connectionPoint.minus(point.asDoublePoint()).over(5)));
     }
 
     static List<Line> lines(List<Path> paths)
@@ -197,8 +198,9 @@ final class Model
 
     public void addPlayer(int x, int y)
     {
+        final Point point = new Point(x, y);
         Connection connection =
-            Connection.nearestConnection(paths, new Point(x, y));
+            Connection.nearestConnection(paths, point.asDoublePoint());
 
         player = connection.connectionPoint;
     }

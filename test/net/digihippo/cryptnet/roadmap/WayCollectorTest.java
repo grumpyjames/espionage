@@ -1,12 +1,14 @@
 package net.digihippo.cryptnet.roadmap;
 
+import org.hamcrest.Description;
+import org.hamcrest.Matcher;
+import org.hamcrest.TypeSafeMatcher;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
+
+import static org.junit.Assert.assertThat;
 
 public class WayCollectorTest
 {
@@ -43,7 +45,32 @@ public class WayCollectorTest
         {
             nodeIds.add(node.nodeId);
         }
-        Assert.assertEquals(Arrays.asList(1L, 2L, 3L, 4L, 5L), nodeIds);
+
+        assertThat(nodeIds, isOrIsReverseOf(Arrays.asList(1L, 2L, 3L, 4L, 5L)));
+    }
+
+    private Matcher<? super List<Long>> isOrIsReverseOf(final List<Long> list)
+    {
+        final List<Long> reversed = new ArrayList<>();
+        for (int i = list.size() - 1; i >= 0; i--)
+        {
+            reversed.add(list.get(i));
+        }
+
+        return new TypeSafeMatcher<List<Long>>()
+        {
+            @Override
+            protected boolean matchesSafely(List<Long> longs)
+            {
+                return longs.equals(list) || longs.equals(reversed);
+            }
+
+            @Override
+            public void describeTo(Description description)
+            {
+                description.appendText("List equal to ").appendValue(list).appendText(" or ").appendValue(reversed);
+            }
+        };
     }
 
     @Test
@@ -79,7 +106,7 @@ public class WayCollectorTest
         {
             nodeIds.add(node.nodeId);
         }
-        Assert.assertEquals(Arrays.asList(1L, 2L, 3L, 4L, 5L), nodeIds);
+        assertThat(nodeIds, isOrIsReverseOf(Arrays.asList(1L, 2L, 3L, 4L, 5L)));
     }
 
     @Test
@@ -115,7 +142,7 @@ public class WayCollectorTest
         {
             nodeIds.add(node.nodeId);
         }
-        Assert.assertEquals(Arrays.asList(5L, 4L, 3L, 2L, 1L), nodeIds);
+        assertThat(nodeIds, isOrIsReverseOf(Arrays.asList(1L, 2L, 3L, 4L, 5L)));
     }
 
     @Test
@@ -151,7 +178,7 @@ public class WayCollectorTest
         {
             nodeIds.add(node.nodeId);
         }
-        Assert.assertEquals(Arrays.asList(5L, 4L, 3L, 2L, 1L), nodeIds);
+        assertThat(nodeIds, isOrIsReverseOf(Arrays.asList(1L, 2L, 3L, 4L, 5L)));
     }
 
     @Test

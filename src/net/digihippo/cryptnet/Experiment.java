@@ -14,9 +14,6 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 public class Experiment
@@ -63,7 +60,7 @@ public class Experiment
         private final Model model;
         private final BufferedImage image;
 
-        private Viewer(Model model, BufferedImage image)
+        private Viewer(final Model model, BufferedImage image, final Random random)
         {
             this.model = model;
             this.image = image;
@@ -73,7 +70,6 @@ public class Experiment
                 @Override
                 public void mouseClicked(MouseEvent e)
                 {
-
                 }
 
                 @Override
@@ -85,7 +81,19 @@ public class Experiment
                 @Override
                 public void mouseReleased(MouseEvent e)
                 {
-                    onClick(e.getX(), e.getY());
+                    if (e.getY() >= 100)
+                    {
+                        onClick(e.getX(), e.getY() - 100);
+                    }
+                    else
+                    {
+                        model.tick(random);
+                        repaint();
+                        if (e.getX() > 128)
+                        {
+                            System.out.println(model);
+                        }
+                    }
                 }
 
                 @Override
@@ -105,7 +113,7 @@ public class Experiment
         @Override
         public void paint(final Graphics g)
         {
-            g.drawImage(image, 0, 0, null);
+            g.drawImage(image, 0, 100, null);
             model.lines.forEach(new Consumer<Line>()
             {
                 @Override
@@ -121,7 +129,7 @@ public class Experiment
                 {
                     g.drawPolygon(
                         new int[] {point.x - 2, point.x + 2, point.x + 2, point.x - 2},
-                        new int[] {point.y + 2, point.y + 2, point.y - 2, point.y - 2},
+                        new int[] {100 + point.y + 2, 100 + point.y + 2, 100 + point.y - 2, 100 + point.y - 2},
                         4);
                 }
             });
@@ -136,9 +144,9 @@ public class Experiment
 
                     g.drawLine(
                         renderable.x,
-                        renderable.y,
+                        100 + renderable.y,
                         Maths.round(sentry.connection.connectionPoint.x),
-                        Maths.round(sentry.connection.connectionPoint.y));
+                        100 + Maths.round(sentry.connection.connectionPoint.y));
                 }
             });
             model.patrols.forEach(new Consumer<Patrol>()
@@ -174,22 +182,22 @@ public class Experiment
             int uy2 = uView.y + uy1;
 
             drawCircle(renderable, g, radius);
-            g.drawLine(tx1, ty1, tx2, ty2);
-            g.drawLine(ux1, uy1, ux2, uy2);
+            g.drawLine(tx1, 100 + ty1, tx2, 100 + ty2);
+            g.drawLine(ux1, 100 + uy1, ux2, 100 + uy2);
         }
 
         private void drawCircle(Point renderable, Graphics g, int radius)
         {
-            g.drawOval(renderable.x - radius, renderable.y - radius, radius * 2, radius * 2);
+            g.drawOval(renderable.x - radius, 100 + renderable.y - radius, radius * 2, radius * 2);
         }
 
         private void drawLine(Graphics g, Line line)
         {
-            g.drawLine(line.x1, line.y1, line.x2, line.y2);
+            g.drawLine(line.x1, 100 + line.y1, line.x2, 100 + line.y2);
         }
 
         public Dimension getPreferredSize() {
-            return new Dimension(model.size(), model.size());
+            return new Dimension(model.size(), model.size() + 100);
         }
 
         public void onClick(int x, int y)
@@ -213,10 +221,8 @@ public class Experiment
         final BufferedImage image =
             ImageIO.read(new URL("http://c.tile.openstreetmap.org/17/" + xTile + "/" + yTile + ".png"));
 
-        final Viewer viewer = new Viewer(model, image);
         final Random random = new Random(238824982L);
-
-        final ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
+        final Viewer viewer = new Viewer(model, image, random);
 
         SwingUtilities.invokeLater(new Runnable()
         {
@@ -228,17 +234,6 @@ public class Experiment
                 f.add(viewer);
                 f.pack();
                 f.setVisible(true);
-
-                scheduledExecutorService.scheduleWithFixedDelay(new Runnable()
-                {
-                    @Override
-                    public void run()
-                    {
-                        // Could be more Elm-like here and make model immutable?
-                        model.tick(random);
-                        viewer.repaint();
-                    }
-                }, 40, 40, TimeUnit.MILLISECONDS);
             }
         });
     }
