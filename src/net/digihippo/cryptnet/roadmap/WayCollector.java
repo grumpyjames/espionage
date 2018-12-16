@@ -84,38 +84,11 @@ final class WayCollector
             {
                 if (startWays.size() == 2)
                 {
-                    Way[] waysArray = startWays.toArray(new Way[2]);
-                    Way other = waysArray[0] == reduction ? waysArray[1] : waysArray[0];
-
-                    ways.remove(other);
-                    startWays.remove(other);
-                    startWays.remove(reduction);
-                    endWays.remove(reduction);
-
-                    reduction = reduction.concat(start, other);
-                    Set<Way> ways = edgeNodeToWay.get(other.oppositeEndTo(start));
-
-                    endWays.add(reduction);
-                    ways.remove(other);
-                    ways.add(reduction);
+                    reduction = joinOne(reduction, start, endWays, startWays);
                 }
                 else if (endWays.size() == 2)
                 {
-                    Way[] waysArray = endWays.toArray(new Way[2]);
-                    Way other = waysArray[0] == reduction ? waysArray[1] : waysArray[0];
-
-                    ways.remove(other);
-                    endWays.remove(reduction);
-                    endWays.remove(other);
-                    startWays.remove(reduction);
-
-                    reduction = reduction.concat(end, other);
-
-                    long otherEndNode = other.oppositeEndTo(end);
-                    Set<Way> ways = edgeNodeToWay.get(otherEndNode);
-                    startWays.add(reduction);
-                    ways.remove(other);
-                    ways.add(reduction);
+                    reduction = joinOne(reduction, end, startWays, endWays);
                 }
                 start = reduction.firstNodeId();
                 end = reduction.lastNodeId();
@@ -129,5 +102,30 @@ final class WayCollector
         }
 
         return results;
+    }
+
+    private Way joinOne(
+        Way accumulator,
+        long end,
+        Set<Way> nonJoinEndWays,
+        Set<Way> joinEndWays)
+    {
+        final Way[] waysArray = joinEndWays.toArray(new Way[2]);
+        final Way other = waysArray[0] == accumulator ? waysArray[1] : waysArray[0];
+
+        ways.remove(other);
+        joinEndWays.remove(other);
+        joinEndWays.remove(accumulator);
+        nonJoinEndWays.remove(accumulator);
+
+        final Way newWay = accumulator.concat(end, other);
+
+        final long otherEndNode = other.oppositeEndTo(end);
+        Set<Way> ways = edgeNodeToWay.get(otherEndNode);
+        nonJoinEndWays.add(newWay);
+        ways.remove(other);
+        ways.add(newWay);
+
+        return newWay;
     }
 }
