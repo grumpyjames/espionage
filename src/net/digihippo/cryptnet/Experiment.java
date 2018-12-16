@@ -31,9 +31,9 @@ public class Experiment
             final List<Line> pieces = new ArrayList<>(lineCount);
             for (int i = 0; i < lineCount; i++)
             {
-                Point start =
+                Pixel start =
                     normalizedWay.doublePoints.get(i).round();
-                Point end = normalizedWay.doublePoints.get(i + 1).round();
+                Pixel end = normalizedWay.doublePoints.get(i + 1).round();
                 Line line = Line.createLine(start.x, end.x, start.y, end.y);
                 if (!start.equals(end))
                 {
@@ -130,10 +130,10 @@ public class Experiment
                     Viewer.this.drawLine(g, line);
                 }
             });
-            model.intersections.keySet().forEach(new Consumer<Point>()
+            model.intersections.keySet().forEach(new Consumer<Pixel>()
             {
                 @Override
-                public void accept(Point point)
+                public void accept(Pixel point)
                 {
                     g.drawPolygon(
                         new int[] {
@@ -154,7 +154,7 @@ public class Experiment
                 @Override
                 public void accept(JoiningSentry sentry)
                 {
-                    final Point renderable = sentry.position.round();
+                    final Pixel renderable = sentry.position.round();
                     final DoublePoint direction = sentry.delta;
                     renderSentry(renderable, direction, g);
 
@@ -176,22 +176,22 @@ public class Experiment
 
             if (model.player != null)
             {
-                Point round = model.player.round();
+                Pixel round = model.player.round();
                 drawCircle(round, g, 2);
             }
         }
 
-        private void renderSentry(Point renderable, DoublePoint direction, Graphics g)
+        private void renderSentry(Pixel renderable, DoublePoint direction, Graphics g)
         {
             final double orientation = direction.orientation();
-            final Point tView = direction.rotate(Math.PI / 12).times(10).round();
+            final Pixel tView = direction.rotate(Math.PI / 12).times(10).round();
             int radius = 3;
             int tx1 = (int) Math.round(renderable.x + (radius * Math.cos(orientation + (Math.PI / 2))));
             int ty1 = (int) Math.round(renderable.y + (radius * Math.sin(orientation + (Math.PI / 2))));
             int tx2 = tView.x + tx1;
             int ty2 = tView.y + ty1;
 
-            final Point uView = direction.rotate(-Math.PI / 12).times(10).round();
+            final Pixel uView = direction.rotate(-Math.PI / 12).times(10).round();
             int ux1 = (int) Math.round(renderable.x - (radius * Math.cos(orientation + (Math.PI / 2))));
             int uy1 = (int) Math.round(renderable.y - (radius * Math.sin(orientation + (Math.PI / 2))));
             int ux2 = uView.x + ux1;
@@ -202,7 +202,7 @@ public class Experiment
             g.drawLine(offsetX + ux1, offsetY + uy1, offsetX + ux2, offsetY + uy2);
         }
 
-        private void drawCircle(Point renderable, Graphics g, int radius)
+        private void drawCircle(Pixel renderable, Graphics g, int radius)
         {
             g.drawOval(offsetX + renderable.x - radius, offsetY + renderable.y - radius, radius * 2, radius * 2);
         }

@@ -19,12 +19,12 @@ public final class Path implements HasLines
         return lines;
     }
 
-    public boolean startsAt(Point pixel)
+    public boolean startsAt(Pixel pixel)
     {
         return lines.get(0).startsAt(pixel);
     }
 
-    public boolean endsAt(Point pixel)
+    public boolean endsAt(Pixel pixel)
     {
         return lines.get(lines.size() - 1).endsAt(pixel);
     }
@@ -77,7 +77,7 @@ public final class Path implements HasLines
             {
                 result += "->";
             }
-            result += new Point(line.x2, line.y2);
+            result += new Pixel(line.x2, line.y2);
         }
 
         return result;
@@ -91,7 +91,7 @@ public final class Path implements HasLines
         {
             String start = points[i];
             String end = points[i + 1];
-            segments.add(Line.createLine(Point.parse(start), Point.parse(end)));
+            segments.add(Line.createLine(Pixel.parse(start), Pixel.parse(end)));
         }
         return new Path(segments);
     }

@@ -12,9 +12,9 @@ public class IntersectionEntryTest
     @Test
     public void roundTrip()
     {
-        Line lineOne = Line.createLine(new Point(3, 4), new Point(11, 10));
-        Line lineTwo = Line.createLine(new Point(11, 10), new Point(20, 10));
-        Line lineThree = Line.createLine(new Point(20, 10), new Point(20, 15));
+        Line lineOne = Line.createLine(new Pixel(3, 4), new Pixel(11, 10));
+        Line lineTwo = Line.createLine(new Pixel(11, 10), new Pixel(20, 10));
+        Line lineThree = Line.createLine(new Pixel(20, 10), new Pixel(20, 15));
 
         IntersectionEntry entry =
             new IntersectionEntry(new Path(Arrays.asList(lineOne, lineTwo, lineThree)), lineTwo, Direction.Forwards);

@@ -11,7 +11,7 @@ final class Model
 {
     private final int size;
 
-    final Map<Point, Intersection> intersections;
+    final Map<Pixel, Intersection> intersections;
     final List<JoiningSentry> joiningSentries = new ArrayList<>();
     final List<Patrol> patrols = new ArrayList<>();
     final List<Path> paths;
@@ -89,9 +89,9 @@ final class Model
         }
     }
 
-    private static Map<Point, Intersection> index(List<Intersection> intersections)
+    private static Map<Pixel, Intersection> index(List<Intersection> intersections)
     {
-        final Map<Point, Intersection> result = new HashMap<>();
+        final Map<Pixel, Intersection> result = new HashMap<>();
         for (Intersection intersection : intersections)
         {
             result.put(intersection.point, intersection);
@@ -136,7 +136,7 @@ final class Model
 
     private Model(
         List<Path> paths,
-        Map<Point, Intersection> intersections,
+        Map<Pixel, Intersection> intersections,
         List<Line> lines,
         int size)
     {
@@ -172,11 +172,11 @@ final class Model
 
     public void addSentry(int x, int y)
     {
-        final Point point1 = new Point(x, y);
+        final Pixel point1 = new Pixel(x, y);
         Connection best =
             Connection.nearestConnection(paths, point1.asDoublePoint());
 
-        final Point point = new Point(x, y);
+        final Pixel point = new Pixel(x, y);
         joiningSentries.add(
             new JoiningSentry(
                 best,
@@ -198,7 +198,7 @@ final class Model
 
     public void addPlayer(int x, int y)
     {
-        final Point point = new Point(x, y);
+        final Pixel point = new Pixel(x, y);
         Connection connection =
             Connection.nearestConnection(paths, point.asDoublePoint());
 

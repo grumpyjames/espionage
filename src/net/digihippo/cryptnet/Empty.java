@@ -7,7 +7,7 @@ public enum Empty implements LineIntersection
     INSTANCE
         {
             @Override
-            public void visit(Consumer<Point> results)
+            public void visit(Consumer<Pixel> results)
             {
 
             }

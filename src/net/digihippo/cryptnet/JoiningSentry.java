@@ -51,10 +51,10 @@ final class JoiningSentry
     {
         this.position = this.position.plus(delta);
 
-        final Iterable<Point> pixels = this.position.pixelBounds();
-        for (Point pixel : pixels)
+        final Iterable<Pixel> pixels = this.position.pixelBounds();
+        for (Pixel pixel : pixels)
         {
-            Point rounded = this.connection.connectionPoint.round();
+            Pixel rounded = this.connection.connectionPoint.round();
             if (pixel.equals(rounded))
             {
                 this.position = pixel.asDoublePoint();

@@ -25,16 +25,16 @@ final class HighlightedLine
             String pointTwo = points[i + 1];
             if (pointOne.endsWith("_"))
             {
-                final Point p = Point.parse(pointOne.substring(0, pointOne.length() - 1));
-                final Point q = Point.parse(pointTwo.substring(1));
+                final Pixel p = Pixel.parse(pointOne.substring(0, pointOne.length() - 1));
+                final Pixel q = Pixel.parse(pointTwo.substring(1));
                 Line line = Line.createLine(p, q);
                 lines.add(line);
                 selected = line;
             }
             else
             {
-                final Point p = Point.parse(pointOne.replace("_", ""));
-                final Point q = Point.parse(pointTwo);
+                final Pixel p = Pixel.parse(pointOne.replace("_", ""));
+                final Pixel q = Pixel.parse(pointTwo);
                 Line line = Line.createLine(p, q);
                 lines.add(line);
             }

@@ -10,7 +10,7 @@ public class DeferredModelActions implements ModelActions
 
     @Override
     public void joined(
-        JoiningSentry sentry, Point pixel, DoublePoint point,
+        JoiningSentry sentry, Pixel pixel, DoublePoint point,
         Path path, Line line, DoublePoint delta, Direction direction)
     {
         outgoing.add(sentry);

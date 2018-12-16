@@ -12,9 +12,9 @@ public class JoiningSentryTest
     @Test
     public void roundTrip()
     {
-        Line lineOne = Line.createLine(new Point(44, 120), new Point(65, 210));
-        Line lineTwo = Line.createLine(new Point(65, 210), new Point(66, 223));
-        Line lineThree = Line.createLine(new Point(66, 223), new Point(44, 120));
+        Line lineOne = Line.createLine(new Pixel(44, 120), new Pixel(65, 210));
+        Line lineTwo = Line.createLine(new Pixel(65, 210), new Pixel(66, 223));
+        Line lineThree = Line.createLine(new Pixel(66, 223), new Pixel(44, 120));
         Path path = new Path(Arrays.asList(lineOne, lineTwo, lineThree));
 
         Connection connection = new Connection(new DoublePoint(44, 120), lineOne, path);

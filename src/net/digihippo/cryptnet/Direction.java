@@ -10,7 +10,7 @@ enum Direction
         }
 
         @Override
-        public boolean turnsAt(Path path, int lineIndex, Point pixel)
+        public boolean turnsAt(Path path, int lineIndex, Pixel pixel)
         {
             final int nextLineIndex = lineIndex + 1;
             if (nextLineIndex >= path.lines.size())
@@ -36,7 +36,7 @@ enum Direction
         }
 
         @Override
-        public boolean turnsAt(Path path, int lineIndex, Point pixel)
+        public boolean turnsAt(Path path, int lineIndex, Pixel pixel)
         {
             final int nextLineIndex = lineIndex - 1;
             if (nextLineIndex < 0)
@@ -57,7 +57,7 @@ enum Direction
 
     public abstract DoublePoint orient(DoublePoint direction);
 
-    public abstract boolean turnsAt(Path path, int lineIndex, Point pixel);
+    public abstract boolean turnsAt(Path path, int lineIndex, Pixel pixel);
 
     public abstract int nextLineIndex(int lineIndex);
 }

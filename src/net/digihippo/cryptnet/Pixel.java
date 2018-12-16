@@ -2,21 +2,14 @@ package net.digihippo.cryptnet;
 
 import java.util.function.Consumer;
 
-class Point implements LineIntersection
+class Pixel implements LineIntersection
 {
     final int x, y;
 
-    Point(int x, int y)
+    Pixel(int x, int y)
     {
         this.x = x;
         this.y = y;
-    }
-
-    static double distanceBetween(Point pOne, Point pTwo)
-    {
-        double dxSquared = Math.pow(pOne.x - pTwo.x, 2);
-        double dySquared = Math.pow(pOne.y - pTwo.y, 2);
-        return Math.sqrt(dxSquared + dySquared);
     }
 
     @Override
@@ -30,13 +23,8 @@ class Point implements LineIntersection
         return new DoublePoint((double) x, (double) y);
     }
 
-    public boolean isEqualTo(Point connectionPoint)
-    {
-        return this.x == connectionPoint.x && this.y == connectionPoint.y;
-    }
-
     @Override
-    public void visit(Consumer<Point> results)
+    public void visit(Consumer<Pixel> results)
     {
         results.accept(this);
     }
@@ -48,7 +36,7 @@ class Point implements LineIntersection
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        Point point = (Point) o;
+        Pixel point = (Pixel) o;
 
         if (x != point.x) return false;
         return y == point.y;
@@ -62,10 +50,10 @@ class Point implements LineIntersection
         return result;
     }
 
-    public static Point parse(String point)
+    public static Pixel parse(String point)
     {
         String[] coords = point.split(",");
-        return new Point(
+        return new Pixel(
             Integer.parseInt(coords[0].substring(1)),
             Integer.parseInt(coords[1].substring(0, coords[1].indexOf(")"))));
     }

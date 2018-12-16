@@ -42,7 +42,7 @@ public class LineTest
         Line vertical = Line.createLine(5, 5, 0, 10);
         Line horizontal = Line.createLine(0, 10, 5, 5);
 
-        Point point = (Point) vertical.intersectionWith(horizontal);
+        Pixel point = (Pixel) vertical.intersectionWith(horizontal);
 
         assertEquals(5, point.x);
         assertEquals(5, point.y);
@@ -54,7 +54,7 @@ public class LineTest
         Line vertical = Line.createLine(5, 5, 0, 10);
         Line horizontal = Line.createLine(0, 10, 5, 5);
 
-        Point point = (Point) horizontal.intersectionWith(vertical);
+        Pixel point = (Pixel) horizontal.intersectionWith(vertical);
 
         assertEquals(5, point.x);
         assertEquals(5, point.y);
@@ -109,7 +109,7 @@ public class LineTest
     {
         Line horizontal = Line.createLine(0, 10, 5, 5);
         Line xEqualsY = Line.createLine(0, 10, 0, 10);
-        Point point = (Point) horizontal.intersectionWith(xEqualsY);
+        Pixel point = (Pixel) horizontal.intersectionWith(xEqualsY);
         assertEquals(5, point.x);
         assertEquals(5, point.y);
     }
@@ -120,7 +120,7 @@ public class LineTest
         Line yEqualsX = Line.createLine(0, 10, 0, 10);
         Line yEqualsTenMinusX = Line.createLine(0, 10, 10, 0);
 
-        final Point point = new Point(2, 10);
+        final Pixel point = new Pixel(2, 10);
         Connection connection =
             Connection.nearestConnection(onePath(Arrays.asList(yEqualsX, yEqualsTenMinusX)), point.asDoublePoint());
 
@@ -138,7 +138,7 @@ public class LineTest
     {
         Line yEqualsX = Line.createLine(0, 10, 0, 10);
 
-        final Point point = new Point(11, 15);
+        final Pixel point = new Pixel(11, 15);
         Connection connection =
             Connection.nearestConnection(onePath(Collections.singletonList(yEqualsX)), point.asDoublePoint());
 
@@ -151,7 +151,7 @@ public class LineTest
     {
         Line yEqualsX = Line.createLine(0, 10, 0, 10);
 
-        final Point point = new Point(11, 11);
+        final Pixel point = new Pixel(11, 11);
         Connection connection =
             Connection.nearestConnection(onePath(Collections.singletonList(yEqualsX)), point.asDoublePoint());
 

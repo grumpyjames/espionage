@@ -12,14 +12,14 @@ public class ModelTest
     @Test
     public void roundTrip()
     {
-        Line lineIntersectOne = Line.createLine(new Point(2, 3), new Point(4, 5));
-        Line lineTwo = Line.createLine(new Point(4, 5), new Point(4, 7));
-        Line lineThree = Line.createLine(new Point(4, 7), new Point(4, 10));
+        Line lineIntersectOne = Line.createLine(new Pixel(2, 3), new Pixel(4, 5));
+        Line lineTwo = Line.createLine(new Pixel(4, 5), new Pixel(4, 7));
+        Line lineThree = Line.createLine(new Pixel(4, 7), new Pixel(4, 10));
         Path one = new Path(Arrays.asList(lineIntersectOne, lineTwo, lineThree));
 
-        Line lineFour = Line.createLine(new Point(0, 0), new Point(3, 6));
-        Line lineFive = Line.createLine(new Point(3, 6), new Point(5, 6));
-        Line lineSix = Line.createLine(new Point(5, 6), new Point(10, 10));
+        Line lineFour = Line.createLine(new Pixel(0, 0), new Pixel(3, 6));
+        Line lineFive = Line.createLine(new Pixel(3, 6), new Pixel(5, 6));
+        Line lineSix = Line.createLine(new Pixel(5, 6), new Pixel(10, 10));
         Path two = new Path(Arrays.asList(lineFour, lineFive, lineSix));
 
         Model model = Model.createModel(Arrays.asList(one, two), 256);

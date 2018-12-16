@@ -13,20 +13,20 @@ import static org.junit.Assert.assertThat;
 
 public class PatrolTest
 {
-    private static final Map<Point, Intersection> NO_INTERSECTIONS = Collections.emptyMap();
+    private static final Map<Pixel, Intersection> NO_INTERSECTIONS = Collections.emptyMap();
     private final Line lineOne = Line.createLine(0, 10, 5, 5);
     private final Path pathOne = new Path(Collections.singletonList(lineOne));
     private final Line lineTwo = Line.createLine(5, 5, 5, 10);
     private final Path pathTwo = new Path(Collections.singletonList(lineTwo));
-    private final Map<Point, Intersection> intersections = Intersection.intersections(Arrays.asList(pathOne, pathTwo));
+    private final Map<Pixel, Intersection> intersections = Intersection.intersections(Arrays.asList(pathOne, pathTwo));
 
     @Test
     public void somePathsAreCircuits()
     {
-        Line one = Line.createLine(new Point(0, 0), new Point(0, 1));
-        Line two = Line.createLine(new Point(0, 1), new Point(1, 1));
-        Line three = Line.createLine(new Point(1, 1), new Point(1, 0));
-        Line four = Line.createLine(new Point(1, 0), new Point(0, 0));
+        Line one = Line.createLine(new Pixel(0, 0), new Pixel(0, 1));
+        Line two = Line.createLine(new Pixel(0, 1), new Pixel(1, 1));
+        Line three = Line.createLine(new Pixel(1, 1), new Pixel(1, 0));
+        Line four = Line.createLine(new Pixel(1, 0), new Pixel(0, 0));
 
         Path circuit = new Path(Arrays.asList(one, two, three, four));
 
@@ -38,7 +38,7 @@ public class PatrolTest
 
     private void assertPatrolBehavesSensibly(
         final Patrol patrol,
-        final Map<Point, Intersection> intersections,
+        final Map<Pixel, Intersection> intersections,
         final Random random)
     {
         DoublePoint point = patrol.point;
@@ -90,7 +90,7 @@ public class PatrolTest
             "}";
         Patrol patrol = Patrol.parse(serialised);
         Random random = new Random(53454334L);
-        Map<Point, Intersection> none = Collections.emptyMap();
+        Map<Pixel, Intersection> none = Collections.emptyMap();
         for (int i = 0; i < 50; i++)
         {
             patrol.tick(none, random);
@@ -149,7 +149,7 @@ public class PatrolTest
         };
     }
 
-    private void tickPrint(Map<Point, Intersection> intersections, Patrol patrol, Random random)
+    private void tickPrint(Map<Pixel, Intersection> intersections, Patrol patrol, Random random)
     {
         patrol.tick(intersections, random);
         System.out.println(patrol);

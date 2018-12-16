@@ -40,9 +40,9 @@ public class DoublePoint
         return Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2));
     }
 
-    public Point round()
+    public Pixel round()
     {
-        return new Point(Maths.round(x), Maths.round(y));
+        return new Pixel(Maths.round(x), Maths.round(y));
     }
 
     // w.r.t the x axis, in radians, anticlockwise being the positive direction.
@@ -74,13 +74,13 @@ public class DoublePoint
         return "(" + x + ", " + y + ")";
     }
 
-    public Iterable<Point> pixelBounds()
+    public Iterable<Pixel> pixelBounds()
     {
         return Arrays.asList(
-            new Point(Maths.floor(x), Maths.floor(y)),
-            new Point(Maths.floor(x), Maths.ceil(y)),
-            new Point(Maths.ceil(x), Maths.floor(y)),
-            new Point(Maths.ceil(x), Maths.ceil(y)));
+            new Pixel(Maths.floor(x), Maths.floor(y)),
+            new Pixel(Maths.floor(x), Maths.ceil(y)),
+            new Pixel(Maths.ceil(x), Maths.floor(y)),
+            new Pixel(Maths.ceil(x), Maths.ceil(y)));
     }
 
     @SuppressWarnings("SimplifiableIfStatement")

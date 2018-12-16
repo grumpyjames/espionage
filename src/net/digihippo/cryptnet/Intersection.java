@@ -6,17 +6,17 @@ import java.util.function.Function;
 
 class Intersection
 {
-    final Point point;
+    final Pixel point;
     final Set<IntersectionEntry> entries = new HashSet<>();
 
-    public Intersection(Point point)
+    public Intersection(Pixel point)
     {
         this.point = point;
     }
 
-    public static Map<Point, Intersection> intersections(List<Path> paths)
+    public static Map<Pixel, Intersection> intersections(List<Path> paths)
     {
-        final Map<Point, Intersection> results = new HashMap<>();
+        final Map<Pixel, Intersection> results = new HashMap<>();
         for (int i = 0; i < paths.size(); i++)
         {
             final Path pathOne = paths.get(i);
@@ -29,17 +29,17 @@ class Intersection
                     {
                         for (final Line lineTwo : pathTwo.lines())
                         {
-                            lineOne.intersectionWith(lineTwo).visit(new Consumer<Point>()
+                            lineOne.intersectionWith(lineTwo).visit(new Consumer<Pixel>()
                             {
                                 @Override
-                                public void accept(Point point)
+                                public void accept(Pixel point)
                                 {
                                     Intersection intersection = results.computeIfAbsent(
                                         point,
-                                        new Function<Point, Intersection>()
+                                        new Function<Pixel, Intersection>()
                                         {
                                             @Override
-                                            public Intersection apply(Point point)
+                                            public Intersection apply(Pixel point)
                                             {
                                                 return new Intersection(point);
                                             }
@@ -124,7 +124,7 @@ class Intersection
     public static Intersection parse(String string)
     {
         String[] parts = string.split("@");
-        Intersection result = new Intersection(Point.parse(parts[1]));
+        Intersection result = new Intersection(Pixel.parse(parts[1]));
 
         final Set<IntersectionEntry> intersectionEntries = new HashSet<>();
         String[] entries = parts[0].substring(1, parts[0].length() - 1).split(", ");

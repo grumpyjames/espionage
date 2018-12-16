@@ -25,7 +25,7 @@ final class Line implements LineIntersection, HasLines
         return new Line(x1, x2, y1, y2, gradient, ((double) y1) - (gradient * (double) x1));
     }
 
-    static Line createLine(Point start, Point finish)
+    static Line createLine(Pixel start, Pixel finish)
     {
         return createLine(start.x, finish.x, start.y, finish.y);
     }
@@ -75,7 +75,7 @@ final class Line implements LineIntersection, HasLines
         }
     }
 
-    private boolean withinBounds(Point point)
+    private boolean withinBounds(Pixel point)
     {
         return Math.min(x1, x2) <= point.x && point.x <= Math.max(x1, x2) && Math.min(y1, y2) <= point.y && point.y <= Math.max(y1, y2);
     }
@@ -112,14 +112,14 @@ final class Line implements LineIntersection, HasLines
             return Empty.INSTANCE;
         }
 
-        final Point candidate;
+        final Pixel candidate;
         if (vertical())
         {
-            candidate = new Point(this.x1, other.computeY(this.x1));
+            candidate = new Pixel(this.x1, other.computeY(this.x1));
         }
         else if (other.vertical())
         {
-            candidate = new Point(other.x1, computeY(other.x1));
+            candidate = new Pixel(other.x1, computeY(other.x1));
         }
         else
         {
@@ -159,7 +159,7 @@ final class Line implements LineIntersection, HasLines
     }
 
     @Override
-    public void visit(Consumer<Point> results)
+    public void visit(Consumer<Pixel> results)
     {
         // Well, we're not going to send it infinite points, are we.
     }
@@ -169,12 +169,12 @@ final class Line implements LineIntersection, HasLines
         return new DoublePoint(x2 - x1, y2 - y1).toUnit();
     }
 
-    public boolean endsAt(Point point)
+    public boolean endsAt(Pixel point)
     {
         return point.x == x2 && point.y == y2;
     }
 
-    public boolean startsAt(Point point)
+    public boolean startsAt(Pixel point)
     {
         return (point.x == x1 && point.y == y1);
     }
@@ -222,18 +222,18 @@ final class Line implements LineIntersection, HasLines
     @Override
     public String toString()
     {
-        return new Point(x1, y1).toString() + "->" + new Point(x2, y2).toString();
+        return new Pixel(x1, y1).toString() + "->" + new Pixel(x2, y2).toString();
     }
 
     public static Line parse(String asString)
     {
         String[] points = asString.split("->");
-        return Line.createLine(Point.parse(points[0]), Point.parse(points[1]));
+        return Line.createLine(Pixel.parse(points[0]), Pixel.parse(points[1]));
     }
 
     public String toString(Line toHighlight)
     {
         String sep = this.equals(toHighlight) ? "_->_" : "->";
-        return new Point(x1, y1).toString() + sep + new Point(x2, y2).toString();
+        return new Pixel(x1, y1).toString() + sep + new Pixel(x2, y2).toString();
     }
 }

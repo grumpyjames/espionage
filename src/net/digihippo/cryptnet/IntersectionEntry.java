@@ -1,8 +1,5 @@
 package net.digihippo.cryptnet;
 
-import java.util.ArrayList;
-import java.util.List;
-
 class IntersectionEntry
 {
     final Path path;

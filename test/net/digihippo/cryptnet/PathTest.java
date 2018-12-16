@@ -13,9 +13,9 @@ public class PathTest
     public void roundTripTest()
     {
         Path path = new Path(Arrays.asList(
-            Line.createLine(new Point(1, 4), new Point(5, 6)),
-            Line.createLine(new Point(5, 6), new Point(11, 15)),
-            Line.createLine(new Point(11, 15), new Point(20, 14))
+            Line.createLine(new Pixel(1, 4), new Pixel(5, 6)),
+            Line.createLine(new Pixel(5, 6), new Pixel(11, 15)),
+            Line.createLine(new Pixel(11, 15), new Pixel(20, 14))
         ));
 
         assertThat(Path.parse(path.toString()), equalTo(path));

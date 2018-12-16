@@ -15,7 +15,7 @@ final class Patrol
     DoublePoint point;
     private Direction direction;
     private Intersection previous;
-    private Point previousTurn;
+    private Pixel previousTurn;
 
     private transient int lineIndex;
 
@@ -30,7 +30,7 @@ final class Patrol
         this.direction = direction;
     }
 
-    private void snapToLine(Point pixel, Path path, Line line, Direction direction)
+    private void snapToLine(Pixel pixel, Path path, Line line, Direction direction)
     {
         this.path = path;
         this.line = line;
@@ -41,13 +41,13 @@ final class Patrol
     }
 
     public void tick(
-        final Map<Point, Intersection> intersections,
+        final Map<Pixel, Intersection> intersections,
         final Random random)
     {
         this.point = this.point.plus(delta);
 
-        final Iterable<Point> pixels = this.point.pixelBounds();
-        for (Point pixel : pixels)
+        final Iterable<Pixel> pixels = this.point.pixelBounds();
+        for (Pixel pixel : pixels)
         {
             Intersection intersection = intersections.get(pixel);
             if (intersection != null)
@@ -92,19 +92,19 @@ final class Patrol
         }
     }
 
-    private void turn(Point pixel, Path path, Line line, Direction dir)
+    private void turn(Pixel pixel, Path path, Line line, Direction dir)
     {
         snapToLine(pixel, path, line, dir);
         turnComplete(pixel);
     }
 
-    private void turnComplete(Point pixel)
+    private void turnComplete(Pixel pixel)
     {
         this.previous = null;
         this.previousTurn = pixel;
     }
 
-    private void intersection(Random random, Point pixel, Intersection intersection)
+    private void intersection(Random random, Pixel pixel, Intersection intersection)
     {
         IntersectionEntry[] lines =
             intersection.entries.toArray(new IntersectionEntry[intersection.entries.size()]);
@@ -171,7 +171,7 @@ final class Patrol
 
         skipTo(jParser, "previousTurn");
         maybeValue = jParser.getValueAsString();
-        final Point previousTurn = maybeValue.equals("null") ? null : Point.parse(maybeValue);
+        final Pixel previousTurn = maybeValue.equals("null") ? null : Pixel.parse(maybeValue);
 
         Patrol patrol = new Patrol(path, line, delta, point, direction);
 
