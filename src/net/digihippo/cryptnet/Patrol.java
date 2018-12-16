@@ -75,14 +75,12 @@ final class Patrol
             }
             else if (!pixel.equals(previousTurn) && direction.turnsAt(this.path, this.lineIndex, pixel))
             {
-                System.out.printf("Starting turn at %s, going %s along %s%n", pixel, direction, path);
                 this.lineIndex = direction.nextLineIndex(lineIndex);
                 this.line = this.path.lines.get(lineIndex);
                 this.delta = direction.orient(this.line.direction());
                 this.point = pixel.asDoublePoint();
                 this.previousTurn = pixel;
 
-                System.out.printf("Finished turn at %s, now following %s using delta %s%n", pixel, line, delta);
                 break;
             }
         }
@@ -112,7 +110,6 @@ final class Patrol
         this.lineIndex = entry.path.indexOf(entry.line);
         this.point = pixel.asDoublePoint();
         this.previousTurn = null;
-        System.out.printf("Chose %s along %s, going %s%n", line, path, direction);
     }
 
     @Override

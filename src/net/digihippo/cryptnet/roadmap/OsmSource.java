@@ -65,8 +65,6 @@ public class OsmSource
         double lonSt  = Math.toDegrees(longitudeMin);
         double lonEnd = Math.toDegrees(longitudeMax);
 
-        System.out.printf("%s %s %s %s\n", latSt, latEnd, lonSt, lonEnd);
-
         try (final InputStream inputStream = requestVectorData(latSt, latEnd, lonSt, lonEnd))
         {
 
