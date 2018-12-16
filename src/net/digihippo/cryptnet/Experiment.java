@@ -21,10 +21,8 @@ import java.util.function.Consumer;
 
 public class Experiment
 {
-    private static Model startingModel(List<NormalizedWay> normalizedWays)
+    private static Model startingModel(List<NormalizedWay> normalizedWays, int dimension)
     {
-        int dimension = 256;
-
         final List<Path> paths = new ArrayList<>();
 
         for (NormalizedWay normalizedWay : normalizedWays)
@@ -58,7 +56,7 @@ public class Experiment
         private final BufferedImage[][] images;
 
         public Dimension getPreferredSize() {
-            return new Dimension(model.size() + offsetX + 100, model.size() + offsetY + 100);
+            return new Dimension(model.size() + (2 * offsetX), model.size() + (2 * offsetY));
         }
 
         private Viewer(final Model model, BufferedImage[][] images, final Random random)
@@ -235,15 +233,13 @@ public class Experiment
         double latitudeMin = OsmSource.lat((yTile + 2) * 256, 17);
         double latitudeMax = OsmSource.lat(yTile * 256, 17);
 
+        // tile coords increase with longitude
         double longitudeMin = OsmSource.lon(xTile * 256, 17);
         double longitudeMax = OsmSource.lon((xTile + 2) * 256, 17);
 
         final Model model = startingModel(
-            OsmSource.fetchWays(
-                latitudeMin,
-                latitudeMax,
-                longitudeMin,
-                longitudeMax)
+            OsmSource.fetchWays(latitudeMin, latitudeMax, longitudeMin, longitudeMax),
+            512
         );
         final BufferedImage[][] images =
             new BufferedImage[2][2];
