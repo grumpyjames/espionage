@@ -29,19 +29,6 @@ public final class Path implements HasLines
         return lines.get(lines.size() - 1).endsAt(pixel);
     }
 
-    public boolean turnsAt(Point pixel)
-    {
-        for (int i = 0; i < lines.size() - 1; i++)
-        {
-            final Line line = lines.get(i);
-            if (line.endsAt(pixel))
-            {
-                return true;
-            }
-        }
-        return false;
-    }
-
     public Line lineAfter(Line line, Direction direction)
     {
         if (direction == Direction.Forwards)

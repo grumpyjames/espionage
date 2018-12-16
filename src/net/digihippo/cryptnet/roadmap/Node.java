@@ -7,7 +7,6 @@ final class Node
 
     public Node(long nodeId)
     {
-
         this.nodeId = nodeId;
     }
 

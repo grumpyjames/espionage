@@ -30,6 +30,16 @@ final class Patrol
         this.direction = direction;
     }
 
+    private void snapToLine(Point pixel, Path path, Line line, Direction direction)
+    {
+        this.path = path;
+        this.line = line;
+        this.lineIndex = path.indexOf(line);
+        this.delta = direction.orient(line.direction());
+        this.point = pixel.asDoublePoint();
+        this.direction = direction;
+    }
+
     public void tick(
         final Map<Point, Intersection> intersections,
         final Random random)
@@ -47,7 +57,7 @@ final class Patrol
                 {
                     continue;
                 }
-                performTurn(random, pixel, intersection);
+                intersection(random, pixel, intersection);
                 break;
             }
             else if (this.path.startsAt(pixel) && this.path.endsAt(pixel) && !pixel.equals(previousTurn))
@@ -55,60 +65,55 @@ final class Patrol
                 boolean forwards = random.nextBoolean();
                 if (forwards)
                 {
-                    pickLine(pixel, this.path.lines.get(0), Direction.Forwards);
+                    turn(pixel, this.path, this.path.lines.get(0), Direction.Forwards);
                 }
                 else
                 {
-                    pickLine(pixel, this.path.lines.get(this.path.lines.size() - 1), Direction.Backwards);
+                    turn(pixel, this.path, this.path.lines.get(this.path.lines.size() - 1), Direction.Backwards);
                 }
                 break;
             }
             else if (this.path.startsAt(pixel) && this.direction == Direction.Backwards && !pixel.equals(previousTurn))
             {
-                pickLine(pixel, this.line, Direction.Forwards);
+                turn(pixel, this.path, this.line, Direction.Forwards);
                 break;
             }
             else if (this.path.endsAt(pixel) && this.direction == Direction.Forwards && !pixel.equals(previousTurn))
             {
-                pickLine(pixel, this.line, Direction.Backwards);
+                turn(pixel, this.path, this.line, Direction.Backwards);
                 break;
             }
-            else if (!pixel.equals(previousTurn) && direction.turnsAt(this.path, this.lineIndex, pixel))
+            else if (direction.turnsAt(this.path, this.lineIndex, pixel) && !pixel.equals(previousTurn))
             {
-                this.lineIndex = direction.nextLineIndex(lineIndex);
-                this.line = this.path.lines.get(lineIndex);
-                this.delta = direction.orient(this.line.direction());
-                this.point = pixel.asDoublePoint();
-                this.previousTurn = pixel;
-
+                final Line nextLine = this.path.lines.get(direction.nextLineIndex(lineIndex));
+                turn(pixel, this.path, nextLine, this.direction);
                 break;
             }
         }
     }
 
-    private void pickLine(Point pixel, Line line, Direction dir)
+    private void turn(Point pixel, Path path, Line line, Direction dir)
     {
-        this.direction = dir;
-        this.delta = this.direction.orient(line.direction());
-        this.point = pixel.asDoublePoint();
+        snapToLine(pixel, path, line, dir);
+        turnComplete(pixel);
+    }
+
+    private void turnComplete(Point pixel)
+    {
         this.previous = null;
         this.previousTurn = pixel;
     }
 
-    private void performTurn(Random random, Point pixel, Intersection intersection)
+    private void intersection(Random random, Point pixel, Intersection intersection)
     {
-        previous = intersection;
         IntersectionEntry[] lines =
             intersection.entries.toArray(new IntersectionEntry[intersection.entries.size()]);
         IntersectionEntry entry =
             lines[random.nextInt(lines.length)];
 
-        this.delta = entry.direction.orient(entry.line.direction());
-        this.direction = entry.direction;
-        this.path = entry.path;
-        this.line = entry.line;
-        this.lineIndex = entry.path.indexOf(entry.line);
-        this.point = pixel.asDoublePoint();
+        snapToLine(pixel, entry.path, entry.line, entry.direction);
+
+        this.previous = intersection;
         this.previousTurn = null;
     }
 

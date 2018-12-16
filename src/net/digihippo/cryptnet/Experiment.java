@@ -44,7 +44,11 @@ public class Experiment
                     Point start =
                         normalizedWay.doublePoints.get(i).round();
                     Point end = normalizedWay.doublePoints.get(i + 1).round();
-                    pieces.add(Line.createLine(start.x, end.x, start.y, end.y));
+                    Line line = Line.createLine(start.x, end.x, start.y, end.y);
+                    if (!start.equals(end))
+                    {
+                        pieces.add(line);
+                    }
                 }
                 paths.add(new Path(pieces));
             }
@@ -62,8 +66,12 @@ public class Experiment
     {
         private final Model model;
         private final BufferedImage image;
-        private final int offsetX = 100;
-        private final int offsetY = 100;
+        private final int offsetX = 256;
+        private final int offsetY = 256;
+
+        public Dimension getPreferredSize() {
+            return new Dimension(model.size() + offsetX + 100, model.size() + offsetY + 100);
+        }
 
         private Viewer(final Model model, BufferedImage image, final Random random)
         {
@@ -207,10 +215,6 @@ public class Experiment
         private void drawLine(Graphics g, Line line)
         {
             g.drawLine(offsetX + line.x1, offsetY + line.y1, offsetX + line.x2, offsetY + line.y2);
-        }
-
-        public Dimension getPreferredSize() {
-            return new Dimension(model.size() + offsetX, model.size() + offsetY);
         }
 
         public void onClick(int x, int y)
