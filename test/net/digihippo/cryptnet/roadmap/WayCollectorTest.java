@@ -8,7 +8,10 @@ import org.junit.Test;
 
 import java.util.*;
 
+import static net.digihippo.cryptnet.Lists.palindromic;
+import static org.hamcrest.CoreMatchers.equalTo;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
 
 public class WayCollectorTest
 {
@@ -182,6 +185,56 @@ public class WayCollectorTest
     }
 
     @Test
+    public void anotherFiddlyCase()
+    {
+        WayCollector wayCollector = new WayCollector();
+
+        wayCollector.wayStart();
+        wayCollector.waypoint(1);
+        wayCollector.waypoint(2);
+        wayCollector.wayEnd();
+
+        wayCollector.wayStart();
+        wayCollector.waypoint(4);
+        wayCollector.waypoint(3);
+        wayCollector.waypoint(2);
+        wayCollector.wayEnd();
+
+
+        wayCollector.wayStart();
+        wayCollector.waypoint(1);
+        wayCollector.waypoint(5);
+        wayCollector.wayEnd();
+
+
+        wayCollector.wayStart();
+        wayCollector.waypoint(5);
+        wayCollector.waypoint(6);
+        wayCollector.wayEnd();
+
+
+        wayCollector.wayStart();
+        wayCollector.waypoint(5);
+        wayCollector.waypoint(7);
+        wayCollector.wayEnd();
+
+
+        wayCollector.wayStart();
+        wayCollector.waypoint(5);
+        wayCollector.waypoint(8);
+        wayCollector.wayEnd();
+
+        Collection<Way> ways = wayCollector.reducedWays();
+        for (Way way : ways)
+        {
+            if (palindromic(nodeIds(way)))
+            {
+                fail("Way " + way + " is palindromic");
+            }
+        }
+    }
+
+    @Test
     public void oneJoinOnlyVassili()
     {
         WayCollector wayCollector = new WayCollector();
@@ -203,7 +256,6 @@ public class WayCollectorTest
         wayCollector.waypoint(6);
         wayCollector.wayEnd();
 
-
         wayCollector.node(1, new LatLn(1, 2));
         wayCollector.node(2, new LatLn(1, 3));
         wayCollector.node(3, new LatLn(1, 4));
@@ -213,7 +265,18 @@ public class WayCollectorTest
 
         Collection<Way> ways = wayCollector.reducedWays();
 
-        System.out.println(ways);
+        assertThat(ways.size(), equalTo(1));
+        Way first = ways.iterator().next();
+        assertThat(nodeIds(first), equalTo(Arrays.asList(1L, 2L, 3L, 4L, 5L, 6L)));
     }
 
+    List<Long> nodeIds(final Way way)
+    {
+        final List<Long> nodeIds = new ArrayList<>();
+        for (Node node : way.nodes)
+        {
+            nodeIds.add(node.nodeId);
+        }
+        return nodeIds;
+    }
 }

@@ -1,12 +1,14 @@
 package net.digihippo.cryptnet.roadmap;
 
+import net.digihippo.cryptnet.Lists;
+
 import java.util.*;
 import java.util.function.Function;
 
 final class WayCollector
 {
     private final Map<Long, Node> nodes = new HashMap<>();
-    private final Set<Way> ways = new HashSet<>();
+    private final Set<Way> ways = new LinkedHashSet<>();
 
     private List<Node> accumulating = null;
     private int nodeCount = 0;
@@ -46,7 +48,7 @@ final class WayCollector
             @Override
             public Set<Way> apply(Long aLong)
             {
-                return new HashSet<>();
+                return new LinkedHashSet<>();
             }
         }).add(way);
     }
@@ -70,44 +72,60 @@ final class WayCollector
         while (!ways.isEmpty())
         {
             Iterator<Way> iterator = ways.iterator();
-            Way originalWay = iterator.next();
+            Way reduction = iterator.next();
             iterator.remove();
 
-            long start = originalWay.firstNodeId();
-            long end = originalWay.lastNodeId();
+            long start = reduction.firstNodeId();
+            long end = reduction.lastNodeId();
             Set<Way> startWays = edgeNodeToWay.get(start);
             Set<Way> endWays = edgeNodeToWay.get(end);
+
             while (startWays.size() == 2 || endWays.size() == 2)
             {
-                boolean startCondition = startWays.size() == 2;
-                boolean endCondition = endWays.size() == 2;
-                if (startCondition)
+                if (startWays.size() == 2)
                 {
                     Way[] waysArray = startWays.toArray(new Way[2]);
-                    Way other = waysArray[0] == originalWay ? waysArray[1] : waysArray[0];
+                    Way other = waysArray[0] == reduction ? waysArray[1] : waysArray[0];
+
                     ways.remove(other);
-                    originalWay = originalWay.concat(start, other);
+                    startWays.remove(other);
+                    startWays.remove(reduction);
+                    endWays.remove(reduction);
+
+                    reduction = reduction.concat(start, other);
                     Set<Way> ways = edgeNodeToWay.get(other.oppositeEndTo(start));
+
+                    endWays.add(reduction);
                     ways.remove(other);
-                    ways.add(originalWay);
+                    ways.add(reduction);
                 }
-                else if (endCondition)
+                else if (endWays.size() == 2)
                 {
                     Way[] waysArray = endWays.toArray(new Way[2]);
-                    Way other = waysArray[0] == originalWay ? waysArray[1] : waysArray[0];
+                    Way other = waysArray[0] == reduction ? waysArray[1] : waysArray[0];
+
                     ways.remove(other);
-                    originalWay = originalWay.concat(end, other);
-                    Set<Way> ways = edgeNodeToWay.get(other.oppositeEndTo(start));
+                    endWays.remove(reduction);
+                    endWays.remove(other);
+                    startWays.remove(reduction);
+
+                    reduction = reduction.concat(end, other);
+
+                    long otherEndNode = other.oppositeEndTo(end);
+                    Set<Way> ways = edgeNodeToWay.get(otherEndNode);
+                    startWays.add(reduction);
                     ways.remove(other);
-                    ways.add(originalWay);
+                    ways.add(reduction);
                 }
-                start = originalWay.firstNodeId();
-                end = originalWay.lastNodeId();
+                start = reduction.firstNodeId();
+                end = reduction.lastNodeId();
                 startWays = edgeNodeToWay.get(start);
                 endWays = edgeNodeToWay.get(end);
             }
 
-            results.add(originalWay);
+            assert !Lists.palindromic(reduction.nodes);
+
+            results.add(reduction);
         }
 
         return results;
