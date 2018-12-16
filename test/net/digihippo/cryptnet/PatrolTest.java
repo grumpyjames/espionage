@@ -76,29 +76,6 @@ public class PatrolTest
     }
 
     @Test
-    public void traversePath()
-    {
-        String intersectionEntry =
-            "Backwards along (250,55)->(273,38)->(281,32)->(284,27)_->_(287,22)->(281,38)->(278,43)->(275,47)->(272,51)->(263,58)->(250,70)->(245,74)->(242,78)->(241,81)->(240,86)->(239,94)->(239,100)->(238,108)";
-
-        IntersectionEntry entry = IntersectionEntry.parse(intersectionEntry);
-
-        Patrol patrol = new Patrol(
-            entry.path,
-            entry.line,
-            entry.direction.orient(entry.line.direction()),
-            new DoublePoint(284, 27),
-            entry.direction);
-
-        Random random = new Random(53454334L);
-        Map<Point, Intersection> none = Collections.emptyMap();
-        for (int i = 0; i < 50; i++)
-        {
-            tickPrint(none, patrol, random);
-        }
-    }
-
-    @Test
     public void doNotBeDistractedByTurnsElsewhereOnTheLine()
     {
         String serialised = "{\n" +
