@@ -250,8 +250,8 @@ public class Experiment
 
     public static void main(String[] args) throws IOException
     {
-        int xTile = 65486;
-        int yTile = 43583;
+        int xTile = 65480;
+        int yTile = 43572;
         // tile coords increase as latitude decreases
         double latitudeMin = OsmSource.lat((yTile + 2) * 256, 17);
         double latitudeMax = OsmSource.lat(yTile * 256, 17);
