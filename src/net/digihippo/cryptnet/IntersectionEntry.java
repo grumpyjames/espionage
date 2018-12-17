@@ -1,6 +1,6 @@
 package net.digihippo.cryptnet;
 
-class IntersectionEntry
+class IntersectionEntry implements Connection.HasPath
 {
     final Path path;
     final Line line;
@@ -52,5 +52,9 @@ class IntersectionEntry
         return new IntersectionEntry(highlightedLine.path, highlightedLine.line, direction);
     }
 
-
+    @Override
+    public Path getPath()
+    {
+        return path;
+    }
 }

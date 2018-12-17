@@ -66,7 +66,7 @@ final class JoiningSentry
                     this,
                     pixel,
                     this.connection.connectionPoint,
-                    this.connection.path,
+                    this.connection.getPath(),
                     this.connection.line,
                     direction.orient(this.connection.line.direction()),
                     direction);

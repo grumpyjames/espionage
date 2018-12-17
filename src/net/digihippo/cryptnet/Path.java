@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public final class Path implements HasLines
+public final class Path implements HasLines, Connection.HasPath
 {
     final List<Line> lines;
 
@@ -123,5 +123,11 @@ public final class Path implements HasLines
     public int indexOf(Line line)
     {
         return lines.indexOf(line);
+    }
+
+    @Override
+    public Path getPath()
+    {
+        return this;
     }
 }

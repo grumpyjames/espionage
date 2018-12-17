@@ -1,33 +1,44 @@
 package net.digihippo.cryptnet;
 
-class Connection
+class Connection<T extends Connection.HasPath>
 {
     final DoublePoint connectionPoint;
     final Line line;
-    final Path path;
+    final T context;
 
-    Connection(DoublePoint to, Line line, Path path)
+    Connection(DoublePoint to, Line line, T context)
     {
         this.connectionPoint = to;
         this.line = line;
-        this.path = path;
+        this.context = context;
     }
 
     @Override
     public String toString()
     {
-        return path.highlighting(line) + "@" + connectionPoint.toString();
+        return context.getPath().highlighting(line) + "@" + connectionPoint.toString();
     }
 
-    static Connection nearestConnection(Iterable<Path> paths, DoublePoint point)
+    public Path getPath()
+    {
+        return context.getPath();
+    }
+
+    interface HasPath
+    {
+        Path getPath();
+    }
+
+    public static <T extends HasPath> Connection<T> nearestConnection(Iterable<T> paths, DoublePoint point)
     {
         double best = Double.MAX_VALUE;
-        Connection result = null;
-        for (Path path : paths)
+        Connection<T> result = null;
+        for (T hasPath : paths)
         {
+            Path path = hasPath.getPath();
             for (Line line : path.lines)
             {
-                Connection connection = line.connectionTo(path, point);
+                Connection<T> connection = line.connectionTo(hasPath, point);
                 double distance =
                     DoublePoint.distanceBetween(point, connection.connectionPoint);
                 if (distance < best)
@@ -40,13 +51,13 @@ class Connection
         return result;
     }
 
-    public static Connection parse(String string)
+    public static Connection<Path> parse(String string)
     {
         String[] parts = string.split("@");
         HighlightedLine highlightedLine = HighlightedLine.parse(parts[0]);
         DoublePoint connectionPoint = DoublePoint.parse(parts[1]);
 
-        return new Connection(connectionPoint, highlightedLine.line, highlightedLine.path);
+        return new Connection<>(connectionPoint, highlightedLine.line, highlightedLine.path);
     }
 
     @SuppressWarnings("SimplifiableIfStatement")
@@ -61,7 +72,7 @@ class Connection
         if (connectionPoint != null ? !connectionPoint.equals(that.connectionPoint) : that.connectionPoint != null)
             return false;
         if (line != null ? !line.equals(that.line) : that.line != null) return false;
-        return !(path != null ? !path.equals(that.path) : that.path != null);
+        return !(context != null ? !context.equals(that.context) : that.context != null);
 
     }
 
@@ -70,7 +81,7 @@ class Connection
     {
         int result = connectionPoint != null ? connectionPoint.hashCode() : 0;
         result = 31 * result + (line != null ? line.hashCode() : 0);
-        result = 31 * result + (path != null ? path.hashCode() : 0);
+        result = 31 * result + (context != null ? context.hashCode() : 0);
         return result;
     }
 }

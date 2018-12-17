@@ -176,8 +176,11 @@ public class Experiment
 
             if (model.player != null)
             {
-                Pixel round = model.player.round();
-                drawCircle(round, g, 2);
+                Pixel round = model.player.position.round();
+                g.drawOval(offsetX + round.x - 4, offsetY + round.y - 4, 4 * 2, 4 * 2);
+                g.setColor(Color.MAGENTA);
+                g.fillOval(offsetX + round.x - 4, offsetY + round.y - 4, 4 * 2, 4 * 2);
+                g.setColor(Color.BLACK);
             }
         }
 
@@ -216,7 +219,14 @@ public class Experiment
         {
             if (model.joiningSentries.size() + model.patrols.size() > 3)
             {
-                model.addPlayer(x, y);
+                if (model.player == null)
+                {
+                    model.addPlayer(x, y);
+                }
+                else
+                {
+                    model.movePlayerTowards(x, y);
+                }
             }
             else
             {
@@ -270,6 +280,8 @@ public class Experiment
                     public void run()
                     {
                         // Could be more Elm-like here and make model immutable?
+                        // FIXME: events like click, etc, need to be queued and then processed by this Thread.
+                        // FIXME: *facepalm*
                         model.tick(random);
                         viewer.repaint();
                     }

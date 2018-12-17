@@ -4,6 +4,7 @@ import java.util.Arrays;
 
 public class DoublePoint
 {
+    protected static final DoublePoint ZERO = new DoublePoint(0, 0);
     double x;
     double y;
 

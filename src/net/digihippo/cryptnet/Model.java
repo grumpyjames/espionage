@@ -16,7 +16,7 @@ final class Model
     final List<Patrol> patrols = new ArrayList<>();
     final List<Path> paths;
     final List<Line> lines;
-    DoublePoint player = null;
+    Player player = null;
 
     public static Model createModel(List<Path> paths, int size)
     {
@@ -74,8 +74,15 @@ final class Model
             }
 
             skipTo(jParser, "player");
-            final String maybeValue = jParser.getValueAsString();
-            final DoublePoint player = maybeValue == null ? null : DoublePoint.parse(maybeValue);
+            final Player player;
+            if (jParser.getCurrentToken() == JsonToken.START_OBJECT)
+            {
+                player = Player.parse(jParser);
+            }
+            else
+            {
+                player = null;
+            }
 
             Model model = new Model(paths, index(intersections), lines(paths), 256);
             model.joiningSentries.addAll(joiningSentries);
@@ -159,7 +166,9 @@ final class Model
 
             if (player != null)
             {
-                double distanceToPlayer = DoublePoint.distanceBetween(patrol.point, player);
+                player.tick(intersections);
+
+                double distanceToPlayer = DoublePoint.distanceBetween(patrol.point, player.position);
                 if (distanceToPlayer < 5)
                 {
                     System.out.println("Game over man!");
@@ -202,7 +211,7 @@ final class Model
         Connection connection =
             Connection.nearestConnection(paths, point.asDoublePoint());
 
-        player = connection.connectionPoint;
+        player = new Player(connection.getPath(), connection.line, connection.connectionPoint);
     }
 
     public int size()
@@ -249,5 +258,13 @@ final class Model
         result = 31 * result + lines.hashCode();
         result = 31 * result + (player != null ? player.hashCode() : 0);
         return result;
+    }
+
+    public void movePlayerTowards(int x, int y)
+    {
+        if (player != null)
+        {
+            player.moveTowards(new Pixel(x, y));
+        }
     }
 }

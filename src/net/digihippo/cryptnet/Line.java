@@ -30,7 +30,7 @@ final class Line implements LineIntersection, HasLines
         return createLine(start.x, finish.x, start.y, finish.y);
     }
 
-    public Connection connectionTo(Path path, DoublePoint point)
+    public <T extends Connection.HasPath> Connection<T> connectionTo(T t, DoublePoint point)
     {
         final DoublePoint perpendicularIntersection;
         if (vertical())
@@ -58,7 +58,7 @@ final class Line implements LineIntersection, HasLines
 
         if (withinBounds(perpendicularIntersection))
         {
-            return new Connection(perpendicularIntersection, this, path);
+            return new Connection<>(perpendicularIntersection, this, t);
         }
 
         final DoublePoint start = new DoublePoint(x1, y1);
@@ -67,11 +67,11 @@ final class Line implements LineIntersection, HasLines
         final double distanceTwo = DoublePoint.distanceBetween(point, end);
         if (distanceOne <= distanceTwo)
         {
-            return new Connection(start, this, path);
+            return new Connection<>(start, this, t);
         }
         else
         {
-            return new Connection(end, this, path);
+            return new Connection<>(end, this, t);
         }
     }
 
@@ -80,7 +80,7 @@ final class Line implements LineIntersection, HasLines
         return Math.min(x1, x2) <= point.x && point.x <= Math.max(x1, x2) && Math.min(y1, y2) <= point.y && point.y <= Math.max(y1, y2);
     }
 
-    private boolean withinBounds(DoublePoint point)
+    boolean withinBounds(DoublePoint point)
     {
         return Math.min(x1, x2) <= point.x && point.x <= Math.max(x1, x2) && Math.min(y1, y2) <= point.y && point.y <= Math.max(y1, y2);
     }
