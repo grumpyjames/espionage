@@ -97,57 +97,7 @@ public class Experiment
             this.model = model;
             this.images = images;
 
-            addMouseListener(new MouseListener()
-            {
-                @Override
-                public void mouseClicked(MouseEvent e)
-                {
-                }
-
-                @Override
-                public void mousePressed(MouseEvent e)
-                {
-
-                }
-
-                @Override
-                public void mouseReleased(MouseEvent e)
-                {
-                    if (e.getY() >= offsetY)
-                    {
-                        ClickEvent event = new ClickEvent(e.getX() - offsetX, e.getY() - offsetY);
-                        pushEvent(event, events);
-                    }
-                    else
-                    {
-                        pushEvent(new PrintEvent(), events);
-                    }
-                }
-
-                @Override
-                public void mouseEntered(MouseEvent e)
-                {
-
-                }
-
-                @Override
-                public void mouseExited(MouseEvent e)
-                {
-
-                }
-            });
-        }
-
-        private void pushEvent(Event event, BlockingQueue<Event> events)
-        {
-            try
-            {
-                events.put(event);
-            } catch (InterruptedException e1)
-            {
-                Thread.currentThread().interrupt();
-                throw new RuntimeException("Unable to enqueue event - interrupted");
-            }
+            addMouseListener(new EventQueueListener(events));
         }
 
         @Override
@@ -256,6 +206,46 @@ public class Experiment
             g.drawLine(offsetX + line.x1, offsetY + line.y1, offsetX + line.x2, offsetY + line.y2);
         }
 
+        private class EventQueueListener implements MouseListener
+        {
+            private final BlockingQueue<Event> events;
+
+            public EventQueueListener(BlockingQueue<Event> events)
+            {
+                this.events = events;
+            }
+
+            @Override
+            public void mouseReleased(MouseEvent e)
+            {
+                if (e.getY() >= offsetY)
+                {
+                    ClickEvent event = new ClickEvent(e.getX() - offsetX, e.getY() - offsetY);
+                    pushEvent(event, events);
+                }
+                else
+                {
+                    pushEvent(new PrintEvent(), events);
+                }
+            }
+
+            private void pushEvent(Event event, BlockingQueue<Event> events)
+            {
+                try
+                {
+                    events.put(event);
+                } catch (InterruptedException e1)
+                {
+                    Thread.currentThread().interrupt();
+                    throw new RuntimeException("Unable to enqueue event - interrupted");
+                }
+            }
+
+            @Override public void mouseClicked(MouseEvent e) {}
+            @Override public void mousePressed(MouseEvent e) {}
+            @Override public void mouseEntered(MouseEvent e) {}
+            @Override public void mouseExited(MouseEvent e) {}
+        }
     }
 
     public static void main(String[] args) throws IOException
