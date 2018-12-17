@@ -116,6 +116,11 @@ public class Player
         final int currentIndex;
         final int targetIndex;
 
+        if (!stopped())
+        {
+            return;
+        }
+
         if (atIntersection())
         {
             final HashSet<Path> paths = new HashSet<>();
@@ -198,14 +203,19 @@ public class Player
 
     private boolean atIntersection()
     {
-        return previous != null && delta.equals(DoublePoint.ZERO);
+        return previous != null && stopped();
+    }
+
+    private boolean stopped()
+    {
+        return delta.equals(DoublePoint.ZERO);
     }
 
     public void tick(Map<Pixel, Intersection> intersections)
     {
         try
         {
-            if (this.delta.equals(DoublePoint.ZERO))
+            if (stopped())
             {
                 return;
             }
