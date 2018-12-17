@@ -14,9 +14,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.function.Consumer;
 
 public class Experiment
@@ -43,23 +41,58 @@ public class Experiment
             paths.add(new Path(pieces));
         }
 
-
         return Model.createModel(paths, dimension);
+    }
 
+    interface Event
+    {
+        void enact(Model model);
+    }
+
+    private static class ClickEvent implements Event
+    {
+        private final int x, y;
+
+        ClickEvent(int x, int y)
+        {
+            this.x = x;
+            this.y = y;
+        }
+
+        @Override
+        public void enact(Model model)
+        {
+            model.click(x, y);
+        }
+    }
+
+    private static class PrintEvent implements Event
+    {
+        @Override
+        public void enact(Model model)
+        {
+            System.out.println(model.toString());
+        }
     }
 
     private static final class Viewer extends Component
     {
+        // FIXME: and, you know, our updates to this field aren't exactly atomic,
+        // ...and happen on a completely different thread.
         private final Model model;
         private final int offsetX = 50;
         private final int offsetY = 50;
         private final BufferedImage[][] images;
 
+        @Override
         public Dimension getPreferredSize() {
             return new Dimension(model.size() + (2 * offsetX), model.size() + (2 * offsetY));
         }
 
-        private Viewer(final Model model, BufferedImage[][] images, final Random random)
+        private Viewer(
+            final Model model,
+            final BufferedImage[][] images,
+            final BlockingQueue<Event> events)
         {
             this.model = model;
             this.images = images;
@@ -82,16 +115,12 @@ public class Experiment
                 {
                     if (e.getY() >= offsetY)
                     {
-                        onClick(e.getX() - offsetX, e.getY() - offsetY);
+                        ClickEvent event = new ClickEvent(e.getX() - offsetX, e.getY() - offsetY);
+                        pushEvent(event, events);
                     }
                     else
                     {
-                        model.tick(random);
-                        repaint();
-                        if (e.getX() > 128)
-                        {
-                            System.out.println(model);
-                        }
+                        pushEvent(new PrintEvent(), events);
                     }
                 }
 
@@ -107,6 +136,18 @@ public class Experiment
 
                 }
             });
+        }
+
+        private void pushEvent(Event event, BlockingQueue<Event> events)
+        {
+            try
+            {
+                events.put(event);
+            } catch (InterruptedException e1)
+            {
+                Thread.currentThread().interrupt();
+                throw new RuntimeException("Unable to enqueue event - interrupted");
+            }
         }
 
         @Override
@@ -215,24 +256,6 @@ public class Experiment
             g.drawLine(offsetX + line.x1, offsetY + line.y1, offsetX + line.x2, offsetY + line.y2);
         }
 
-        public void onClick(int x, int y)
-        {
-            if (model.joiningSentries.size() + model.patrols.size() > 3)
-            {
-                if (model.player == null)
-                {
-                    model.addPlayer(x, y);
-                }
-                else
-                {
-                    model.movePlayerTowards(x, y);
-                }
-            }
-            else
-            {
-                model.addSentry(x, y);
-            }
-        }
     }
 
     public static void main(String[] args) throws IOException
@@ -258,9 +281,9 @@ public class Experiment
         images[0][1] = ImageIO.read(new URL("http://c.tile.openstreetmap.org/17/" + xTile + "/" + (yTile + 1) + ".png"));
         images[1][1] = ImageIO.read(new URL("http://c.tile.openstreetmap.org/17/" + (xTile + 1) + "/" + (yTile + 1) + ".png"));
 
-
+        final BlockingQueue<Event> events = new LinkedBlockingQueue<>();
         final Random random = new Random(238824982L);
-        final Viewer viewer = new Viewer(model, images, random);
+        final Viewer viewer = new Viewer(model, images, events);
         final ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
 
         SwingUtilities.invokeLater(new Runnable()
@@ -280,8 +303,11 @@ public class Experiment
                     public void run()
                     {
                         // Could be more Elm-like here and make model immutable?
-                        // FIXME: events like click, etc, need to be queued and then processed by this Thread.
-                        // FIXME: *facepalm*
+                        Event event;
+                        while ((event = events.poll()) != null)
+                        {
+                            event.enact(model);
+                        }
                         model.tick(random);
                         viewer.repaint();
                     }

@@ -267,4 +267,23 @@ final class Model
             player.moveTowards(new Pixel(x, y));
         }
     }
+
+    void click(int x, int y)
+    {
+        if (joiningSentries.size() + patrols.size() > 3)
+        {
+            if (player == null)
+            {
+                addPlayer(x, y);
+            }
+            else
+            {
+                movePlayerTowards(x, y);
+            }
+        }
+        else
+        {
+            addSentry(x, y);
+        }
+    }
 }
