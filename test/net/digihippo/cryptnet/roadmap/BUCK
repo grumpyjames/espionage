@@ -1,0 +1,11 @@
+java_test(
+  name = 'roadmap',
+  srcs = glob(['*.java']),
+  deps = [
+    '//src/net/digihippo/cryptnet/compat:compat',
+    '//src/net/digihippo/cryptnet/roadmap:roadmap',
+    '//:junit',
+    '//:hamcrest',
+  ],
+  visibility = [ 'PUBLIC' ],
+)

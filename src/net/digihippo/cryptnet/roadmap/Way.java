@@ -1,6 +1,6 @@
 package net.digihippo.cryptnet.roadmap;
 
-import net.digihippo.cryptnet.DoublePoint;
+import net.digihippo.cryptnet.dimtwo.DoublePoint;
 
 import java.util.ArrayList;
 import java.util.List;

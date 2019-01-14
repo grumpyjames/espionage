@@ -1,6 +1,6 @@
 package net.digihippo.cryptnet.roadmap;
 
-import net.digihippo.cryptnet.Lists;
+import net.digihippo.cryptnet.compat.Lists;
 
 import java.util.*;
 import java.util.function.Function;

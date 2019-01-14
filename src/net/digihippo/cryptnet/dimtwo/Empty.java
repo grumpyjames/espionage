@@ -1,4 +1,4 @@
-package net.digihippo.cryptnet;
+package net.digihippo.cryptnet.dimtwo;
 
 import java.util.function.Consumer;
 

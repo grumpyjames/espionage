@@ -1,13 +1,13 @@
-package net.digihippo.cryptnet;
+package net.digihippo.cryptnet.dimtwo;
 
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-class Intersection
+public class Intersection
 {
-    final Pixel point;
-    final Set<IntersectionEntry> entries = new HashSet<>();
+    public final Pixel point;
+    public final Set<IntersectionEntry> entries = new HashSet<>();
 
     public Intersection(Pixel point)
     {

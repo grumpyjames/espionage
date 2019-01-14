@@ -1,0 +1,5 @@
+java_library(
+  name = 'compat',
+  srcs = glob(['*.java']),
+  visibility = [ 'PUBLIC' ],
+)

@@ -2,6 +2,7 @@ package net.digihippo.cryptnet;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
+import net.digihippo.cryptnet.dimtwo.*;
 
 import java.io.IOException;
 import java.util.Map;

@@ -1,4 +1,4 @@
-package net.digihippo.cryptnet;
+package net.digihippo.cryptnet.dimtwo;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -6,7 +6,7 @@ import java.util.List;
 
 public final class Path implements HasLines, Connection.HasPath
 {
-    final List<Line> lines;
+    public final List<Line> lines;
 
     public Path(List<Line> lines)
     {

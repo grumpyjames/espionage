@@ -1,10 +1,10 @@
-package net.digihippo.cryptnet;
+package net.digihippo.cryptnet.dimtwo;
 
-class IntersectionEntry implements Connection.HasPath
+public final class IntersectionEntry implements Connection.HasPath
 {
-    final Path path;
-    final Line line;
-    final Direction direction;
+    public final Path path;
+    public final Line line;
+    public final Direction direction;
 
     public IntersectionEntry(Path path, Line line, Direction direction)
     {

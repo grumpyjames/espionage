@@ -1,5 +1,7 @@
 package net.digihippo.cryptnet;
 
+import net.digihippo.cryptnet.dimtwo.*;
+
 import java.util.ArrayList;
 import java.util.List;
 

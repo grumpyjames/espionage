@@ -1,6 +1,6 @@
-package net.digihippo.cryptnet;
+package net.digihippo.cryptnet.dimtwo;
 
-enum Direction
+public enum Direction
 {
     Forwards {
         @Override

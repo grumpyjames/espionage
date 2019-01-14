@@ -8,7 +8,7 @@ import org.junit.Test;
 
 import java.util.*;
 
-import static net.digihippo.cryptnet.Lists.palindromic;
+import static net.digihippo.cryptnet.compat.Lists.palindromic;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;

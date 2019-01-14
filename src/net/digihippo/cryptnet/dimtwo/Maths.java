@@ -1,18 +1,18 @@
-package net.digihippo.cryptnet;
+package net.digihippo.cryptnet.dimtwo;
 
 public final class Maths
 {
-    static int floor(double d)
+    public static int floor(double d)
     {
         return (int) java.lang.Math.floor(d);
     }
 
-    static int ceil(double d)
+    public static int ceil(double d)
     {
         return (int) java.lang.Math.ceil(d);
     }
 
-    static int round(double d)
+    public static int round(double d)
     {
         return (int) java.lang.Math.round(d);
     }

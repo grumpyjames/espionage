@@ -1,12 +1,12 @@
-package net.digihippo.cryptnet;
+package net.digihippo.cryptnet.dimtwo;
 
 import java.util.Arrays;
 
 public class DoublePoint
 {
-    protected static final DoublePoint ZERO = new DoublePoint(0, 0);
-    double x;
-    double y;
+    public static final DoublePoint ZERO = new DoublePoint(0, 0);
+    public final double x;
+    public final double y;
 
     public DoublePoint(double x, double y)
     {

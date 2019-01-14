@@ -1,12 +1,12 @@
-package net.digihippo.cryptnet;
+package net.digihippo.cryptnet.dimtwo;
 
 import java.util.function.Consumer;
 
-class Pixel implements LineIntersection
+public class Pixel implements LineIntersection
 {
-    final int x, y;
+    public final int x, y;
 
-    Pixel(int x, int y)
+    public Pixel(int x, int y)
     {
         this.x = x;
         this.y = y;

@@ -1,9 +1,9 @@
-package net.digihippo.cryptnet;
+package net.digihippo.cryptnet.dimtwo;
 
 import java.util.Collections;
 import java.util.function.Consumer;
 
-final class Line implements LineIntersection, HasLines
+public final class Line implements LineIntersection, HasLines
 {
     public final int x1, x2, y1, y2;
     public final double gradient, intersect;
@@ -19,13 +19,13 @@ final class Line implements LineIntersection, HasLines
         this.intersect = intersect;
     }
 
-    static Line createLine(int x1, int x2, int y1, int y2)
+    public static Line createLine(int x1, int x2, int y1, int y2)
     {
         double gradient = ((double) y2 - y1) / ((double) x2 - x1);
         return new Line(x1, x2, y1, y2, gradient, ((double) y1) - (gradient * (double) x1));
     }
 
-    static Line createLine(Pixel start, Pixel finish)
+    public static Line createLine(Pixel start, Pixel finish)
     {
         return createLine(start.x, finish.x, start.y, finish.y);
     }

@@ -1,12 +1,12 @@
-package net.digihippo.cryptnet;
+package net.digihippo.cryptnet.dimtwo;
 
-class Connection<T extends Connection.HasPath>
+public class Connection<T extends Connection.HasPath>
 {
-    final DoublePoint connectionPoint;
-    final Line line;
-    final T context;
+    public final DoublePoint connectionPoint;
+    public final Line line;
+    public final T context;
 
-    Connection(DoublePoint to, Line line, T context)
+    public Connection(DoublePoint to, Line line, T context)
     {
         this.connectionPoint = to;
         this.line = line;

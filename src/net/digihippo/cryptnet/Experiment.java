@@ -1,5 +1,6 @@
 package net.digihippo.cryptnet;
 
+import net.digihippo.cryptnet.dimtwo.*;
 import net.digihippo.cryptnet.roadmap.NormalizedWay;
 import net.digihippo.cryptnet.roadmap.OsmSource;
 

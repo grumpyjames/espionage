@@ -1,0 +1,8 @@
+java_library(
+  name = 'dimtwo',
+  srcs = glob(['*.java']),
+  deps = [
+    '//:jackson'
+  ],
+  visibility = [ 'PUBLIC' ],
+)

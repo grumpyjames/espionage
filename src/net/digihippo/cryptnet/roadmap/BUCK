@@ -1,0 +1,10 @@
+java_library(
+  name = 'roadmap',
+  srcs = glob(['*.java']),
+  deps = [
+    '//src/net/digihippo/cryptnet/dimtwo:dimtwo',
+    '//src/net/digihippo/cryptnet/compat:compat',
+    '//:jackson',
+  ],
+  visibility = [ 'PUBLIC' ],
+)

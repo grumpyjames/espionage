@@ -1,5 +1,6 @@
-package net.digihippo.cryptnet;
+package net.digihippo.cryptnet.dimtwo;
 
+import net.digihippo.cryptnet.dimtwo.*;
 import org.junit.Test;
 
 import java.util.Arrays;

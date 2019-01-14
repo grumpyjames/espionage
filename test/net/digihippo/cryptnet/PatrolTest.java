@@ -1,5 +1,6 @@
 package net.digihippo.cryptnet;
 
+import net.digihippo.cryptnet.dimtwo.*;
 import org.hamcrest.*;
 import org.junit.Test;
 
