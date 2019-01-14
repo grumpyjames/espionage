@@ -227,12 +227,22 @@ public class Player
             for (Pixel pixel : pixels)
             {
                 final Intersection intersection = intersections.get(pixel);
-                if (intersection != null && !intersection.equals(previous))
+                if (intersection != null)
                 {
+                    if (intersection.equals(previous))
+                    {
+                        continue;
+                    }
                     delta = DoublePoint.ZERO;
                     position = pixel.asDoublePoint();
                     previous = intersection;
                     previousTurn = null;
+                    break;
+                }
+                else if (direction.turnsAt(this.path, this.lineIndex, pixel) && !pixel.equals(previousTurn))
+                {
+                    final Line nextLine = this.path.lines.get(direction.nextLineIndex(lineIndex));
+                    turn(pixel, this.path, nextLine, this.direction);
                     break;
                 }
                 else if (this.path.startsAt(pixel) && this.path.endsAt(pixel) && !pixel.equals(previousTurn))
@@ -257,12 +267,6 @@ public class Player
                     position = pixel.asDoublePoint();
                     previousTurn = pixel;
                     previous = null;
-                    break;
-                }
-                else if (direction.turnsAt(this.path, this.lineIndex, pixel) && !pixel.equals(previousTurn))
-                {
-                    final Line nextLine = this.path.lines.get(direction.nextLineIndex(lineIndex));
-                    turn(pixel, this.path, nextLine, this.direction);
                     break;
                 }
             }

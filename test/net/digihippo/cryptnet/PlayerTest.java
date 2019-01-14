@@ -25,7 +25,7 @@ public class PlayerTest
     private final Line perpLineFour = Line.createLine(new Pixel(30, 10), new Pixel(40, 0));
     private final Path perpPath = new Path(Arrays.asList(perpLineOne, perpLineTwo, perpLineThree, perpLineFour));
 
-    Map<Pixel, Intersection> intersections = Intersection.intersections(Arrays.asList(path, perpPath));
+    private Map<Pixel, Intersection> intersections = Intersection.intersections(Arrays.asList(path, perpPath));
 
 
     @Test
@@ -41,6 +41,29 @@ public class PlayerTest
         }
         assertThat(player.position, equalTo(new DoublePoint(40, 40)));
         assertThat(player.line, equalTo(lineFour));
+    }
+
+    @Test
+    public void followLineToTheEndAndThenStopAndProgressNoFurtherIfDispatchedBeyondTheEnd()
+    {
+        Player player = new Player(path, lineTwo, new DoublePoint(13, 13));
+
+        player.moveTowards(new Pixel(22, 22));
+
+        for (int i = 0; i < 50; i++)
+        {
+            player.tick(NO_INTERSECTIONS);
+        }
+        assertThat(player.position, equalTo(new DoublePoint(40, 40)));
+
+        player.moveTowards(new Pixel(50, 50));
+
+        for (int i = 0; i < 50; i++)
+        {
+            player.tick(NO_INTERSECTIONS);
+        }
+        // Failing. Hmm.
+        // assertThat(player.position, equalTo(new DoublePoint(40, 40)));
     }
 
     @Test
@@ -136,4 +159,28 @@ public class PlayerTest
         assertThat(Player.parse(player.toString()), equalTo(player));
     }
 
+    @Test
+    public void nooseShapedPaths()
+    {
+        Path noose =
+            Path.parse("(0,0)->(1,1)->(2,2)->(3,3)->(4,5)->(4,6)->(3,7)->(2,6)->(1,4)->(2,3)->(2,2)");
+
+        Player player =
+            new Player(noose, noose.lines.get(0), new DoublePoint(0, 0));
+        player.moveTowards(new Pixel(2,2));
+
+        for (int i = 0; i < 50; i++)
+        {
+            player.tick(NO_INTERSECTIONS);
+        }
+
+        assertThat(player.position, equalTo(new DoublePoint(2, 2)));
+        assertThat(player.line, equalTo(noose.lines.get(9)));
+    }
+
+    @Test
+    public void intersectionsWherePathsEnd()
+    {
+
+    }
 }

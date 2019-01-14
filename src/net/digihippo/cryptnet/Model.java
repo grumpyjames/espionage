@@ -166,14 +166,16 @@ final class Model
 
             if (player != null)
             {
-                player.tick(intersections);
-
                 double distanceToPlayer = DoublePoint.distanceBetween(patrol.point, player.position);
                 if (distanceToPlayer < 5)
                 {
                     System.out.println("Game over man!");
                 }
             }
+        }
+        if (player != null)
+        {
+            player.tick(intersections);
         }
 
         modelActions.enact(this);
