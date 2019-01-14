@@ -1,0 +1,10 @@
+java_test(
+  name = 'dimtwo',
+  srcs = glob(['*.java']),
+  deps = [
+    '//src/net/digihippo/cryptnet/dimtwo:dimtwo',
+    '//:junit',
+    '//:hamcrest',
+  ],
+  visibility = [ 'PUBLIC' ],
+)

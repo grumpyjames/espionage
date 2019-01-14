@@ -6,14 +6,14 @@ public final class IntersectionEntry implements Connection.HasPath
     public final Line line;
     public final Direction direction;
 
-    public IntersectionEntry(Path path, Line line, Direction direction)
+    IntersectionEntry(Path path, Line line, Direction direction)
     {
         this.path = path;
         this.line = line;
         this.direction = direction;
     }
 
-    @SuppressWarnings("SimplifiableIfStatement")
+    @SuppressWarnings({"SimplifiableIfStatement", "EqualsReplaceableByObjectsCall"})
     @Override
     public boolean equals(Object o)
     {

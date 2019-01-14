@@ -1,10 +1,9 @@
 package net.digihippo.cryptnet.dimtwo;
 
-import net.digihippo.cryptnet.dimtwo.DoublePoint;
 import org.junit.Test;
 
 import static org.hamcrest.CoreMatchers.equalTo;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertThat;
 
 public class DoublePointTest
 {

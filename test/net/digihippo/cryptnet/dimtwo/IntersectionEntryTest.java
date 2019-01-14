@@ -1,10 +1,5 @@
 package net.digihippo.cryptnet.dimtwo;
 
-import net.digihippo.cryptnet.Direction;
-import net.digihippo.cryptnet.dimtwo.IntersectionEntry;
-import net.digihippo.cryptnet.dimtwo.Line;
-import net.digihippo.cryptnet.dimtwo.Path;
-import net.digihippo.cryptnet.dimtwo.Pixel;
 import org.junit.Test;
 
 import java.util.Arrays;

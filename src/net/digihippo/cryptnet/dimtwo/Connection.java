@@ -60,7 +60,7 @@ public class Connection<T extends Connection.HasPath>
         return new Connection<>(connectionPoint, highlightedLine.line, highlightedLine.path);
     }
 
-    @SuppressWarnings("SimplifiableIfStatement")
+    @SuppressWarnings({"SimplifiableIfStatement", "EqualsReplaceableByObjectsCall"})
     @Override
     public boolean equals(Object o)
     {

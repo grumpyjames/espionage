@@ -5,7 +5,7 @@ final class Node
     final long nodeId;
     LatLn latLn;
 
-    public Node(long nodeId)
+    Node(long nodeId)
     {
         this.nodeId = nodeId;
     }

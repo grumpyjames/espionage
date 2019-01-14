@@ -66,7 +66,7 @@ final class WayCollector
         return nodeCount == nodes.keySet().size();
     }
 
-    public Collection<Way> reducedWays()
+    Collection<Way> reducedWays()
     {
         final List<Way> results = new ArrayList<>();
         while (!ways.isEmpty())
@@ -86,7 +86,7 @@ final class WayCollector
                 {
                     reduction = joinOne(reduction, start, endWays, startWays);
                 }
-                else if (endWays.size() == 2)
+                else
                 {
                     reduction = joinOne(reduction, end, startWays, endWays);
                 }

@@ -20,6 +20,7 @@ import java.util.function.Consumer;
 
 public class Experiment
 {
+    @SuppressWarnings("SameParameterValue")
     private static Model startingModel(List<NormalizedWay> normalizedWays, int dimension)
     {
         final List<Path> paths = new ArrayList<>();
@@ -211,7 +212,7 @@ public class Experiment
         {
             private final BlockingQueue<Event> events;
 
-            public EventQueueListener(BlockingQueue<Event> events)
+            EventQueueListener(BlockingQueue<Event> events)
             {
                 this.events = events;
             }

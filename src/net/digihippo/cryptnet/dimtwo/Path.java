@@ -29,7 +29,7 @@ public final class Path implements HasLines, Connection.HasPath
         return lines.get(lines.size() - 1).endsAt(pixel);
     }
 
-    public Line lineAfter(Line line, Direction direction)
+    Line lineAfter(Line line, Direction direction)
     {
         if (direction == Direction.Forwards)
         {
@@ -61,26 +61,26 @@ public final class Path implements HasLines, Connection.HasPath
         return highlighting(null);
     }
 
-    public String highlighting(Line toHighlight)
+    String highlighting(Line toHighlight)
     {
         Line line = lines.get(0);
-        String result = line.toString(toHighlight);
+        StringBuilder result = new StringBuilder(line.toString(toHighlight));
 
         for (int i = 1; i < lines.size(); i++)
         {
             line = lines.get(i);
             if (line.equals(toHighlight))
             {
-                result += "_->_";
+                result.append("_->_");
             }
             else
             {
-                result += "->";
+                result.append("->");
             }
-            result += new Pixel(line.x2, line.y2);
+            result.append(new Pixel(line.x2, line.y2));
         }
 
-        return result;
+        return result.toString();
     }
 
     public static Path parse(String path)
@@ -96,6 +96,7 @@ public final class Path implements HasLines, Connection.HasPath
         return new Path(segments);
     }
 
+    @SuppressWarnings("EqualsReplaceableByObjectsCall")
     @Override
     public boolean equals(Object o)
     {

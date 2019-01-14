@@ -1,14 +1,11 @@
 package net.digihippo.cryptnet.dimtwo;
 
-import net.digihippo.cryptnet.dimtwo.Line;
-import net.digihippo.cryptnet.dimtwo.Path;
-import net.digihippo.cryptnet.dimtwo.Pixel;
 import org.junit.Test;
 
 import java.util.Arrays;
 
 import static org.hamcrest.CoreMatchers.equalTo;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertThat;
 
 public class PathTest
 {

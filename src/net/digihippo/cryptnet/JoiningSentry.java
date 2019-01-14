@@ -11,7 +11,7 @@ final class JoiningSentry
     DoublePoint position;
     final DoublePoint delta;
 
-    public JoiningSentry(
+    JoiningSentry(
         Connection connection,
         DoublePoint position,
         DoublePoint delta)
@@ -27,7 +27,7 @@ final class JoiningSentry
         return "Moving " + delta + " from position " + position + " to " + connection;
     }
 
-    @SuppressWarnings("SimplifiableIfStatement")
+    @SuppressWarnings({"SimplifiableIfStatement", "EqualsReplaceableByObjectsCall"})
     @Override
     public boolean equals(Object o)
     {
@@ -51,7 +51,7 @@ final class JoiningSentry
         return result;
     }
 
-    public void tick(
+    void tick(
         final ModelActions modelActions)
     {
         this.position = this.position.plus(delta);
@@ -80,7 +80,7 @@ final class JoiningSentry
         }
     }
 
-    public static JoiningSentry parse(String string)
+    static JoiningSentry parse(String string)
     {
         String[] parts = string.split(" from position ");
         DoublePoint delta = DoublePoint.parse(parts[0].substring("Moving ".length()));

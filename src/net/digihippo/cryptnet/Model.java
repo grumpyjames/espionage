@@ -15,11 +15,11 @@ final class Model
     final Map<Pixel, Intersection> intersections;
     final List<JoiningSentry> joiningSentries = new ArrayList<>();
     final List<Patrol> patrols = new ArrayList<>();
-    final List<Path> paths;
+    private final List<Path> paths;
     final List<Line> lines;
     Player player = null;
 
-    public static Model createModel(List<Path> paths, int size)
+    static Model createModel(List<Path> paths, int size)
     {
         return new Model(paths, Intersection.intersections(paths), lines(paths), size);
     }
@@ -36,7 +36,7 @@ final class Model
         "}";
     }
 
-    public static Model parse(String string)
+    static Model parse(String string)
     {
         JsonFactory jfactory = new JsonFactory();
         try
@@ -121,25 +121,25 @@ final class Model
     private String jsonArray(Collection<?> values, boolean object)
     {
         boolean first = true;
-        String result = "";
+        StringBuilder result = new StringBuilder();
         for (Object value : values)
         {
             if (!first)
             {
-                result += ",\n\t\t";
+                result.append(",\n\t\t");
             }
 
             if (object)
             {
-                result += value.toString();
+                result.append(value.toString());
             }
             else
             {
-                result += "\"" + value.toString() + "\"";
+                result.append("\"").append(value.toString()).append("\"");
             }
             first = false;
         }
-        return result;
+        return result.toString();
     }
 
     private Model(
@@ -154,7 +154,7 @@ final class Model
         this.size = size;
     }
 
-    public void tick(Random random)
+    void tick(Random random)
     {
         DeferredModelActions modelActions = new DeferredModelActions();
         for (JoiningSentry sentry : joiningSentries)
@@ -182,7 +182,7 @@ final class Model
         modelActions.enact(this);
     }
 
-    public void addSentry(int x, int y)
+    void addSentry(int x, int y)
     {
         final Pixel point1 = new Pixel(x, y);
         Connection best =
@@ -196,7 +196,7 @@ final class Model
                 best.connectionPoint.minus(point.asDoublePoint()).over(5)));
     }
 
-    static List<Line> lines(List<Path> paths)
+    private static List<Line> lines(List<Path> paths)
     {
         final List<Line> lines = new ArrayList<>();
 
@@ -208,7 +208,7 @@ final class Model
         return lines;
     }
 
-    public void addPlayer(int x, int y)
+    void addPlayer(int x, int y)
     {
         final Pixel point = new Pixel(x, y);
         Connection connection =
@@ -217,22 +217,22 @@ final class Model
         player = new Player(connection.getPath(), connection.line, connection.connectionPoint);
     }
 
-    public int size()
+    int size()
     {
         return size;
     }
 
-    public void removeJoining(List<JoiningSentry> outgoing)
+    void removeJoining(List<JoiningSentry> outgoing)
     {
         this.joiningSentries.removeAll(outgoing);
     }
 
-    public void addPatrols(List<Patrol> incoming)
+    void addPatrols(List<Patrol> incoming)
     {
         this.patrols.addAll(incoming);
     }
 
-    @SuppressWarnings("SimplifiableIfStatement")
+    @SuppressWarnings({"SimplifiableIfStatement", "EqualsReplaceableByObjectsCall"})
     @Override
     public boolean equals(Object o)
     {
@@ -263,7 +263,7 @@ final class Model
         return result;
     }
 
-    public void movePlayerTowards(int x, int y)
+    private void movePlayerTowards(int x, int y)
     {
         if (player != null)
         {

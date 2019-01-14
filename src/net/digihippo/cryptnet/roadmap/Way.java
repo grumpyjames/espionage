@@ -20,7 +20,8 @@ final class Way
         return nodes.toString();
     }
 
-    public NormalizedWay translate(double originX, double originY, int zoomLevel)
+    @SuppressWarnings("SameParameterValue")
+    NormalizedWay translate(double originX, double originY, int zoomLevel)
     {
         final List<DoublePoint> result = new ArrayList<>(nodes.size());
         for (Node node : nodes)
@@ -35,7 +36,7 @@ final class Way
         return new NormalizedWay(result);
     }
 
-    public Way concat(long joiningNode, Way another)
+    Way concat(long joiningNode, Way another)
     {
         final List<Node> nodes = new ArrayList<>(this.nodes.size() + another.nodes.size());
         if (
@@ -81,17 +82,17 @@ final class Way
         return new Way(nodes);
     }
 
-    public long lastNodeId()
+    long lastNodeId()
     {
         return nodes.get(nodes.size() - 1).nodeId;
     }
 
-    public long firstNodeId()
+    long firstNodeId()
     {
         return this.nodes.get(0).nodeId;
     }
 
-    public long oppositeEndTo(long nodeId)
+    long oppositeEndTo(long nodeId)
     {
         if (firstNodeId() == nodeId)
         {

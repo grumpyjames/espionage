@@ -37,7 +37,7 @@ public class Player
             "}";
     }
 
-    public static Player parse(String s)
+    static Player parse(String s)
     {
         JsonFactory jfactory = new JsonFactory();
         try
@@ -100,7 +100,7 @@ public class Player
         jParser.nextToken();
     }
 
-    public Player(
+    Player(
         Path path,
         Line line,
         DoublePoint position)
@@ -111,7 +111,7 @@ public class Player
         this.lineIndex = path.indexOf(line);
     }
 
-    public void moveTowards(Pixel pixel)
+    void moveTowards(Pixel pixel)
     {
         final Connection<?> connection;
         final int currentIndex;
@@ -212,7 +212,7 @@ public class Player
         return delta.equals(DoublePoint.ZERO);
     }
 
-    public void tick(Map<Pixel, Intersection> intersections)
+    void tick(Map<Pixel, Intersection> intersections)
     {
         try
         {
@@ -300,7 +300,7 @@ public class Player
         this.direction = direction;
     }
 
-    @SuppressWarnings("SimplifiableIfStatement")
+    @SuppressWarnings({"SimplifiableIfStatement", "EqualsReplaceableByObjectsCall"})
     @Override
     public boolean equals(Object o)
     {

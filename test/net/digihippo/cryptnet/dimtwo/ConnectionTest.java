@@ -18,7 +18,8 @@ public class ConnectionTest
         Line lineThree = Line.createLine(new Pixel(66, 223), new Pixel(44, 120));
         Path path = new Path(Arrays.asList(lineOne, lineTwo, lineThree));
 
-        Connection connection = new Connection(new DoublePoint(44, 120), lineOne, path);
+        Connection<Path> connection =
+            new Connection<>(new DoublePoint(44, 120), lineOne, path);
 
         assertThat(Connection.parse(connection.toString()), equalTo(connection));
     }

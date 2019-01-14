@@ -2,12 +2,12 @@ package net.digihippo.cryptnet.dimtwo;
 
 public final class Maths
 {
-    public static int floor(double d)
+    static int floor(double d)
     {
         return (int) java.lang.Math.floor(d);
     }
 
-    public static int ceil(double d)
+    static int ceil(double d)
     {
         return (int) java.lang.Math.ceil(d);
     }

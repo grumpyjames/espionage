@@ -6,7 +6,8 @@ import java.util.function.Consumer;
 public final class Line implements LineIntersection, HasLines
 {
     public final int x1, x2, y1, y2;
-    public final double gradient, intersect;
+    final double gradient;
+    final double intersect;
 
     private Line(int x1, int x2, int y1, int y2, double gradient, double intersect)
     {
@@ -30,7 +31,7 @@ public final class Line implements LineIntersection, HasLines
         return createLine(start.x, finish.x, start.y, finish.y);
     }
 
-    public <T extends Connection.HasPath> Connection<T> connectionTo(T t, DoublePoint point)
+    <T extends Connection.HasPath> Connection<T> connectionTo(T t, DoublePoint point)
     {
         final DoublePoint perpendicularIntersection;
         if (vertical())
@@ -80,12 +81,12 @@ public final class Line implements LineIntersection, HasLines
         return Math.min(x1, x2) <= point.x && point.x <= Math.max(x1, x2) && Math.min(y1, y2) <= point.y && point.y <= Math.max(y1, y2);
     }
 
-    boolean withinBounds(DoublePoint point)
+    private boolean withinBounds(DoublePoint point)
     {
         return Math.min(x1, x2) <= point.x && point.x <= Math.max(x1, x2) && Math.min(y1, y2) <= point.y && point.y <= Math.max(y1, y2);
     }
 
-    public LineIntersection intersectionWith(Line other)
+    LineIntersection intersectionWith(Line other)
     {
         // FIXME: could simplify by enforcing all infinity gradient lines be positive
         if (vertical() && other.vertical())
@@ -174,7 +175,7 @@ public final class Line implements LineIntersection, HasLines
         return point.x == x2 && point.y == y2;
     }
 
-    public boolean startsAt(Pixel point)
+    boolean startsAt(Pixel point)
     {
         return (point.x == x1 && point.y == y1);
     }

@@ -29,7 +29,7 @@ public class DoublePoint
         return new DoublePoint(x - delta.x, y - delta.y);
     }
 
-    public DoublePoint toUnit()
+    DoublePoint toUnit()
     {
         double size = size();
 
@@ -64,7 +64,7 @@ public class DoublePoint
         return new DoublePoint(Math.cos(newOrientation), Math.sin(newOrientation));
     }
 
-    public DoublePoint flip()
+    DoublePoint flip()
     {
         return new DoublePoint(-x, -y);
     }

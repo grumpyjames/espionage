@@ -9,7 +9,7 @@ public class Intersection
     public final Pixel point;
     public final Set<IntersectionEntry> entries = new HashSet<>();
 
-    public Intersection(Pixel point)
+    Intersection(Pixel point)
     {
         this.point = point;
     }
@@ -106,17 +106,17 @@ public class Intersection
     public String toString()
     {
         boolean first = true;
-        String result = "[";
+        StringBuilder result = new StringBuilder("[");
         for (IntersectionEntry entry : entries)
         {
             if (!first)
             {
-                result += ", ";
+                result.append(", ");
             }
-            result += entry.toString();
+            result.append(entry.toString());
             first = false;
         }
-        result += "]";
+        result.append("]");
 
         return result + "@" + point.toString();
     }

@@ -20,7 +20,7 @@ final class Patrol
 
     private transient int lineIndex;
 
-    public Patrol(
+    Patrol(
         Path path, Line line, DoublePoint delta, DoublePoint doublePoint, Direction direction)
     {
         this.path = path;
@@ -41,7 +41,7 @@ final class Patrol
         this.direction = direction;
     }
 
-    public void tick(
+    void tick(
         final Map<Pixel, Intersection> intersections,
         final Random random)
     {
@@ -108,7 +108,7 @@ final class Patrol
     private void intersection(Random random, Pixel pixel, Intersection intersection)
     {
         IntersectionEntry[] lines =
-            intersection.entries.toArray(new IntersectionEntry[intersection.entries.size()]);
+            intersection.entries.toArray(new IntersectionEntry[0]);
         IntersectionEntry entry =
             lines[random.nextInt(lines.length)];
 
@@ -132,7 +132,7 @@ final class Patrol
             "}";
     }
 
-    public static Patrol parse(String s)
+    static Patrol parse(String s)
     {
         JsonFactory jfactory = new JsonFactory();
         try
@@ -194,7 +194,7 @@ final class Patrol
         jParser.nextToken();
     }
 
-    @SuppressWarnings("SimplifiableIfStatement")
+    @SuppressWarnings({"SimplifiableIfStatement", "EqualsReplaceableByObjectsCall"})
     @Override
     public boolean equals(Object o)
     {

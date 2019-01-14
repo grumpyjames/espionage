@@ -8,7 +8,7 @@ final class HighlightedLine
     final Line line;
     final Path path;
 
-    HighlightedLine(Line line, Path path)
+    private HighlightedLine(Line line, Path path)
     {
         this.line = line;
         this.path = path;
