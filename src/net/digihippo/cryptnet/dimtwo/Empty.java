@@ -1,6 +1,6 @@
 package net.digihippo.cryptnet.dimtwo;
 
-import java.util.function.Consumer;
+import net.digihippo.cryptnet.compat.Consumer;
 
 public enum Empty implements LineIntersection
 {

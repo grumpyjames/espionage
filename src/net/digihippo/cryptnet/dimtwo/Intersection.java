@@ -1,8 +1,10 @@
 package net.digihippo.cryptnet.dimtwo;
 
+import net.digihippo.cryptnet.compat.Consumer;
+import net.digihippo.cryptnet.compat.Function;
+import net.digihippo.cryptnet.compat.Maps;
+
 import java.util.*;
-import java.util.function.Consumer;
-import java.util.function.Function;
 
 public class Intersection
 {
@@ -32,9 +34,10 @@ public class Intersection
                             lineOne.intersectionWith(lineTwo).visit(new Consumer<Pixel>()
                             {
                                 @Override
-                                public void accept(Pixel point)
+                                public void consume(Pixel point)
                                 {
-                                    Intersection intersection = results.computeIfAbsent(
+                                    Intersection intersection = Maps.computeIfAbsent(
+                                        results,
                                         point,
                                         new Function<Pixel, Intersection>()
                                         {

@@ -1,7 +1,8 @@
 package net.digihippo.cryptnet.dimtwo;
 
+import net.digihippo.cryptnet.compat.Consumer;
+
 import java.util.Collections;
-import java.util.function.Consumer;
 
 public final class Line implements LineIntersection, HasLines
 {

@@ -1,6 +1,6 @@
 package net.digihippo.cryptnet.dimtwo;
 
-import java.util.function.Consumer;
+import net.digihippo.cryptnet.compat.Consumer;
 
 public class Pixel implements LineIntersection
 {
@@ -26,7 +26,7 @@ public class Pixel implements LineIntersection
     @Override
     public void visit(Consumer<Pixel> results)
     {
-        results.accept(this);
+        results.consume(this);
     }
 
     @SuppressWarnings("SimplifiableIfStatement")

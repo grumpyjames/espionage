@@ -16,7 +16,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.*;
-import java.util.function.Consumer;
 
 public class Experiment
 {
@@ -115,57 +114,40 @@ public class Experiment
                     g.drawImage(bufferedImage, offsetX + (i * 256), offsetY + (j * 256), null);
                 }
             }
-            model.lines.forEach(new Consumer<Line>()
+            for (Line line: model.lines)
             {
-                @Override
-                public void accept(Line line)
-                {
-                    Viewer.this.drawLine(g, line);
-                }
-            });
-            model.intersections.keySet().forEach(new Consumer<Pixel>()
-            {
-                @Override
-                public void accept(Pixel point)
-                {
-                    g.drawPolygon(
-                        new int[] {
-                            offsetX + point.x - 2,
-                            offsetX + point.x + 2,
-                            offsetX + point.x + 2,
-                            offsetX + point.x - 2},
-                        new int[] {
-                            offsetY + point.y + 2,
-                            offsetY + point.y + 2,
-                            offsetY + point.y - 2,
-                            offsetY + point.y - 2},
-                        4);
-                }
-            });
-            model.joiningSentries.forEach(new Consumer<JoiningSentry>()
-            {
-                @Override
-                public void accept(JoiningSentry sentry)
-                {
-                    final Pixel renderable = sentry.position.round();
-                    final DoublePoint direction = sentry.delta;
-                    renderSentry(renderable, direction, g);
+                drawLine(g, line);
+            }
+            for (Pixel point: model.intersections.keySet()) {
+                g.drawPolygon(
+                    new int[] {
+                        offsetX + point.x - 2,
+                        offsetX + point.x + 2,
+                        offsetX + point.x + 2,
+                        offsetX + point.x - 2},
+                    new int[] {
+                        offsetY + point.y + 2,
+                        offsetY + point.y + 2,
+                        offsetY + point.y - 2,
+                        offsetY + point.y - 2},
+                    4);
+            }
+            for (JoiningSentry sentry : model.joiningSentries) {
+                final Pixel renderable = sentry.position.round();
+                final DoublePoint direction = sentry.delta;
+                renderSentry(renderable, direction, g);
 
-                    g.drawLine(
-                        offsetX + renderable.x,
-                        offsetY + renderable.y,
-                        offsetX + Maths.round(sentry.connection.connectionPoint.x),
-                        offsetY + Maths.round(sentry.connection.connectionPoint.y));
-                }
-            });
-            model.patrols.forEach(new Consumer<Patrol>()
+                g.drawLine(
+                    offsetX + renderable.x,
+                    offsetY + renderable.y,
+                    offsetX + Maths.round(sentry.connection.connectionPoint.x),
+                    offsetY + Maths.round(sentry.connection.connectionPoint.y));
+            }
+
+            for (Patrol patrol: model.patrols)
             {
-                @Override
-                public void accept(Patrol patrol)
-                {
-                    renderSentry(patrol.point.round(), patrol.delta, g);
-                }
-            });
+                renderSentry(patrol.point.round(), patrol.delta, g);
+            }
 
             if (model.player != null)
             {
