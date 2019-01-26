@@ -1,0 +1,20 @@
+android_binary(
+  name = 'espionage-apk',
+  manifest = 'AndroidManifest.xml',
+  keystore = '//:keystore',
+  package_type = 'debug',
+  deps = [
+    ':espionage'
+  ]
+)
+
+android_library(
+  name = 'espionage',
+  srcs = glob(['*.java']),
+  deps = [
+    '//src/net/digihippo/cryptnet/roadmap:roadmap',
+    '//src/net/digihippo/cryptnet/dimtwo:dimtwo',
+    '//src/net/digihippo/cryptnet/model:model',
+  ]
+)
+

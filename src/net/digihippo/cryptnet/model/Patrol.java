@@ -1,4 +1,4 @@
-package net.digihippo.cryptnet;
+package net.digihippo.cryptnet.model;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
@@ -8,12 +8,12 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.Random;
 
-final class Patrol
+public final class Patrol
 {
     Path path;
     Line line;
-    DoublePoint delta;
-    DoublePoint point;
+    public DoublePoint delta;
+    public DoublePoint point;
     private Direction direction;
     private Intersection previous;
     private Pixel previousTurn;

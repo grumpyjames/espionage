@@ -1,6 +1,9 @@
 package net.digihippo.cryptnet;
 
 import net.digihippo.cryptnet.dimtwo.*;
+import net.digihippo.cryptnet.model.JoiningSentry;
+import net.digihippo.cryptnet.model.Model;
+import net.digihippo.cryptnet.model.Patrol;
 import net.digihippo.cryptnet.roadmap.NormalizedWay;
 import net.digihippo.cryptnet.roadmap.OsmSource;
 
@@ -20,7 +23,10 @@ import java.util.concurrent.*;
 public class Experiment
 {
     @SuppressWarnings("SameParameterValue")
-    private static Model startingModel(List<NormalizedWay> normalizedWays, int dimension)
+    private static Model startingModel(
+        List<NormalizedWay> normalizedWays,
+        int width,
+        int height)
     {
         final List<Path> paths = new ArrayList<>();
 
@@ -42,7 +48,7 @@ public class Experiment
             paths.add(new Path(pieces));
         }
 
-        return Model.createModel(paths, dimension);
+        return Model.createModel(paths, width, height);
     }
 
     interface Event
@@ -87,7 +93,7 @@ public class Experiment
 
         @Override
         public Dimension getPreferredSize() {
-            return new Dimension(model.size() + (2 * offsetX), model.size() + (2 * offsetY));
+            return new Dimension(model.width + (2 * offsetX), model.height + (2 * offsetY));
         }
 
         private Viewer(
@@ -245,7 +251,8 @@ public class Experiment
         double longitudeMax = OsmSource.lon((xTile + 2) * 256, 17);
 
         final Model model = startingModel(
-            OsmSource.fetchWays(latitudeMin, latitudeMax, longitudeMin, longitudeMax),
+            OsmSource.fetchWays(latitudeMin, latitudeMax, longitudeMin, longitudeMax, 256D),
+            512,
             512
         );
         final BufferedImage[][] images =

@@ -15,3 +15,10 @@ prebuilt_jar(
   binary_jar = 'lib/jackson-core-2.9.7.jar',
   visibility = [ 'PUBLIC' ],
 )
+
+keystore(
+  name = 'keystore',
+  store = 'temporary.keystore',
+  properties = 'keystore.properties',
+  visibility = [ 'PUBLIC' ],
+)

@@ -1,15 +1,15 @@
-package net.digihippo.cryptnet;
+package net.digihippo.cryptnet.model;
 
 import net.digihippo.cryptnet.dimtwo.Connection;
 import net.digihippo.cryptnet.dimtwo.Direction;
 import net.digihippo.cryptnet.dimtwo.DoublePoint;
 import net.digihippo.cryptnet.dimtwo.Pixel;
 
-final class JoiningSentry
+public final class JoiningSentry
 {
-    final Connection connection;
-    DoublePoint position;
-    final DoublePoint delta;
+    public final Connection connection;
+    public DoublePoint position;
+    public final DoublePoint delta;
 
     JoiningSentry(
         Connection connection,

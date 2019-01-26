@@ -1,4 +1,4 @@
-package net.digihippo.cryptnet;
+package net.digihippo.cryptnet.model;
 
 import net.digihippo.cryptnet.dimtwo.*;
 import org.junit.Test;
@@ -23,7 +23,7 @@ public class ModelTest
         Line lineSix = Line.createLine(new Pixel(5, 6), new Pixel(10, 10));
         Path two = new Path(Arrays.asList(lineFour, lineFive, lineSix));
 
-        Model model = Model.createModel(Arrays.asList(one, two), 256);
+        Model model = Model.createModel(Arrays.asList(one, two), 256, 256);
 
         model.addSentry(42, 43);
         model.addSentry(10, 1);

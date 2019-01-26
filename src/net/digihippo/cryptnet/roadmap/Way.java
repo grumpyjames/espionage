@@ -21,14 +21,14 @@ final class Way
     }
 
     @SuppressWarnings("SameParameterValue")
-    NormalizedWay translate(double originX, double originY, int zoomLevel)
+    NormalizedWay translate(double originX, double originY, int zoomLevel, double tileSize)
     {
         final List<DoublePoint> result = new ArrayList<>(nodes.size());
         for (Node node : nodes)
         {
-            double ourXPixel = OsmSource.x(node.latLn.lon, zoomLevel);
+            double ourXPixel = OsmSource.x(node.latLn.lon, zoomLevel, tileSize);
             double x = ourXPixel - originX;
-            double ourYPixel = OsmSource.y(node.latLn.lat, zoomLevel);
+            double ourYPixel = OsmSource.y(node.latLn.lat, zoomLevel, tileSize);
             double y = ourYPixel - originY;
             result.add(new DoublePoint(x, y));
         }

@@ -1,4 +1,4 @@
-package net.digihippo.cryptnet;
+package net.digihippo.cryptnet.model;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
@@ -9,11 +9,11 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
 
-public class Player
+public final class Player
 {
     Path path;
     Line line;
-    DoublePoint position;
+    public DoublePoint position;
 
     private DoublePoint delta = DoublePoint.ZERO;
     private Direction direction = Direction.Forwards;

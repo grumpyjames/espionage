@@ -35,12 +35,12 @@ public class OsmSource
         double latYOrig = 3545567.64;
         double latRads = lat(latYOrig, 17);
 
-        System.out.printf("%s %s %s\n", latYOrig, latRads, y(latRads, 17));
+        System.out.printf("%s %s %s\n", latYOrig, latRads, y(latRads, 17, 256D));
 
         double lonXOrig = 3637774.66774;
         double lonRads = lon(lonXOrig, 17);
 
-        System.out.printf("%s %s %s\n", lonXOrig, lonRads, x(lonRads, 17));
+        System.out.printf("%s %s %s\n", lonXOrig, lonRads, x(lonRads, 17, 256D));
 
         System.out.println(overpassApiBody(51.51045188624859, 51.50874245880335, -0.1373291015625049, -0.13458251953125938));
         System.out.println(overpassApiBody(51.50874245880335, 51.51045188624859, -0.13458251953125938, -0.1373291015625049));
@@ -58,7 +58,7 @@ public class OsmSource
     }
 
     public static List<NormalizedWay> fetchWays(
-        double latitudeMin, double latitudeMax, double longitudeMin, double longitudeMax) throws IOException
+        double latitudeMin, double latitudeMax, double longitudeMin, double longitudeMax, double tileSize) throws IOException
     {
         double latSt = Math.toDegrees(latitudeMin);
         double latEnd = Math.toDegrees(latitudeMax);
@@ -117,7 +117,11 @@ public class OsmSource
 
             for (Way way : ways)
             {
-                NormalizedWay translate = way.translate(x(Math.toRadians(lonSt), 17), y(Math.toRadians(latEnd), 17), 17);
+                NormalizedWay translate = way.translate(
+                    x(Math.toRadians(lonSt), 17, tileSize),
+                    y(Math.toRadians(latEnd), 17, tileSize),
+                    17,
+                    tileSize);
                 normalizedWays.add(translate);
             }
 
@@ -140,9 +144,7 @@ public class OsmSource
             "=" +
             encode(overpassApiBody(latSt, latEnd, lonSt, lonEnd));
 
-        connection.getOutputStream()
-            .write(
-                builder.getBytes(StandardCharsets.UTF_8));
+        connection.getOutputStream().write(builder.getBytes());
 
         return connection.getInputStream();
     }
@@ -158,29 +160,29 @@ public class OsmSource
             "out skel qt;";
     }
 
-    static double y(double latRads, int zoomLevel)
+    static double y(double latRads, int zoomLevel, double tileSize)
     {
-        return multiplier(zoomLevel) * (Math.PI - Math.log(Math.tan((Math.PI / 4) + (latRads / 2))));
+        return multiplier(zoomLevel, tileSize) * (Math.PI - Math.log(Math.tan((Math.PI / 4) + (latRads / 2))));
     }
 
     public static double lat(double y, int zoomLevel)
     {
-        return 2 * (Math.atan(Math.exp(Math.PI - (y / multiplier(zoomLevel)))) - (Math.PI / 4));
+        return 2 * (Math.atan(Math.exp(Math.PI - (y / multiplier(zoomLevel, 256D)))) - (Math.PI / 4));
     }
 
-    static double x(double lonRads, int zoomLevel)
+    static double x(double lonRads, int zoomLevel, double tileSize)
     {
-        return multiplier(zoomLevel) * (lonRads + Math.PI);
+        return multiplier(zoomLevel, tileSize) * (lonRads + Math.PI);
     }
 
     public static double lon(double x, int zoomLevel)
     {
-        return (x / multiplier(zoomLevel)) - Math.PI;
+        return (x / multiplier(zoomLevel, 256D)) - Math.PI;
     }
 
-    private static double multiplier(int zoomLevel)
+    private static double multiplier(int zoomLevel, double tileSize)
     {
-        return (256D / (2 * Math.PI)) * Math.pow(2, zoomLevel);
+        return (tileSize / (2 * Math.PI)) * Math.pow(2, zoomLevel);
     }
 
     private static void skipTo(JsonParser jParser, String fieldName) throws IOException

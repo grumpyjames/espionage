@@ -1,7 +1,9 @@
-package net.digihippo.cryptnet;
+package net.digihippo.cryptnet.model;
 
 import net.digihippo.cryptnet.dimtwo.*;
-import org.hamcrest.*;
+import org.hamcrest.Description;
+import org.hamcrest.Matcher;
+import org.hamcrest.TypeSafeDiagnosingMatcher;
 import org.junit.Test;
 
 import java.util.Arrays;

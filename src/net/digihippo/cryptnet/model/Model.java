@@ -1,4 +1,4 @@
-package net.digihippo.cryptnet;
+package net.digihippo.cryptnet.model;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
@@ -8,20 +8,20 @@ import net.digihippo.cryptnet.dimtwo.*;
 import java.io.IOException;
 import java.util.*;
 
-final class Model
+public final class Model
 {
-    private final int size;
-
-    final Map<Pixel, Intersection> intersections;
-    final List<JoiningSentry> joiningSentries = new ArrayList<>();
-    final List<Patrol> patrols = new ArrayList<>();
+    public final Map<Pixel, Intersection> intersections;
+    public final List<JoiningSentry> joiningSentries = new ArrayList<>();
+    public final List<Patrol> patrols = new ArrayList<>();
     private final List<Path> paths;
-    final List<Line> lines;
-    Player player = null;
+    public final List<Line> lines;
+    public final int width;
+    public final int height;
+    public Player player = null;
 
-    static Model createModel(List<Path> paths, int size)
+    public static Model createModel(List<Path> paths, int width, int height)
     {
-        return new Model(paths, Intersection.intersections(paths), lines(paths), size);
+        return new Model(paths, Intersection.intersections(paths), lines(paths), width, height);
     }
 
     @Override
@@ -85,7 +85,7 @@ final class Model
                 player = null;
             }
 
-            Model model = new Model(paths, index(intersections), lines(paths), 256);
+            Model model = new Model(paths, index(intersections), lines(paths), 256, 256);
             model.joiningSentries.addAll(joiningSentries);
             model.patrols.addAll(patrols);
             model.player = player;
@@ -146,15 +146,17 @@ final class Model
         List<Path> paths,
         Map<Pixel, Intersection> intersections,
         List<Line> lines,
-        int size)
+        int width,
+        int height)
     {
         this.paths = paths;
         this.intersections = intersections;
         this.lines = lines;
-        this.size = size;
+        this.width = width;
+        this.height = height;
     }
 
-    void tick(Random random)
+    public void tick(Random random)
     {
         DeferredModelActions modelActions = new DeferredModelActions();
         for (JoiningSentry sentry : joiningSentries)
@@ -217,11 +219,6 @@ final class Model
         player = new Player(connection.getPath(), connection.line, connection.connectionPoint);
     }
 
-    int size()
-    {
-        return size;
-    }
-
     void removeJoining(List<JoiningSentry> outgoing)
     {
         this.joiningSentries.removeAll(outgoing);
@@ -232,35 +229,26 @@ final class Model
         this.patrols.addAll(incoming);
     }
 
-    @SuppressWarnings({"SimplifiableIfStatement", "EqualsReplaceableByObjectsCall"})
     @Override
     public boolean equals(Object o)
     {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-
         Model model = (Model) o;
-
-        if (size != model.size) return false;
-        if (!intersections.equals(model.intersections)) return false;
-        if (!joiningSentries.equals(model.joiningSentries)) return false;
-        if (!patrols.equals(model.patrols)) return false;
-        if (!paths.equals(model.paths)) return false;
-        if (!lines.equals(model.lines)) return false;
-        return !(player != null ? !player.equals(model.player) : model.player != null);
+        return width == model.width &&
+            height == model.height &&
+            Objects.equals(intersections, model.intersections) &&
+            Objects.equals(joiningSentries, model.joiningSentries) &&
+            Objects.equals(patrols, model.patrols) &&
+            Objects.equals(paths, model.paths) &&
+            Objects.equals(lines, model.lines) &&
+            Objects.equals(player, model.player);
     }
 
     @Override
     public int hashCode()
     {
-        int result = size;
-        result = 31 * result + intersections.hashCode();
-        result = 31 * result + joiningSentries.hashCode();
-        result = 31 * result + patrols.hashCode();
-        result = 31 * result + paths.hashCode();
-        result = 31 * result + lines.hashCode();
-        result = 31 * result + (player != null ? player.hashCode() : 0);
-        return result;
+        return Objects.hash(intersections, joiningSentries, patrols, paths, lines, width, height, player);
     }
 
     private void movePlayerTowards(int x, int y)
@@ -271,7 +259,7 @@ final class Model
         }
     }
 
-    void click(int x, int y)
+    public void click(int x, int y)
     {
         if (joiningSentries.size() + patrols.size() > 3)
         {

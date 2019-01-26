@@ -1,4 +1,4 @@
-package net.digihippo.cryptnet;
+package net.digihippo.cryptnet.model;
 
 import net.digihippo.cryptnet.dimtwo.*;
 

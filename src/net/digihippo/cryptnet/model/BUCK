@@ -1,12 +1,11 @@
-java_test(
-  name = 'cryptnet',
+java_library(
+  name = 'model',
   srcs = glob(['*.java']),
   deps = [
-    '//src/net/digihippo/cryptnet:cryptnet',
+    '//src/net/digihippo/cryptnet/roadmap:roadmap',
     '//src/net/digihippo/cryptnet/dimtwo:dimtwo',
-    '//:hamcrest',
+
     '//:jackson',
-    '//:junit',
   ],
   visibility = [ 'PUBLIC' ],
 )
