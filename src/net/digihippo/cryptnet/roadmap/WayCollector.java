@@ -3,7 +3,6 @@ package net.digihippo.cryptnet.roadmap;
 import net.digihippo.cryptnet.compat.Lists;
 
 import java.util.*;
-import java.util.function.Function;
 
 final class WayCollector
 {
@@ -22,15 +21,13 @@ final class WayCollector
 
     void waypoint(final long nodeId)
     {
-        final Node forPath = nodes.computeIfAbsent(nodeId, new Function<Long, Node>()
+        Node node = nodes.get(nodeId);
+        if (node == null)
         {
-            @Override
-            public Node apply(Long aLong)
-            {
-                return new Node(nodeId);
-            }
-        });
-        accumulating.add(forPath);
+            node = new Node(nodeId);
+            nodes.put(nodeId, node);
+        }
+        accumulating.add(node);
     }
 
     void wayEnd()
@@ -43,14 +40,13 @@ final class WayCollector
 
     private void indexEdge(Way way, long nodeId)
     {
-        edgeNodeToWay.computeIfAbsent(nodeId, new Function<Long, Set<Way>>()
+        Set<Way> ways = edgeNodeToWay.get(nodeId);
+        if (ways == null)
         {
-            @Override
-            public Set<Way> apply(Long aLong)
-            {
-                return new LinkedHashSet<>();
-            }
-        }).add(way);
+            ways = new LinkedHashSet<>();
+            edgeNodeToWay.put(nodeId, ways);
+        }
+        ways.add(way);
     }
 
     boolean node(final long nodeId, final LatLn location)

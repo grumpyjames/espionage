@@ -160,7 +160,7 @@ public class OsmSource
             "out skel qt;";
     }
 
-    static double y(double latRads, int zoomLevel, double tileSize)
+    public static double y(double latRads, int zoomLevel, double tileSize)
     {
         return multiplier(zoomLevel, tileSize) * (Math.PI - Math.log(Math.tan((Math.PI / 4) + (latRads / 2))));
     }
@@ -170,7 +170,7 @@ public class OsmSource
         return 2 * (Math.atan(Math.exp(Math.PI - (y / multiplier(zoomLevel, 256D)))) - (Math.PI / 4));
     }
 
-    static double x(double lonRads, int zoomLevel, double tileSize)
+    public static double x(double lonRads, int zoomLevel, double tileSize)
     {
         return multiplier(zoomLevel, tileSize) * (lonRads + Math.PI);
     }
@@ -197,7 +197,7 @@ public class OsmSource
 
     private static String encode(String query) throws UnsupportedEncodingException
     {
-        return URLEncoder.encode(query, StandardCharsets.UTF_8.name());
+        return URLEncoder.encode(query, "UTF-8");
     }
 
 }

@@ -2,7 +2,7 @@ package net.digihippo.cryptnet.dimtwo;
 
 public final class Maths
 {
-    static int floor(double d)
+    public static int floor(double d)
     {
         return (int) java.lang.Math.floor(d);
     }

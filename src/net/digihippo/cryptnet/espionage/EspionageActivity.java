@@ -1,15 +1,22 @@
 package net.digihippo.cryptnet.espionage;
 
+import android.Manifest;
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
+import android.content.pm.PackageManager;
 import android.graphics.*;
+import android.location.Location;
+import android.location.LocationListener;
+import android.location.LocationManager;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
-import net.digihippo.cryptnet.dimtwo.*;
 import net.digihippo.cryptnet.dimtwo.Path;
+import net.digihippo.cryptnet.dimtwo.*;
 import net.digihippo.cryptnet.model.JoiningSentry;
 import net.digihippo.cryptnet.model.Model;
 import net.digihippo.cryptnet.model.Patrol;
@@ -21,13 +28,133 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.util.*;
 
-public class EspionageActivity extends Activity
+interface TileListener
 {
+    void onTiles(final Map<Pixel, Bitmap> tiles);
+}
+
+interface ModelListener
+{
+    void onModel(final Model model);
+}
+
+public class EspionageActivity
+    extends Activity
+    implements TileListener, ModelListener
+{
+    private static final int ZOOM = 17;
     private Model model;
     private Map<Pixel, Bitmap> tiles = new HashMap<>();
+    private int xTile = 0;
+    private int yTile = 0;
 
-    private static final int xTile = 65480;
-    private static final int yTile = 43572;
+    @Override
+    public void onCreate(Bundle savedInstanceState)
+    {
+        super.onCreate(savedInstanceState);
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M)
+        {
+            if (
+                checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
+                checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED)
+            {
+                requestPermissions(new String[] {
+                    Manifest.permission.ACCESS_FINE_LOCATION,
+                    Manifest.permission.ACCESS_COARSE_LOCATION
+                }, 1);
+            }
+            else
+            {
+                requestLocation();
+            }
+        }
+        else
+        {
+            requestLocation();
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults)
+    {
+        requestLocation();
+    }
+
+    @SuppressLint("MissingPermission")
+    private void requestLocation()
+    {
+        LocationManager locationManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
+
+        LocationListener locationListener = new LocationListener()
+        {
+            public void onLocationChanged(Location location)
+            {
+                // Called when a new location is found by the network location provider.
+                onLocation(location);
+            }
+
+            public void onStatusChanged(String provider, int status, Bundle extras)
+            {
+            }
+
+            public void onProviderEnabled(String provider)
+            {
+            }
+
+            public void onProviderDisabled(String provider)
+            {
+            }
+        };
+
+        locationManager.requestLocationUpdates(
+            LocationManager.NETWORK_PROVIDER, 0, 0, locationListener);
+    }
+
+    private void onLocation(final Location location)
+    {
+        Log.w("espionage-loading", "Received location " + location);
+        if (xTile != 0)
+        {
+            return;
+        }
+
+        double latitude = Math.toRadians(location.getLatitude());
+        double longitude = Math.toRadians(location.getLongitude());
+
+        double x = OsmSource.x(longitude, ZOOM, 256) / 256;
+        double y = OsmSource.y(latitude, ZOOM, 256) / 256;
+
+        this.xTile = Maths.floor(x);
+        this.yTile = Maths.floor(y);
+
+        new CreateInitialModel(this, xTile, yTile).execute();
+    }
+
+    @Override
+    public void onTiles(Map<Pixel, Bitmap> tiles)
+    {
+        Log.w("espionage-loading", "Loaded " + tiles.size() + " tiles");
+        this.tiles = tiles;
+        this.tryPromote();
+    }
+
+    @Override
+    public void onModel(Model model)
+    {
+        Log.w("espionage-loading", "Model created");
+        this.model = model;
+        final List<Pixel> requests = new ArrayList<>(3 * 4);
+        for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < 4; j++) {
+                requests.add(new Pixel(xTile + i, yTile + j));
+            }
+        }
+
+        new FetchTileBitmap(this).execute(
+            requests.toArray(new Pixel[] {})
+        );
+    }
 
     @SuppressWarnings("SameParameterValue")
     private static Model startingModel(
@@ -58,23 +185,9 @@ public class EspionageActivity extends Activity
         return Model.createModel(paths, width, height);
     }
 
-    @Override
-    public void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-
-        new CreateInitialModel(this).execute();
-
-        new FetchTileBitmap(this).execute(
-            new Pixel(xTile, yTile),
-            new Pixel(xTile + 1, yTile),
-            new Pixel(xTile, yTile + 1),
-            new Pixel(xTile + 1, yTile + 1)
-        );
-    }
-
     private static class FetchTileBitmap extends AsyncTask<Pixel, String, Map<Pixel, Bitmap>>
     {
-        private final EspionageActivity callback;
+        private final TileListener callback;
 
         private FetchTileBitmap(EspionageActivity callback)
         {
@@ -91,14 +204,16 @@ public class EspionageActivity extends Activity
                 try
                 {
                     URL tileUrl =
-                        new URL("https://tile.osmand.net/hd/17/" + pixel.x + "/" + pixel.y + ".png");
+                        new URL("https://tile.osmand.net/hd/" + ZOOM + "/" + pixel.x + "/" + pixel.y + ".png");
 
+                    Log.w("espionage-loading", "Requesting " + tileUrl);
                     URLConnection urlConnection = tileUrl.openConnection();
 
                     result.put(pixel, BitmapFactory.decodeStream(urlConnection.getInputStream()));
                 }
                 catch (IOException e)
                 {
+                    Log.w("espionage-loading", e);
                     return null;
                 }
             }
@@ -109,32 +224,33 @@ public class EspionageActivity extends Activity
         @Override
         protected void onPostExecute(Map<Pixel, Bitmap> bitmap)
         {
-            callback.tiles = bitmap;
-            callback.tryPromote();
+            callback.onTiles(bitmap);
         }
     }
 
     private static class CreateInitialModel extends AsyncTask<Void, String, Model>
     {
-        private final EspionageActivity callback;
+        private final ModelListener callback;
+        private final int yTile;
+        private final int xTile;
 
-        private CreateInitialModel(EspionageActivity callback)
+        private CreateInitialModel(ModelListener callback, int xTile, int yTile)
         {
             this.callback = callback;
+            this.yTile = yTile;
+            this.xTile = xTile;
         }
 
         @Override
         protected Model doInBackground(Void... voids)
         {
-            int xTile = 65480;
-            int yTile = 43572;
             // tile coords increase as latitude decreases
-            double latitudeMin = OsmSource.lat((yTile + 2) * 256, 17);
-            double latitudeMax = OsmSource.lat(yTile * 256, 17);
+            double latitudeMin = OsmSource.lat((yTile + 2) * 256, ZOOM);
+            double latitudeMax = OsmSource.lat(yTile * 256, ZOOM);
 
             // tile coords increase with longitude
-            double longitudeMin = OsmSource.lon(xTile * 256, 17);
-            double longitudeMax = OsmSource.lon((xTile + 2) * 256, 17);
+            double longitudeMin = OsmSource.lon(xTile * 256, ZOOM);
+            double longitudeMax = OsmSource.lon((xTile + 2) * 256, ZOOM);
 
             try
             {
@@ -152,8 +268,7 @@ public class EspionageActivity extends Activity
         @Override
         protected void onPostExecute(Model model)
         {
-            callback.model = model;
-            callback.tryPromote();
+            callback.onModel(model);
         }
     }
 
@@ -161,6 +276,7 @@ public class EspionageActivity extends Activity
     {
         if (model != null && !tiles.isEmpty())
         {
+            Log.w("espionage-loading", "Initializing!");
             View modelView = new ModelView(this, xTile, yTile, model, tiles);
             setContentView(modelView);
             modelView.setBackgroundColor(Color.BLACK);
