@@ -45,6 +45,7 @@ public class EspionageActivity
     implements TileListener, ModelListener
 {
     private static final int ZOOM = 17;
+    protected static final String ESPIONAGE_LOADING = "espionage-loading";
     private Model model;
     private Map<Pixel, Bitmap> tiles = new HashMap<>();
     private int xTile = 0;
@@ -125,7 +126,7 @@ public class EspionageActivity
 
     private void onLocation(final Location location)
     {
-        Log.w("espionage-loading", "Received location " + location);
+        Log.w(ESPIONAGE_LOADING, "Received location " + location);
         alertDialog.setMessage("Waiting for geography...");
         if (xTile != 0)
         {
@@ -141,13 +142,13 @@ public class EspionageActivity
         this.xTile = Maths.floor(x);
         this.yTile = Maths.floor(y);
 
-        new CreateInitialModel(this, xTile, yTile).execute();
+        new CreateInitialModel(this, xTile, yTile, latitude, longitude).execute();
     }
 
     @Override
     public void onTiles(Map<Pixel, Bitmap> tiles)
     {
-        Log.w("espionage-loading", "Loaded " + tiles.size() + " tiles");
+        Log.w(ESPIONAGE_LOADING, "Loaded " + tiles.size() + " tiles");
         this.tiles.putAll(tiles);
         onMapProgress(this.tiles.size());
         this.tryPromote();
@@ -158,7 +159,7 @@ public class EspionageActivity
     {
         onMapProgress(0);
 
-        Log.w("espionage-loading", "Model created");
+        Log.w(ESPIONAGE_LOADING, "Model created");
         this.model = model;
         for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 4; j++) {
@@ -222,14 +223,14 @@ public class EspionageActivity
                     URL tileUrl =
                         new URL("https://tile.osmand.net/hd/" + ZOOM + "/" + pixel.x + "/" + pixel.y + ".png");
 
-                    Log.w("espionage-loading", "Requesting " + tileUrl);
+                    Log.w(ESPIONAGE_LOADING, "Requesting " + tileUrl);
                     URLConnection urlConnection = tileUrl.openConnection();
 
                     result.put(pixel, BitmapFactory.decodeStream(urlConnection.getInputStream()));
                 }
                 catch (IOException e)
                 {
-                    Log.w("espionage-loading", e);
+                    Log.w(ESPIONAGE_LOADING, e);
                     return null;
                 }
             }
@@ -249,32 +250,53 @@ public class EspionageActivity
         private final ModelListener callback;
         private final int yTile;
         private final int xTile;
+        private final double latitude;
+        private final double longitude;
 
-        private CreateInitialModel(ModelListener callback, int xTile, int yTile)
+        private CreateInitialModel(
+            ModelListener callback,
+            int xTile,
+            int yTile,
+            double latitude,
+            double longitude)
         {
             this.callback = callback;
             this.yTile = yTile;
             this.xTile = xTile;
+            this.latitude = latitude;
+            this.longitude = longitude;
         }
 
         @Override
         protected Model doInBackground(Void... voids)
         {
-            // tile coords increase as latitude decreases
-            double latitudeMin = OsmSource.lat((yTile + 2) * 256, ZOOM);
+            // tile coords increase as latitude decreases <- really?
+            double latitudeMin = OsmSource.lat((yTile + 4) * 256, ZOOM);
             double latitudeMax = OsmSource.lat(yTile * 256, ZOOM);
 
             // tile coords increase with longitude
             double longitudeMin = OsmSource.lon(xTile * 256, ZOOM);
-            double longitudeMax = OsmSource.lon((xTile + 2) * 256, ZOOM);
+            double longitudeMax = OsmSource.lon((xTile + 3) * 256, ZOOM);
 
             try
             {
-                return startingModel(
+                Model model = startingModel(
                     OsmSource.fetchWays(latitudeMin, latitudeMax, longitudeMin, longitudeMax, 512D),
                     1024,
                     1024
                 );
+
+                final double xOrigin = xTile * 512;
+                final double yOrigin = yTile * 512;
+                OsmSource.x(longitude, ZOOM, 512);
+                OsmSource.y(latitude, ZOOM, 512);
+
+                int playerX = (int) (OsmSource.x(longitude, ZOOM, 512) - xOrigin);
+                int playerY = (int) (OsmSource.y(latitude, ZOOM, 512) - yOrigin);
+                Log.w(ESPIONAGE_LOADING, "Adding player at (" + playerX + ", " + playerY + ")");
+                model.addPlayer(playerX, playerY);
+
+                return model;
             } catch (IOException e)
             {
                 return null;
@@ -293,7 +315,7 @@ public class EspionageActivity
         if (model != null && tiles.size() == 12)
         {
             alertDialog.hide();
-            Log.w("espionage-loading", "Initializing!");
+            Log.w(ESPIONAGE_LOADING, "Initializing!");
             View modelView = new ModelView(this, xTile, yTile, model, tiles);
             setContentView(modelView);
             modelView.setBackgroundColor(Color.BLACK);
