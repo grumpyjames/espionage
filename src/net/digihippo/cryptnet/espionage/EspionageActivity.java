@@ -45,7 +45,7 @@ public class EspionageActivity
     implements TileListener, ModelListener
 {
     private static final int ZOOM = 17;
-    protected static final String ESPIONAGE_LOADING = "espionage-loading";
+    private static final String ESPIONAGE_LOADING = "espionage-loading";
     private Model model;
     private Map<Pixel, Bitmap> tiles = new HashMap<>();
     private int xTile = 0;
@@ -89,6 +89,7 @@ public class EspionageActivity
         }
     }
 
+    @SuppressWarnings("NullableProblems")
     @Override
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults)
     {
@@ -121,6 +122,7 @@ public class EspionageActivity
             }
         };
 
+        assert locationManager != null;
         locationManager.requestLocationUpdates(
             LocationManager.NETWORK_PROVIDER, 60000, 100, locationListener);
 
