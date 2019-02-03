@@ -1,4 +1,4 @@
 #!/bin/bash
 
 buck build //src/net/digihippo/cryptnet/espionage:espionage-apk
-$ANDROID_HOME/platform-tools/adb install -r buck-out/gen/src/net/digihippo/cryptnet/espionage/espionage-apk.apk
+$ANDROID_SDK/platform-tools/adb install -r buck-out/gen/src/net/digihippo/cryptnet/espionage/espionage-apk.apk

@@ -148,6 +148,7 @@ public class EspionageActivity
 
                 model.setPlayerLocation(playerX, playerY);
             }
+            return;
         }
 
         alertDialog.setMessage("Waiting for geography...");
