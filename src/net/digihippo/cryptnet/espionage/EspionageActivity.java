@@ -52,6 +52,7 @@ public class EspionageActivity
     private int yTile = 0;
 
     private AlertDialog alertDialog;
+    private boolean initialized;
 
     @Override
     public void onCreate(Bundle savedInstanceState)
@@ -121,20 +122,35 @@ public class EspionageActivity
         };
 
         locationManager.requestLocationUpdates(
-            LocationManager.NETWORK_PROVIDER, 0, 0, locationListener);
+            LocationManager.NETWORK_PROVIDER, 60000, 100, locationListener);
+
+        locationManager.requestLocationUpdates(
+            LocationManager.GPS_PROVIDER, 5000, 5, locationListener);
     }
 
     private void onLocation(final Location location)
     {
-        Log.w(ESPIONAGE_LOADING, "Received location " + location);
-        alertDialog.setMessage("Waiting for geography...");
-        if (xTile != 0)
-        {
-            return;
-        }
-
         double latitude = Math.toRadians(location.getLatitude());
         double longitude = Math.toRadians(location.getLongitude());
+
+        Log.w(ESPIONAGE_LOADING, "Received location " + location);
+        if (xTile != 0)
+        {
+            if (initialized)
+            {
+                final double xOrigin = xTile * 512;
+                final double yOrigin = yTile * 512;
+                OsmSource.x(longitude, ZOOM, 512);
+                OsmSource.y(latitude, ZOOM, 512);
+
+                int playerX = (int) (OsmSource.x(longitude, ZOOM, 512) - xOrigin);
+                int playerY = (int) (OsmSource.y(latitude, ZOOM, 512) - yOrigin);
+
+                model.setPlayerLocation(playerX, playerY);
+            }
+        }
+
+        alertDialog.setMessage("Waiting for geography...");
 
         double x = OsmSource.x(longitude, ZOOM, 256) / 256;
         double y = OsmSource.y(latitude, ZOOM, 256) / 256;
@@ -294,7 +310,7 @@ public class EspionageActivity
                 int playerX = (int) (OsmSource.x(longitude, ZOOM, 512) - xOrigin);
                 int playerY = (int) (OsmSource.y(latitude, ZOOM, 512) - yOrigin);
                 Log.w(ESPIONAGE_LOADING, "Adding player at (" + playerX + ", " + playerY + ")");
-                model.addPlayer(playerX, playerY);
+                model.setPlayerLocation(playerX, playerY);
 
                 return model;
             } catch (IOException e)
@@ -314,6 +330,7 @@ public class EspionageActivity
     {
         if (model != null && tiles.size() == 12)
         {
+            initialized = true;
             alertDialog.hide();
             Log.w(ESPIONAGE_LOADING, "Initializing!");
             View modelView = new ModelView(this, xTile, yTile, model, tiles);
@@ -362,7 +379,6 @@ public class EspionageActivity
                 int tileSize = 512;
                 int left = (key.x - xTile) * tileSize;
                 int top = (key.y - yTile) * tileSize;
-                Log.w("Render", "Drawing a tile at " + left + ", " + top);
                 canvas.drawBitmap(value, left, top, paint);
             }
 

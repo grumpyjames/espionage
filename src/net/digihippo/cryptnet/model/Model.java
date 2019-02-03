@@ -210,7 +210,7 @@ public final class Model
         return lines;
     }
 
-    public void addPlayer(int x, int y)
+    public void setPlayerLocation(int x, int y)
     {
         final Pixel point = new Pixel(x, y);
         Connection connection =
@@ -265,7 +265,7 @@ public final class Model
         {
             if (player == null)
             {
-                addPlayer(x, y);
+                setPlayerLocation(x, y);
             }
             else
             {

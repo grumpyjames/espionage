@@ -33,7 +33,7 @@ public class ModelTest
             new Patrol(one, lineThree, new DoublePoint(0, 1), new DoublePoint(4, 8), Direction.Backwards)
         ));
 
-        model.addPlayer(13, 44);
+        model.setPlayerLocation(13, 44);
 
         // The String representation of some of the double values is, sadly, lossy.
         assertThat(Model.parse(model.toString()).toString(), equalTo(model.toString()));
