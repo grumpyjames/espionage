@@ -3,6 +3,7 @@ package net.digihippo.cryptnet.espionage;
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.graphics.*;
@@ -15,6 +16,7 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
+import android.widget.ProgressBar;
 import net.digihippo.cryptnet.dimtwo.Path;
 import net.digihippo.cryptnet.dimtwo.*;
 import net.digihippo.cryptnet.model.JoiningSentry;
@@ -48,10 +50,20 @@ public class EspionageActivity
     private int xTile = 0;
     private int yTile = 0;
 
+    private AlertDialog alertDialog;
+
     @Override
     public void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setMessage("Waiting for GPS location");
+        ProgressBar progressBar = new ProgressBar(this);
+        progressBar.setIndeterminate(true);
+        builder.setView(progressBar);
+
+        alertDialog = builder.create();
+        alertDialog.show();
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M)
         {
@@ -114,6 +126,7 @@ public class EspionageActivity
     private void onLocation(final Location location)
     {
         Log.w("espionage-loading", "Received location " + location);
+        alertDialog.setMessage("Waiting for geography...");
         if (xTile != 0)
         {
             return;
@@ -135,25 +148,28 @@ public class EspionageActivity
     public void onTiles(Map<Pixel, Bitmap> tiles)
     {
         Log.w("espionage-loading", "Loaded " + tiles.size() + " tiles");
-        this.tiles = tiles;
+        this.tiles.putAll(tiles);
+        onMapProgress(this.tiles.size());
         this.tryPromote();
     }
 
     @Override
     public void onModel(Model model)
     {
+        onMapProgress(0);
+
         Log.w("espionage-loading", "Model created");
         this.model = model;
-        final List<Pixel> requests = new ArrayList<>(3 * 4);
         for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 4; j++) {
-                requests.add(new Pixel(xTile + i, yTile + j));
+                new FetchTileBitmap(this).execute(new Pixel(xTile + i, yTile + j));
             }
         }
+    }
 
-        new FetchTileBitmap(this).execute(
-            requests.toArray(new Pixel[] {})
-        );
+    private void onMapProgress(int count)
+    {
+        alertDialog.setMessage("Requesting map data (" + count + "/12)");
     }
 
     @SuppressWarnings("SameParameterValue")
@@ -274,8 +290,9 @@ public class EspionageActivity
 
     private void tryPromote()
     {
-        if (model != null && !tiles.isEmpty())
+        if (model != null && tiles.size() == 12)
         {
+            alertDialog.hide();
             Log.w("espionage-loading", "Initializing!");
             View modelView = new ModelView(this, xTile, yTile, model, tiles);
             setContentView(modelView);
@@ -359,7 +376,7 @@ public class EspionageActivity
             try {
                 Thread.sleep(30);
             } catch (InterruptedException e) {
-
+                Thread.currentThread().interrupt();
             }
 
             invalidate();  // Force a re-draw
