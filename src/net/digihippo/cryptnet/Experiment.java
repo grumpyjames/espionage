@@ -251,7 +251,7 @@ public class Experiment
         double longitudeMax = OsmSource.lon((xTile + 2) * 256, 17);
 
         final Model model = startingModel(
-            OsmSource.fetchWays(latitudeMin, latitudeMax, longitudeMin, longitudeMax, 256D),
+            OsmSource.fetchWays(latitudeMin, latitudeMax, longitudeMin, longitudeMax, 256D, 0, 0),
             512,
             512
         );

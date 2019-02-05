@@ -13,6 +13,7 @@ import android.location.LocationManager;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
@@ -35,9 +36,69 @@ interface TileListener
     void onTiles(final Map<Pixel, Bitmap> tiles);
 }
 
+class TileGeometry
+{
+    final int xOffset;
+    final int yOffset;
+    final int xTileOrigin;
+    final int yTileOrigin;
+    final int columnCount;
+    final int rowCount;
+    final double latitude;
+    final double longitude;
+
+    TileGeometry(
+        int xOffset,
+        int yOffset,
+        int xTileOrigin,
+        int yTileOrigin,
+        int columnCount,
+        int rowCount,
+        double latitude,
+        double longitude)
+    {
+        this.xOffset = xOffset;
+        this.yOffset = yOffset;
+        this.xTileOrigin = xTileOrigin;
+        this.yTileOrigin = yTileOrigin;
+        this.columnCount = columnCount;
+        this.rowCount = rowCount;
+        this.latitude = latitude;
+        this.longitude = longitude;
+    }
+
+    @Override
+    public String toString()
+    {
+        return "TileGeometry{" +
+            "xOffset=" + xOffset +
+            ", yOffset=" + yOffset +
+            ", xTileOrigin=" + xTileOrigin +
+            ", yTileOrigin=" + yTileOrigin +
+            ", columnCount=" + columnCount +
+            ", rowCount=" + rowCount +
+            ", latitude=" + latitude +
+            ", longitude=" + longitude +
+            '}';
+    }
+}
+
+class Pieces
+{
+    final Model model;
+    final TileGeometry tileGeometry;
+
+    Pieces(Model model, TileGeometry tileGeometry)
+    {
+        this.model = model;
+        this.tileGeometry = tileGeometry;
+    }
+}
+
+
 interface ModelListener
 {
-    void onModel(final Model model);
+    void onModel(final Pieces model);
 }
 
 public class EspionageActivity
@@ -46,18 +107,26 @@ public class EspionageActivity
 {
     private static final int ZOOM = 17;
     private static final String ESPIONAGE_LOADING = "espionage-loading";
-    private Model model;
+    private Pieces model;
     private Map<Pixel, Bitmap> tiles = new HashMap<>();
-    private int xTile = 0;
-    private int yTile = 0;
 
     private AlertDialog alertDialog;
     private boolean initialized;
+    private int height;
+    private int width;
+    private int requiredTiles = 0;
+    private ModelView modelView;
 
     @Override
     public void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
+
+        DisplayMetrics displayMetrics = new DisplayMetrics();
+        getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
+        height = displayMetrics.heightPixels;
+        width = displayMetrics.widthPixels;
+
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setMessage("Waiting for GPS location");
         ProgressBar progressBar = new ProgressBar(this);
@@ -87,6 +156,64 @@ public class EspionageActivity
         {
             requestLocation();
         }
+    }
+
+    interface OffsetListener
+    {
+        void offsetsCalculated(TileGeometry geometry);
+    }
+
+    private void calculateOffsets(
+        final int screenWidth,
+        final int screenHeight,
+        final int tileSize,
+        final double latitude,
+        final double longitude,
+        OffsetListener offsetListener
+    )
+    {
+        final int columnCount = (screenWidth / tileSize) + 3;
+        final int rowCount = (screenHeight / tileSize) + 3;
+
+        final int x = (int) OsmSource.x(longitude, ZOOM, tileSize);
+        final int y = (int) OsmSource.y(latitude, ZOOM, tileSize);
+
+        final int xTile = x / tileSize;
+        final int yTile = y / tileSize;
+        final int xPixel = (x % tileSize);
+        final int yPixel = (y % tileSize);
+
+        final int xOff = (columnCount / 2) * tileSize;
+        final int xOffset = screenWidth / 2 - (xOff + xPixel);
+        final int yOff = (rowCount / 2) * tileSize;
+        final int yOffset = screenHeight / 2 - (yOff + yPixel);
+
+        final int xTileOrigin = (xTile - (columnCount / 2));
+        final int yTileOrigin = (yTile - (rowCount / 2));
+
+        /*
+        Calculated geometry:
+            TileGeometry{
+                xOffset=16758670,
+                yOffset=11146491,
+                xTileOrigin=65466,
+                yTileOrigin=43544,
+                columnCount=5,
+                rowCount=6,
+                latitude=0.900099681656737,
+                longitude=-0.003238280403491775}
+         */
+
+        offsetListener.offsetsCalculated(new TileGeometry(
+            xOffset,
+            yOffset,
+            xTileOrigin,
+            yTileOrigin,
+            columnCount,
+            rowCount,
+            latitude,
+            longitude
+        ));
     }
 
     @SuppressWarnings("NullableProblems")
@@ -130,38 +257,35 @@ public class EspionageActivity
             LocationManager.GPS_PROVIDER, 5000, 5, locationListener);
     }
 
+    private boolean locationSeen = false;
+
     private void onLocation(final Location location)
     {
-        double latitude = Math.toRadians(location.getLatitude());
-        double longitude = Math.toRadians(location.getLongitude());
+        final double latitude = Math.toRadians(location.getLatitude());
+        final double longitude = Math.toRadians(location.getLongitude());
 
         Log.w(ESPIONAGE_LOADING, "Received location " + location);
-        if (xTile != 0)
+        if (locationSeen)
         {
             if (initialized)
             {
-                final double xOrigin = xTile * 512;
-                final double yOrigin = yTile * 512;
-                OsmSource.x(longitude, ZOOM, 512);
-                OsmSource.y(latitude, ZOOM, 512);
-
-                int playerX = (int) (OsmSource.x(longitude, ZOOM, 512) - xOrigin);
-                int playerY = (int) (OsmSource.y(latitude, ZOOM, 512) - yOrigin);
-
-                model.setPlayerLocation(playerX, playerY);
+                modelView.onLocationChanged(latitude, longitude);
             }
             return;
         }
 
+        locationSeen = true;
         alertDialog.setMessage("Waiting for geography...");
 
-        double x = OsmSource.x(longitude, ZOOM, 256) / 256;
-        double y = OsmSource.y(latitude, ZOOM, 256) / 256;
-
-        this.xTile = Maths.floor(x);
-        this.yTile = Maths.floor(y);
-
-        new CreateInitialModel(this, xTile, yTile, latitude, longitude).execute();
+        calculateOffsets(width, height, 512, latitude, longitude, new OffsetListener()
+        {
+            @Override
+            public void offsetsCalculated(TileGeometry geometry)
+            {
+                Log.w(ESPIONAGE_LOADING, "Calculated geometry: " + geometry);
+                new CreateInitialModel(EspionageActivity.this, geometry).execute();
+            }
+        });
     }
 
     @Override
@@ -174,22 +298,27 @@ public class EspionageActivity
     }
 
     @Override
-    public void onModel(Model model)
+    public void onModel(Pieces model)
     {
+        requiredTiles = model.tileGeometry.columnCount * model.tileGeometry.rowCount;
         onMapProgress(0);
 
         Log.w(ESPIONAGE_LOADING, "Model created");
         this.model = model;
-        for (int i = 0; i < 3; i++) {
-            for (int j = 0; j < 4; j++) {
-                new FetchTileBitmap(this).execute(new Pixel(xTile + i, yTile + j));
+        for (int i = 0; i < model.tileGeometry.columnCount; i++) {
+            for (int j = 0; j < model.tileGeometry.rowCount; j++) {
+                new FetchTileBitmap(this)
+                    .execute(
+                        new Pixel(
+                            model.tileGeometry.xTileOrigin + i,
+                            model.tileGeometry.yTileOrigin + j));
             }
         }
     }
 
     private void onMapProgress(int count)
     {
-        alertDialog.setMessage("Requesting map data (" + count + "/12)");
+        alertDialog.setMessage("Requesting map data (" + count + "/" + requiredTiles + ")");
     }
 
     @SuppressWarnings("SameParameterValue")
@@ -264,58 +393,40 @@ public class EspionageActivity
         }
     }
 
-    private static class CreateInitialModel extends AsyncTask<Void, String, Model>
+    private static class CreateInitialModel extends AsyncTask<Void, String, Pieces>
     {
         private final ModelListener callback;
-        private final int yTile;
-        private final int xTile;
-        private final double latitude;
-        private final double longitude;
+        private final TileGeometry geometry;
 
         private CreateInitialModel(
-            ModelListener callback,
-            int xTile,
-            int yTile,
-            double latitude,
-            double longitude)
+            ModelListener callback, TileGeometry geometry)
         {
             this.callback = callback;
-            this.yTile = yTile;
-            this.xTile = xTile;
-            this.latitude = latitude;
-            this.longitude = longitude;
+            this.geometry = geometry;
         }
 
         @Override
-        protected Model doInBackground(Void... voids)
+        protected Pieces doInBackground(Void... voids)
         {
             // tile coords increase as latitude decreases <- really?
-            double latitudeMin = OsmSource.lat((yTile + 4) * 256, ZOOM);
-            double latitudeMax = OsmSource.lat(yTile * 256, ZOOM);
+            double latitudeMin = OsmSource.lat((geometry.yTileOrigin + geometry.rowCount) * 256, ZOOM);
+            double latitudeMax = OsmSource.lat(geometry.yTileOrigin * 256, ZOOM);
 
             // tile coords increase with longitude
-            double longitudeMin = OsmSource.lon(xTile * 256, ZOOM);
-            double longitudeMax = OsmSource.lon((xTile + 3) * 256, ZOOM);
+            double longitudeMin = OsmSource.lon(geometry.xTileOrigin * 256, ZOOM);
+            double longitudeMax = OsmSource.lon((geometry.xTileOrigin + geometry.columnCount) * 256, ZOOM);
 
             try
             {
                 Model model = startingModel(
-                    OsmSource.fetchWays(latitudeMin, latitudeMax, longitudeMin, longitudeMax, 512D),
+                    OsmSource.fetchWays(latitudeMin, latitudeMax, longitudeMin, longitudeMax, 512D, 0, 0),
                     1024,
                     1024
                 );
 
-                final double xOrigin = xTile * 512;
-                final double yOrigin = yTile * 512;
-                OsmSource.x(longitude, ZOOM, 512);
-                OsmSource.y(latitude, ZOOM, 512);
+                setPlayerLocation(geometry, model, geometry.latitude, geometry.longitude);
 
-                int playerX = (int) (OsmSource.x(longitude, ZOOM, 512) - xOrigin);
-                int playerY = (int) (OsmSource.y(latitude, ZOOM, 512) - yOrigin);
-                Log.w(ESPIONAGE_LOADING, "Adding player at (" + playerX + ", " + playerY + ")");
-                model.setPlayerLocation(playerX, playerY);
-
-                return model;
+                return new Pieces(model, geometry);
             } catch (IOException e)
             {
                 return null;
@@ -323,20 +434,39 @@ public class EspionageActivity
         }
 
         @Override
-        protected void onPostExecute(Model model)
+        protected void onPostExecute(Pieces model)
         {
             callback.onModel(model);
         }
     }
 
+
+    private static void setPlayerLocation(
+        TileGeometry geometry,
+        Model model,
+        double latitude,
+        double longitude)
+    {
+        final double xOrigin = geometry.xTileOrigin * 512;
+        final double yOrigin = geometry.yTileOrigin * 512;
+
+        int playerX =
+            (int) (OsmSource.x(longitude, ZOOM, 512) - xOrigin);
+        int playerY =
+            (int) (OsmSource.y(latitude, ZOOM, 512) - yOrigin);
+
+        Log.w(ESPIONAGE_LOADING, "Adding player at (" + playerX + ", " + playerY + ")");
+        model.setPlayerLocation(playerX, playerY);
+    }
+
     private void tryPromote()
     {
-        if (model != null && tiles.size() == 12)
+        if (model != null && tiles.size() == requiredTiles)
         {
             initialized = true;
             alertDialog.hide();
             Log.w(ESPIONAGE_LOADING, "Initializing!");
-            View modelView = new ModelView(this, xTile, yTile, model, tiles);
+            modelView = new ModelView(this, model, tiles);
             setContentView(modelView);
             modelView.setBackgroundColor(Color.BLACK);
         }
@@ -344,24 +474,20 @@ public class EspionageActivity
 
     private static class ModelView extends View implements View.OnClickListener, View.OnTouchListener
     {
-        private final int xTile;
-        private final int yTile;
         private final Model model;
         private final Map<Pixel, Bitmap> tiles;
         private final Random random = new Random(234234234L);
+        private final TileGeometry geometry;
         private Paint paint;           // The paint (e.g. style, color) used for drawing
 
         // Constructor
         ModelView(
             Context context,
-            int xTile,
-            int yTile,
-            Model model,
+            Pieces pieces,
             Map<Pixel, Bitmap> tiles) {
             super(context);
-            this.xTile = xTile;
-            this.yTile = yTile;
-            this.model = model;
+            this.model = pieces.model;
+            this.geometry = pieces.tileGeometry;
             this.tiles = tiles;
 
             paint = new Paint();
@@ -380,8 +506,8 @@ public class EspionageActivity
                 final Pixel key = pixelBitmapEntry.getKey();
                 final Bitmap value = pixelBitmapEntry.getValue();
                 int tileSize = 512;
-                int left = (key.x - xTile) * tileSize;
-                int top = (key.y - yTile) * tileSize;
+                int left = geometry.xOffset + (key.x - geometry.xTileOrigin) * tileSize;
+                int top = geometry.yOffset + (key.y - geometry.yTileOrigin) * tileSize;
                 canvas.drawBitmap(value, left, top, paint);
             }
 
@@ -390,12 +516,12 @@ public class EspionageActivity
                 final DoublePoint direction = sentry.delta;
                 renderSentry(renderable, direction, canvas);
 
-                canvas.drawLine(
+                drawLine(
+                    canvas,
                     renderable.x,
                     renderable.y,
                     Maths.round(sentry.connection.connectionPoint.x),
-                    Maths.round(sentry.connection.connectionPoint.y),
-                    paint);
+                    Maths.round(sentry.connection.connectionPoint.y));
             }
 
             for (Patrol patrol: model.patrols)
@@ -409,7 +535,11 @@ public class EspionageActivity
                 paint.setColor(Color.MAGENTA);
                 int radius = 8;
                 canvas.drawOval(
-                    round.x - radius, round.y - radius, round.x + radius, round.y + radius, paint);
+                    geometry.xOffset + round.x - radius,
+                    geometry.yOffset + round.y - radius,
+                    geometry.xOffset + round.x + radius,
+                    geometry.yOffset + round.y + radius,
+                    paint);
                 paint.setColor(Color.BLACK);
             }
 
@@ -440,17 +570,27 @@ public class EspionageActivity
             int uy2 = uView.y + uy1;
 
             drawCircle(renderable, g, radius);
-            g.drawLine(tx1, ty1, tx2, ty2, paint);
-            g.drawLine(ux1, uy1, ux2, uy2, paint);
+            drawLine(g, tx1, ty1, tx2, ty2);
+            drawLine(g, ux1, uy1, ux2, uy2);
+        }
+
+        private void drawLine(Canvas g, int tx1, int ty1, int tx2, int ty2)
+        {
+            g.drawLine(
+                geometry.xOffset + tx1,
+                geometry.yOffset + ty1,
+                geometry.xOffset + tx2,
+                geometry.yOffset + ty2,
+                paint);
         }
 
         private void drawCircle(Pixel renderable, Canvas g, int radius)
         {
             g.drawOval(
-                renderable.x - radius,
-                renderable.y - radius,
-                renderable.x + radius,
-                renderable.y + radius,
+                geometry.xOffset + renderable.x - radius,
+                geometry.yOffset + renderable.y - radius,
+                geometry.xOffset + renderable.x + radius,
+                geometry.yOffset + renderable.y + radius,
                 paint);
         }
 
@@ -460,7 +600,9 @@ public class EspionageActivity
         @Override
         public void onClick(View v)
         {
-            model.click(Math.round(lastTouchX), Math.round(lastTouchY));
+            model.click(
+                Math.round(lastTouchX) - geometry.xOffset,
+                Math.round(lastTouchY) - geometry.yOffset);
         }
 
         @Override
@@ -470,6 +612,11 @@ public class EspionageActivity
             lastTouchY = event.getY();
 
             return false;
+        }
+
+        void onLocationChanged(double latitude, double longitude)
+        {
+            setPlayerLocation(geometry, model, latitude, longitude);
         }
     }
 }

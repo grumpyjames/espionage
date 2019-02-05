@@ -60,7 +60,11 @@ public class OsmSource
     }
 
     public static List<NormalizedWay> fetchWays(
-        double latitudeMin, double latitudeMax, double longitudeMin, double longitudeMax, double tileSize) throws IOException
+        double latitudeMin,
+        double latitudeMax,
+        double longitudeMin,
+        double longitudeMax,
+        double tileSize, int offsetX, int offsetY) throws IOException
     {
         double latSt = Math.toDegrees(latitudeMin);
         double latEnd = Math.toDegrees(latitudeMax);

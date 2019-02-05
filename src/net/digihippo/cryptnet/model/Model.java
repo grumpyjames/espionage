@@ -19,7 +19,10 @@ public final class Model
     public final int height;
     public Player player = null;
 
-    public static Model createModel(List<Path> paths, int width, int height)
+    public static Model createModel(
+        List<Path> paths,
+        int width,
+        int height)
     {
         return new Model(paths, Intersection.intersections(paths), lines(paths), width, height);
     }
@@ -186,9 +189,9 @@ public final class Model
 
     void addSentry(int x, int y)
     {
-        final Pixel point1 = new Pixel(x, y);
+        final Pixel clickPoint = new Pixel(x, y);
         Connection best =
-            Connection.nearestConnection(paths, point1.asDoublePoint());
+            Connection.nearestConnection(paths, clickPoint.asDoublePoint());
 
         final Pixel point = new Pixel(x, y);
         joiningSentries.add(
