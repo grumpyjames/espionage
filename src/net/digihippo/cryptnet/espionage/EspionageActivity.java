@@ -224,11 +224,11 @@ public class EspionageActivity
         protected void onDraw(Canvas canvas) {
             model.tick(random);
 
+            int tileSize = 512;
             for (Map.Entry<Pixel, Bitmap> pixelBitmapEntry : tiles.entrySet())
             {
                 final Pixel key = pixelBitmapEntry.getKey();
                 final Bitmap value = pixelBitmapEntry.getValue();
-                int tileSize = 512;
                 int left = geometry.xOffset + (key.x - geometry.xTileOrigin) * tileSize;
                 int top = geometry.yOffset + (key.y - geometry.yTileOrigin) * tileSize;
                 canvas.drawBitmap(value, left, top, paint);

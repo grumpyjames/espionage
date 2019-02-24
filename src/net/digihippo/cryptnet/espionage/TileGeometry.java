@@ -1,9 +1,13 @@
 package net.digihippo.cryptnet.espionage;
 
+import android.util.Log;
 import net.digihippo.cryptnet.roadmap.OsmSource;
 
 final class TileGeometry
 {
+    private final int tileSize;
+    private final int screenWidth;
+    private final int screenHeight;
     int xOffset;
     int yOffset;
     final int xTileOrigin;
@@ -14,6 +18,9 @@ final class TileGeometry
     final double longitude;
 
     private TileGeometry(
+        int tileSize,
+        int screenWidth,
+        int screenHeight,
         int xOffset,
         int yOffset,
         int xTileOrigin,
@@ -23,6 +30,9 @@ final class TileGeometry
         double latitude,
         double longitude)
     {
+        this.tileSize = tileSize;
+        this.screenWidth = screenWidth;
+        this.screenHeight = screenHeight;
         this.xOffset = xOffset;
         this.yOffset = yOffset;
         this.xTileOrigin = xTileOrigin;
@@ -62,6 +72,9 @@ final class TileGeometry
         final int yTileOrigin = (yTile - (rowCount / 2));
 
         return new TileGeometry(
+            tileSize,
+            screenWidth,
+            screenHeight,
             xOffset,
             yOffset,
             xTileOrigin,
@@ -71,6 +84,18 @@ final class TileGeometry
             latitude,
             longitude
         );
+    }
+
+    void onDrag(float dx, float dy)
+    {
+        // offsets are the origin of where we start drawing map tiles.
+        // if they become positive, we have non tile covered area in the left or top edges
+
+        // For a screen sized (x, y), with a rendered tile area of (w, h),
+        // can allow offsets down to... (x - w, y - h)
+        this.xOffset = Math.max(screenWidth - (tileSize * columnCount), Math.min(0, this.xOffset - (int) dx));
+        this.yOffset = Math.max(screenHeight - (tileSize * rowCount), Math.min(0, this.yOffset - (int) dy));
+        Log.w(EspionageActivity.ESPIONAGE_TAG, "Offsets now: (" + xOffset + ", " + yOffset + ")");
     }
 
     @Override
@@ -86,11 +111,5 @@ final class TileGeometry
             ", latitude=" + latitude +
             ", longitude=" + longitude +
             '}';
-    }
-
-    void onDrag(float dx, float dy)
-    {
-        this.xOffset -= dx;
-        this.yOffset -= dy;
     }
 }
