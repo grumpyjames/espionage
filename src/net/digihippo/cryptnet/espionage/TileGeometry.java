@@ -6,8 +6,8 @@ import net.digihippo.cryptnet.roadmap.OsmSource;
 final class TileGeometry
 {
     private final int tileSize;
-    private final int screenWidth;
-    private final int screenHeight;
+    final int screenWidth;
+    final int screenHeight;
     int xOffset;
     int yOffset;
     final int xTileOrigin;

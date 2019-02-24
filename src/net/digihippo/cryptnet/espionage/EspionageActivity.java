@@ -203,6 +203,7 @@ public class EspionageActivity
         private final TileGeometry geometry;
 
         private Paint paint;
+        private boolean gameOver = false;
 
         ModelView(
             Context context,
@@ -222,7 +223,7 @@ public class EspionageActivity
 
         @Override
         protected void onDraw(Canvas canvas) {
-            model.tick(random);
+            this.gameOver = model.tick(random);
 
             int tileSize = 512;
             for (Map.Entry<Pixel, Bitmap> pixelBitmapEntry : tiles.entrySet())
@@ -266,14 +267,28 @@ public class EspionageActivity
                 paint.setColor(Color.BLACK);
             }
 
+            if (!gameOver)
+            {
+                try
+                {
+                    Thread.sleep(30);
+                } catch (InterruptedException e)
+                {
+                    Thread.currentThread().interrupt();
+                }
 
-            try {
-                Thread.sleep(30);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
+                invalidate();  // Force a re-draw
             }
-
-            invalidate();  // Force a re-draw
+            else
+            {
+                int halfHeight = geometry.screenHeight / 2;
+                paint.setTextSize(64);
+                paint.setTextAlign(Paint.Align.CENTER);
+                paint.setTypeface(Typeface.DEFAULT_BOLD);
+                int halfWidth = geometry.screenWidth / 2;
+                canvas.drawText("Game Over", halfWidth, halfHeight - 32, paint);
+                canvas.drawText("(bad luck)", halfWidth, halfHeight + 32, paint);
+            }
         }
 
         private void renderSentry(Pixel renderable, DoublePoint direction, Canvas g)

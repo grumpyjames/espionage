@@ -159,7 +159,7 @@ public final class Model
         this.height = height;
     }
 
-    public void tick(Random random)
+    public boolean tick(Random random)
     {
         DeferredModelActions modelActions = new DeferredModelActions();
         for (JoiningSentry sentry : joiningSentries)
@@ -175,7 +175,7 @@ public final class Model
                 double distanceToPlayer = DoublePoint.distanceBetween(patrol.point, player.position);
                 if (distanceToPlayer < 5)
                 {
-                    System.out.println("Game over man!");
+                    return true;
                 }
             }
         }
@@ -185,6 +185,7 @@ public final class Model
         }
 
         modelActions.enact(this);
+        return false;
     }
 
     void addSentry(int x, int y)
