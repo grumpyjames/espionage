@@ -1,6 +1,7 @@
 package net.digihippo.cryptnet.roadmap;
 
 import net.digihippo.cryptnet.dimtwo.DoublePoint;
+import net.digihippo.cryptnet.dimtwo.WebMercator;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -26,9 +27,9 @@ final class Way
         final List<DoublePoint> result = new ArrayList<>(nodes.size());
         for (Node node : nodes)
         {
-            double ourXPixel = OsmSource.x(node.latLn.lon, zoomLevel, tileSize);
+            double ourXPixel = WebMercator.x(node.latLn.lon, zoomLevel, tileSize);
             double x = ourXPixel - originX;
-            double ourYPixel = OsmSource.y(node.latLn.lat, zoomLevel, tileSize);
+            double ourYPixel = WebMercator.y(node.latLn.lat, zoomLevel, tileSize);
             double y = ourYPixel - originY;
             result.add(new DoublePoint(x, y));
         }

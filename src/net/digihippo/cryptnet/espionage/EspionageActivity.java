@@ -23,6 +23,7 @@ import net.digihippo.cryptnet.dimtwo.*;
 import net.digihippo.cryptnet.model.JoiningSentry;
 import net.digihippo.cryptnet.model.Model;
 import net.digihippo.cryptnet.model.Patrol;
+import net.digihippo.cryptnet.model.TileGeometry;
 import net.digihippo.cryptnet.roadmap.NormalizedWay;
 import net.digihippo.cryptnet.roadmap.OsmSource;
 
@@ -144,12 +145,12 @@ public class EspionageActivity
         protected Model doInBackground(Void... voids)
         {
             // tile coords increase as latitude decreases <- really?
-            double latitudeMin = OsmSource.lat((geometry.yTileOrigin + geometry.rowCount) * 256, ZOOM);
-            double latitudeMax = OsmSource.lat(geometry.yTileOrigin * 256, ZOOM);
+            double latitudeMin = WebMercator.lat((geometry.yTileOrigin + geometry.rowCount) * 256, ZOOM);
+            double latitudeMax = WebMercator.lat(geometry.yTileOrigin * 256, ZOOM);
 
             // tile coords increase with longitude
-            double longitudeMin = OsmSource.lon(geometry.xTileOrigin * 256, ZOOM);
-            double longitudeMax = OsmSource.lon((geometry.xTileOrigin + geometry.columnCount) * 256, ZOOM);
+            double longitudeMin = WebMercator.lon(geometry.xTileOrigin * 256, ZOOM);
+            double longitudeMax = WebMercator.lon((geometry.xTileOrigin + geometry.columnCount) * 256, ZOOM);
 
             try
             {
@@ -186,9 +187,9 @@ public class EspionageActivity
         final double yOrigin = geometry.yTileOrigin * 512;
 
         int playerX =
-            (int) (OsmSource.x(longitude, ZOOM, 512) - xOrigin);
+            (int) (WebMercator.x(longitude, ZOOM, 512) - xOrigin);
         int playerY =
-            (int) (OsmSource.y(latitude, ZOOM, 512) - yOrigin);
+            (int) (WebMercator.y(latitude, ZOOM, 512) - yOrigin);
 
         Log.w(ESPIONAGE_TAG, "Locating player at (" + playerX + ", " + playerY + ")");
         model.setPlayerLocation(playerX, playerY);

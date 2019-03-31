@@ -1,21 +1,20 @@
-package net.digihippo.cryptnet.espionage;
+package net.digihippo.cryptnet.model;
 
-import android.util.Log;
-import net.digihippo.cryptnet.roadmap.OsmSource;
+import net.digihippo.cryptnet.dimtwo.WebMercator;
 
-final class TileGeometry
+public final class TileGeometry
 {
     private final int tileSize;
-    final int screenWidth;
-    final int screenHeight;
-    int xOffset;
-    int yOffset;
-    final int xTileOrigin;
-    final int yTileOrigin;
-    final int columnCount;
-    final int rowCount;
-    final double latitude;
-    final double longitude;
+    public final int screenWidth;
+    public final int screenHeight;
+    public int xOffset;
+    public int yOffset;
+    public final int xTileOrigin;
+    public final int yTileOrigin;
+    public final int columnCount;
+    public final int rowCount;
+    public final double latitude;
+    public final double longitude;
 
     private TileGeometry(
         int tileSize,
@@ -43,7 +42,7 @@ final class TileGeometry
         this.longitude = longitude;
     }
 
-    static TileGeometry centeredAt(
+    public static TileGeometry centeredAt(
         final int screenWidth,
         final int screenHeight,
         final int zoom,
@@ -55,8 +54,8 @@ final class TileGeometry
         final int columnCount = (screenWidth / tileSize) + 3;
         final int rowCount = (screenHeight / tileSize) + 3;
 
-        final int x = (int) OsmSource.x(longitude, zoom, tileSize);
-        final int y = (int) OsmSource.y(latitude, zoom, tileSize);
+        final int x = (int) WebMercator.x(longitude, zoom, tileSize);
+        final int y = (int) WebMercator.y(latitude, zoom, tileSize);
 
         final int xTile = x / tileSize;
         final int yTile = y / tileSize;
@@ -86,7 +85,7 @@ final class TileGeometry
         );
     }
 
-    void onDrag(float dx, float dy)
+    public void onDrag(float dx, float dy)
     {
         // offsets are the origin of where we start drawing map tiles.
         // if they become positive, we have non tile covered area in the left or top edges
@@ -95,7 +94,6 @@ final class TileGeometry
         // can allow offsets down to... (x - w, y - h)
         this.xOffset = Math.max(screenWidth - (tileSize * columnCount), Math.min(0, this.xOffset - (int) dx));
         this.yOffset = Math.max(screenHeight - (tileSize * rowCount), Math.min(0, this.yOffset - (int) dy));
-        Log.w(EspionageActivity.ESPIONAGE_TAG, "Offsets now: (" + xOffset + ", " + yOffset + ")");
     }
 
     @Override
