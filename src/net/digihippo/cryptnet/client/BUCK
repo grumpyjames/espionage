@@ -1,0 +1,11 @@
+java_library(
+  name = 'client',
+  srcs = glob(['*.java']),
+  deps = [
+    '//src/net/digihippo/cryptnet/roadmap:roadmap',
+    '//src/net/digihippo/cryptnet/dimtwo:dimtwo',
+    '//src/net/digihippo/cryptnet/model:model',
+    '//src/net/digihippo/cryptnet/server:server',
+  ],
+  visibility = [ 'PUBLIC' ]
+)

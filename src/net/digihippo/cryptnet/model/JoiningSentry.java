@@ -7,15 +7,18 @@ import net.digihippo.cryptnet.dimtwo.Pixel;
 
 public final class JoiningSentry
 {
+    final String identifier;
     public final Connection connection;
-    public DoublePoint position;
     public final DoublePoint delta;
+    public DoublePoint position;
 
     JoiningSentry(
+        String identifier,
         Connection connection,
         DoublePoint position,
         DoublePoint delta)
     {
+        this.identifier = identifier;
         this.connection = connection;
         this.position = position;
         this.delta = delta;
@@ -24,10 +27,10 @@ public final class JoiningSentry
     @Override
     public String toString()
     {
-        return "Moving " + delta + " from position " + position + " to " + connection;
+        return identifier + " moving " + delta + " from position " + position + " to " + connection;
     }
 
-    @SuppressWarnings({"SimplifiableIfStatement", "EqualsReplaceableByObjectsCall"})
+    @SuppressWarnings("SimplifiableIfStatement")
     @Override
     public boolean equals(Object o)
     {
@@ -36,23 +39,25 @@ public final class JoiningSentry
 
         JoiningSentry that = (JoiningSentry) o;
 
+        if (identifier != null ? !identifier.equals(that.identifier) : that.identifier != null) return false;
         if (connection != null ? !connection.equals(that.connection) : that.connection != null) return false;
-        if (position != null ? !position.equals(that.position) : that.position != null) return false;
-        return !(delta != null ? !delta.equals(that.delta) : that.delta != null);
+        if (delta != null ? !delta.equals(that.delta) : that.delta != null) return false;
+        return !(position != null ? !position.equals(that.position) : that.position != null);
 
     }
 
     @Override
     public int hashCode()
     {
-        int result = connection != null ? connection.hashCode() : 0;
-        result = 31 * result + (position != null ? position.hashCode() : 0);
+        int result = identifier != null ? identifier.hashCode() : 0;
+        result = 31 * result + (connection != null ? connection.hashCode() : 0);
         result = 31 * result + (delta != null ? delta.hashCode() : 0);
+        result = 31 * result + (position != null ? position.hashCode() : 0);
         return result;
     }
 
     void tick(
-        final ModelActions modelActions)
+        final ModelActions modelActions, Model.Events events)
     {
         this.position = this.position.plus(delta);
 
@@ -78,16 +83,20 @@ public final class JoiningSentry
                 break;
             }
         }
+
+        events.sentryPositionChanged(identifier, this.position, this.delta);
     }
 
     static JoiningSentry parse(String string)
     {
         String[] parts = string.split(" from position ");
-        DoublePoint delta = DoublePoint.parse(parts[0].substring("Moving ".length()));
+        String[] along = parts[0].split(" moving ");
+        DoublePoint delta = DoublePoint.parse(along[1]);
 
         String[] moreParts = parts[1].split(" to ");
         DoublePoint position = DoublePoint.parse(moreParts[0]);
         return new JoiningSentry(
+            along[0],
             Connection.parse(moreParts[1]),
             position,
             delta);

@@ -13,8 +13,11 @@ android_library(
   srcs = glob(['*.java']),
   deps = [
     '//src/net/digihippo/cryptnet/roadmap:roadmap',
+    '//src/net/digihippo/cryptnet/client:client',
+    '//src/net/digihippo/cryptnet/compat:compat',
     '//src/net/digihippo/cryptnet/dimtwo:dimtwo',
     '//src/net/digihippo/cryptnet/model:model',
+    '//src/net/digihippo/cryptnet/server:server',
   ]
 )
 

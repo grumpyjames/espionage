@@ -22,6 +22,8 @@ public class PatrolTest
     private final Line lineTwo = Line.createLine(5, 5, 5, 10);
     private final Path pathTwo = new Path(Collections.singletonList(lineTwo));
     private final Map<Pixel, Intersection> intersections = Intersection.intersections(Arrays.asList(pathOne, pathTwo));
+    private final Model.Events events = new NoOpEvents();
+    private final String ident = "hello";
 
     @Test
     public void somePathsAreCircuits()
@@ -33,7 +35,8 @@ public class PatrolTest
 
         Path circuit = new Path(Arrays.asList(one, two, three, four));
 
-        Patrol patrol = new Patrol(circuit, one, one.direction(), new DoublePoint(0, 0), Direction.Forwards);
+        Patrol patrol = new Patrol(
+            ident, circuit, one, one.direction(), new DoublePoint(0, 0), Direction.Forwards);
         Random random = new Random(22357L);
 
         assertPatrolBehavesSensibly(patrol, NO_INTERSECTIONS, random);
@@ -47,7 +50,7 @@ public class PatrolTest
         DoublePoint point = patrol.point;
         for (int i = 0; i < 50; i++)
         {
-            patrol.tick(intersections, random);
+            patrol.tick(intersections, random, events);
             assertThat(patrol.path.distanceTo(patrol.point), lessThan(1.0D));
             assertThat(DoublePoint.distanceBetween(point, patrol.point), greaterThan(0.9D));
             point = patrol.point;
@@ -57,7 +60,8 @@ public class PatrolTest
     @Test
     public void reverseAtEndOfLine()
     {
-        Patrol patrol = new Patrol(pathTwo, lineTwo, new DoublePoint(0, -1), new DoublePoint(5, 8), Direction.Forwards);
+        Patrol patrol = new Patrol(
+            ident, pathTwo, lineTwo, new DoublePoint(0, -1), new DoublePoint(5, 8), Direction.Forwards);
 
         Random random = new Random(22357L);
         assertPatrolBehavesSensibly(patrol, intersections, random);
@@ -66,7 +70,8 @@ public class PatrolTest
     @Test
     public void atTeeJunctionDoNotTakeThePhantomFourthWay()
     {
-        Patrol patrol = new Patrol(pathOne, lineOne, new DoublePoint(1, 0), new DoublePoint(3, 5), Direction.Forwards);
+        Patrol patrol = new Patrol(
+            ident, pathOne, lineOne, new DoublePoint(1, 0), new DoublePoint(3, 5), Direction.Forwards);
         Random random = new Random(22353L);
         assertPatrolBehavesSensibly(patrol, intersections, random);
     }
@@ -74,7 +79,8 @@ public class PatrolTest
     @Test
     public void roundTrip()
     {
-        Patrol patrol = new Patrol(pathOne, lineOne, new DoublePoint(1, 0), new DoublePoint(3, 5), Direction.Forwards);
+        Patrol patrol = new Patrol(
+            ident, pathOne, lineOne, new DoublePoint(1, 0), new DoublePoint(3, 5), Direction.Forwards);
 
         assertThat(Patrol.parse(patrol.toString()), equalTo(patrol));
     }
@@ -83,6 +89,7 @@ public class PatrolTest
     public void doNotBeDistractedByTurnsElsewhereOnTheLine()
     {
         String serialised = "{\n" +
+            "\t   \"identifier\": \"geoff\",\n" +
             "\t   \"path\": \"(250,55)->(273,38)->(281,32)->(284,27)->(287,22)->(281,38)->(278,43)->(275,47)->(272,51)->(263,58)->(250,70)->(245,74)->(242,78)->(241,81)->(240,86)->(239,94)->(239,100)->(238,108)\",\n" +
             "\t   \"line\": \"(284,27)->(287,22)\",\n" +
             "\t   \"delta\": \"(0.5144957554275265, -0.8574929257125441)\",\n" +
@@ -96,7 +103,7 @@ public class PatrolTest
         Map<Pixel, Intersection> none = Collections.emptyMap();
         for (int i = 0; i < 50; i++)
         {
-            patrol.tick(none, random);
+            patrol.tick(none, random, events);
             assertThat(patrol.path.distanceTo(patrol.point), lessThan(1.0D));
         }
     }
@@ -154,7 +161,7 @@ public class PatrolTest
 
     private void tickPrint(Map<Pixel, Intersection> intersections, Patrol patrol, Random random)
     {
-        patrol.tick(intersections, random);
+        patrol.tick(intersections, random, events);
         System.out.println(patrol);
     }
 }

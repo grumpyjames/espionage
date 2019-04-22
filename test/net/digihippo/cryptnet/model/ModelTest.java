@@ -29,8 +29,8 @@ public class ModelTest
         model.addSentry(10, 1);
 
         model.addPatrols(Arrays.asList(
-            new Patrol(one, lineThree, new DoublePoint(0, 1), new DoublePoint(4, 8), Direction.Forwards),
-            new Patrol(one, lineThree, new DoublePoint(0, 1), new DoublePoint(4, 8), Direction.Backwards)
+            new Patrol("patrol-one", one, lineThree, new DoublePoint(0, 1), new DoublePoint(4, 8), Direction.Forwards),
+            new Patrol("patrol-two", one, lineThree, new DoublePoint(0, 1), new DoublePoint(4, 8), Direction.Backwards)
         ));
 
         model.setPlayerLocation(13, 44);

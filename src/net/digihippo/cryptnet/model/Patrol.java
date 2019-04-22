@@ -10,6 +10,7 @@ import java.util.Random;
 
 public final class Patrol
 {
+    private final String identifier;
     Path path;
     Line line;
     public DoublePoint delta;
@@ -21,8 +22,14 @@ public final class Patrol
     private transient int lineIndex;
 
     Patrol(
-        Path path, Line line, DoublePoint delta, DoublePoint doublePoint, Direction direction)
+        String identifier,
+        Path path,
+        Line line,
+        DoublePoint delta,
+        DoublePoint doublePoint,
+        Direction direction)
     {
+        this.identifier = identifier;
         this.path = path;
         this.line = line;
         this.lineIndex = path.indexOf(line);
@@ -43,7 +50,8 @@ public final class Patrol
 
     void tick(
         final Map<Pixel, Intersection> intersections,
-        final Random random)
+        final Random random,
+        Model.Events events)
     {
         this.point = this.point.plus(delta);
 
@@ -91,6 +99,8 @@ public final class Patrol
                 break;
             }
         }
+
+        events.sentryPositionChanged(identifier, this.point, this.delta);
     }
 
     private void turn(Pixel pixel, Path path, Line line, Direction dir)
@@ -108,7 +118,7 @@ public final class Patrol
     private void intersection(Random random, Pixel pixel, Intersection intersection)
     {
         IntersectionEntry[] lines =
-            intersection.entries.toArray(new IntersectionEntry[0]);
+            intersection.entries.toArray(new IntersectionEntry[intersection.entries.size()]);
         IntersectionEntry entry =
             lines[random.nextInt(lines.length)];
 
@@ -122,6 +132,7 @@ public final class Patrol
     public String toString()
     {
         return "{\n\t" +
+            "   \"identifier\": \"" + identifier + "\",\n\t" +
             "   \"path\": \"" + path.toString() + "\",\n\t" +
             "   \"line\": \"" + line.toString() + "\",\n\t" +
             "   \"delta\": \"" + delta.toString() + "\",\n\t" +
@@ -151,6 +162,9 @@ public final class Patrol
     static Patrol parse(JsonParser jParser) throws IOException
     {
         jParser.nextToken();
+        skipTo(jParser, "identifier");
+        final String identifier = jParser.getValueAsString();
+
         skipTo(jParser, "path");
         final Path path = Path.parse(jParser.getValueAsString());
 
@@ -174,7 +188,7 @@ public final class Patrol
         maybeValue = jParser.getValueAsString();
         final Pixel previousTurn = maybeValue.equals("null") ? null : Pixel.parse(maybeValue);
 
-        Patrol patrol = new Patrol(path, line, delta, point, direction);
+        Patrol patrol = new Patrol(identifier, path, line, delta, point, direction);
 
         patrol.previous = previous;
         patrol.previousTurn = previousTurn;
@@ -194,7 +208,7 @@ public final class Patrol
         jParser.nextToken();
     }
 
-    @SuppressWarnings({"SimplifiableIfStatement", "EqualsReplaceableByObjectsCall"})
+    @SuppressWarnings("SimplifiableIfStatement")
     @Override
     public boolean equals(Object o)
     {
@@ -203,6 +217,8 @@ public final class Patrol
 
         Patrol patrol = (Patrol) o;
 
+        if (lineIndex != patrol.lineIndex) return false;
+        if (identifier != null ? !identifier.equals(patrol.identifier) : patrol.identifier != null) return false;
         if (path != null ? !path.equals(patrol.path) : patrol.path != null) return false;
         if (line != null ? !line.equals(patrol.line) : patrol.line != null) return false;
         if (delta != null ? !delta.equals(patrol.delta) : patrol.delta != null) return false;
@@ -216,13 +232,15 @@ public final class Patrol
     @Override
     public int hashCode()
     {
-        int result = path != null ? path.hashCode() : 0;
+        int result = identifier != null ? identifier.hashCode() : 0;
+        result = 31 * result + (path != null ? path.hashCode() : 0);
         result = 31 * result + (line != null ? line.hashCode() : 0);
         result = 31 * result + (delta != null ? delta.hashCode() : 0);
         result = 31 * result + (point != null ? point.hashCode() : 0);
         result = 31 * result + (direction != null ? direction.hashCode() : 0);
         result = 31 * result + (previous != null ? previous.hashCode() : 0);
         result = 31 * result + (previousTurn != null ? previousTurn.hashCode() : 0);
+        result = 31 * result + lineIndex;
         return result;
     }
 }

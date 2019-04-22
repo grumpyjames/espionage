@@ -1,0 +1,108 @@
+package net.digihippo.cryptnet.client;
+
+import net.digihippo.cryptnet.dimtwo.DoublePoint;
+import net.digihippo.cryptnet.model.Model.Events;
+
+import java.util.HashMap;
+import java.util.Map;
+
+public class GameView implements Events
+{
+    public GameView(String identifier)
+    {
+        this.identifier = identifier;
+    }
+
+    @Override
+    public void playerPositionChanged(DoublePoint location)
+    {
+        this.playerLocation = location;
+    }
+
+    @Override
+    public void sentryPositionChanged(String patrolIdentifier, DoublePoint location, DoublePoint orientation)
+    {
+        SentryView sentryView = sentries.get(patrolIdentifier);
+        if (sentryView == null)
+        {
+            SentryView view = new SentryView(patrolIdentifier);
+            sentries.put(patrolIdentifier, view);
+            view.setLocation(location, orientation);
+        }
+        else
+        {
+            sentryView.setLocation(location, orientation);
+        }
+    }
+
+    @Override
+    public void gameOver()
+    {
+        this.state = State.GameOver;
+    }
+
+    @Override
+    public void victory()
+    {
+        this.state = State.Victory;
+    }
+
+    @Override
+    public void gameRejected(String message)
+    {
+
+    }
+
+    @Override
+    public void gameStarted()
+    {
+        this.state = State.Live;
+    }
+
+    public boolean isGameOver()
+    {
+        return state == State.GameOver;
+    }
+
+    public Iterable<? extends SentryView> sentries()
+    {
+        return sentries.values();
+    }
+
+    public DoublePoint playerLocation()
+    {
+        return playerLocation;
+    }
+
+    public static class SentryView
+    {
+        private final String identifier;
+        public DoublePoint location;
+        public DoublePoint orientation;
+
+        private SentryView(String identifier)
+        {
+            this.identifier = identifier;
+        }
+
+        public void setLocation(DoublePoint location, DoublePoint orientation)
+        {
+            this.location = location;
+            this.orientation = orientation;
+        }
+    }
+
+    private final String identifier;
+    private final Map<String, SentryView> sentries = new HashMap<>();
+    private DoublePoint playerLocation;
+    private State state = State.Idle;
+
+    enum State
+    {
+        Idle,
+        Live,
+        GameOver,
+        Victory
+    }
+
+}

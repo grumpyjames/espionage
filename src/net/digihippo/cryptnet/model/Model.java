@@ -17,7 +17,28 @@ public final class Model
     public final List<Line> lines;
     public final int width;
     public final int height;
+
+    private int sentryIndex = 0;
     public Player player = null;
+
+    public interface Events
+    {
+        void playerPositionChanged(
+            DoublePoint location);
+
+        void sentryPositionChanged(
+            String patrolIdentifier,
+            DoublePoint location,
+            DoublePoint orientation);
+
+        void gameOver();
+
+        void victory();
+
+        void gameRejected(String message);
+
+        void gameStarted();
+    }
 
     public static Model createModel(
         List<Path> paths,
@@ -159,32 +180,34 @@ public final class Model
         this.height = height;
     }
 
-    public boolean tick(Random random)
+    public boolean tick(Random random, Events events)
     {
         DeferredModelActions modelActions = new DeferredModelActions();
+
         for (JoiningSentry sentry : joiningSentries)
         {
-            sentry.tick(modelActions);
+            sentry.tick(modelActions, events);
         }
+
         for (Patrol patrol : patrols)
         {
-            patrol.tick(intersections, random);
+            patrol.tick(intersections, random, events);
 
             if (player != null)
             {
                 double distanceToPlayer = DoublePoint.distanceBetween(patrol.point, player.position);
                 if (distanceToPlayer < 5)
                 {
-                    return true;
+                    events.gameOver();
                 }
             }
         }
         if (player != null)
         {
-            player.tick(intersections);
+            player.tick(events);
         }
 
-        modelActions.enact(this);
+        modelActions.enact(this, events);
         return false;
     }
 
@@ -197,6 +220,7 @@ public final class Model
         final Pixel point = new Pixel(x, y);
         joiningSentries.add(
             new JoiningSentry(
+                "sentry-" + sentryIndex++,
                 best,
                 point.asDoublePoint(),
                 best.connectionPoint.minus(point.asDoublePoint()).over(5)));
@@ -238,29 +262,36 @@ public final class Model
     {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
+
         Model model = (Model) o;
-        return width == model.width &&
-            height == model.height &&
-            Objects.equals(intersections, model.intersections) &&
-            Objects.equals(joiningSentries, model.joiningSentries) &&
-            Objects.equals(patrols, model.patrols) &&
-            Objects.equals(paths, model.paths) &&
-            Objects.equals(lines, model.lines) &&
-            Objects.equals(player, model.player);
+
+        if (width != model.width) return false;
+        if (height != model.height) return false;
+        if (sentryIndex != model.sentryIndex) return false;
+        if (intersections != null ? !intersections.equals(model.intersections) : model.intersections != null)
+            return false;
+        if (joiningSentries != null ? !joiningSentries.equals(model.joiningSentries) : model.joiningSentries != null)
+            return false;
+        if (patrols != null ? !patrols.equals(model.patrols) : model.patrols != null) return false;
+        if (paths != null ? !paths.equals(model.paths) : model.paths != null) return false;
+        if (lines != null ? !lines.equals(model.lines) : model.lines != null) return false;
+        return !(player != null ? !player.equals(model.player) : model.player != null);
+
     }
 
     @Override
     public int hashCode()
     {
-        return Objects.hash(intersections, joiningSentries, patrols, paths, lines, width, height, player);
-    }
-
-    private void movePlayerTowards(int x, int y)
-    {
-        if (player != null)
-        {
-            player.moveTowards(new Pixel(x, y));
-        }
+        int result = intersections != null ? intersections.hashCode() : 0;
+        result = 31 * result + (joiningSentries != null ? joiningSentries.hashCode() : 0);
+        result = 31 * result + (patrols != null ? patrols.hashCode() : 0);
+        result = 31 * result + (paths != null ? paths.hashCode() : 0);
+        result = 31 * result + (lines != null ? lines.hashCode() : 0);
+        result = 31 * result + width;
+        result = 31 * result + height;
+        result = 31 * result + sentryIndex;
+        result = 31 * result + (player != null ? player.hashCode() : 0);
+        return result;
     }
 
     public void click(int x, int y)
@@ -270,10 +301,6 @@ public final class Model
             if (player == null)
             {
                 setPlayerLocation(x, y);
-            }
-            else
-            {
-                movePlayerTowards(x, y);
             }
         }
         else

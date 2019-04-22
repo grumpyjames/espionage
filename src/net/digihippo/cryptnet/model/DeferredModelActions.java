@@ -12,14 +12,19 @@ public class DeferredModelActions implements ModelActions
 
     @Override
     public void joined(
-        JoiningSentry sentry, Pixel pixel, DoublePoint point,
-        Path path, Line line, DoublePoint delta, Direction direction)
+        JoiningSentry sentry,
+        Pixel pixel,
+        DoublePoint point,
+        Path path,
+        Line line,
+        DoublePoint delta,
+        Direction direction)
     {
         outgoing.add(sentry);
-        incoming.add(new Patrol(path, line, delta, point, direction));
+        incoming.add(new Patrol(sentry.identifier, path, line, delta, point, direction));
     }
 
-    void enact(final Model model)
+    void enact(final Model model, Model.Events events)
     {
         model.removeJoining(outgoing);
         model.addPatrols(incoming);

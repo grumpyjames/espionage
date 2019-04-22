@@ -10,7 +10,6 @@ import android.graphics.*;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
-import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
@@ -18,21 +17,27 @@ import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.ProgressBar;
+import net.digihippo.cryptnet.client.GameView;
+import net.digihippo.cryptnet.compat.Consumer;
+import net.digihippo.cryptnet.dimtwo.DoublePoint;
 import net.digihippo.cryptnet.dimtwo.Path;
-import net.digihippo.cryptnet.dimtwo.*;
-import net.digihippo.cryptnet.model.JoiningSentry;
+import net.digihippo.cryptnet.dimtwo.Pixel;
+import net.digihippo.cryptnet.dimtwo.WebMercator;
 import net.digihippo.cryptnet.model.Model;
-import net.digihippo.cryptnet.model.Patrol;
 import net.digihippo.cryptnet.model.TileGeometry;
 import net.digihippo.cryptnet.roadmap.NormalizedWay;
 import net.digihippo.cryptnet.roadmap.OsmSource;
+import net.digihippo.cryptnet.server.Server;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class EspionageActivity
     extends Activity
-    implements TileListener, ModelListener
+    implements TileListener
 {
     private static final int ZOOM = 17;
     static final String ESPIONAGE_TAG = "espionage";
@@ -55,7 +60,7 @@ public class EspionageActivity
         performLocationRequest();
     }
 
-    private boolean vectorFetchInProgress = false;
+    private boolean tileFetchInProgress = false;
 
     private void onLocation(final Location location)
     {
@@ -67,11 +72,9 @@ public class EspionageActivity
         {
             modelView.onLocationChanged(latitude, longitude);
         }
-        else if (!vectorFetchInProgress)
+        else if (!tileFetchInProgress)
         {
-            vectorFetchInProgress = true;
-
-            alertDialog.setMessage("Waiting for geography...");
+            tileFetchInProgress = true;
 
             DisplayMetrics displayMetrics = new DisplayMetrics();
             getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
@@ -80,15 +83,41 @@ public class EspionageActivity
                 displayMetrics.widthPixels, displayMetrics.heightPixels, ZOOM, 512, latitude, longitude);
 
             Log.w(ESPIONAGE_TAG, "Calculated geometry: " + tileGeometry);
-            new FetchVectorData(EspionageActivity.this, tileGeometry).execute();
+
+            fetchTiles(model);
         }
     }
 
     @Override
-    public void onModel(Model model)
+    public void onTiles(Map<Pixel, Bitmap> tiles)
     {
-        setPlayerLocation(tileGeometry, model, tileGeometry.latitude, tileGeometry.longitude);
+        this.tiles.putAll(tiles);
+        onMapProgress(this.tiles.size());
+        Log.w(ESPIONAGE_TAG, "Loaded " + tiles.keySet() + ". Progress: " + this.tiles.size() +
+            " tiles of " + requiredTiles);
 
+        if (this.tiles.size() == requiredTiles)
+        {
+            alertDialog.setMessage("Starting game...");
+            Log.w(ESPIONAGE_TAG, "Initializing!");
+            modelView = new ModelView(this, tileGeometry, this.tiles);
+            setContentView(modelView);
+            modelView.setBackgroundColor(Color.BLACK);
+            startGame();
+        }
+    }
+
+    private void startGame()
+    {
+        GameView theGame = new GameView("TheGame");
+        RunGame runGame = new RunGame(theGame, tileGeometry);
+        modelView.gameView = theGame;
+        modelView.runGame = runGame;
+        new Thread(runGame).start();
+    }
+
+    private void fetchTiles(Model model)
+    {
         requiredTiles = tileGeometry.columnCount * tileGeometry.rowCount;
         onMapProgress(0);
 
@@ -105,36 +134,21 @@ public class EspionageActivity
         }
     }
 
-    @Override
-    public void onTiles(Map<Pixel, Bitmap> tiles)
-    {
-        this.tiles.putAll(tiles);
-        onMapProgress(this.tiles.size());
-        Log.w(ESPIONAGE_TAG, "Loaded " + tiles.keySet() + ". Progress: " + this.tiles.size() +
-            " tiles of " + requiredTiles);
-
-        if (this.tiles.size() == requiredTiles)
-        {
-            alertDialog.hide();
-            Log.w(ESPIONAGE_TAG, "Initializing!");
-            modelView = new ModelView(this, model, tileGeometry, this.tiles);
-            setContentView(modelView);
-            modelView.setBackgroundColor(Color.BLACK);
-        }
-    }
-
     private void onMapProgress(int count)
     {
         alertDialog.setMessage("Requesting map data (" + count + "/" + requiredTiles + ")");
     }
 
-    private static class FetchVectorData extends AsyncTask<Void, String, Model>
+    private final class RunGame implements Runnable
     {
-        private final ModelListener callback;
+        private final Model.Events callback;
         private final TileGeometry geometry;
 
-        private FetchVectorData(
-            ModelListener callback,
+        private final BlockingQueue<Consumer<Server>> queue = new LinkedBlockingQueue<>();
+        private String gameIdentifier;
+
+        private RunGame(
+            Model.Events callback,
             TileGeometry geometry)
         {
             this.callback = callback;
@@ -142,8 +156,106 @@ public class EspionageActivity
         }
 
         @Override
-        protected Model doInBackground(Void... voids)
+        public void run()
         {
+            final AtomicBoolean gameComplete = new AtomicBoolean(false);
+            Server.Events events = new Server.Events()
+            {
+                @Override
+                public void gameRejected(String gameIdentifier, final String message)
+                {
+                    runOnUiThread(new Runnable()
+                    {
+                        @Override
+                        public void run()
+                        {
+                            callback.gameRejected(message);
+                            EspionageActivity.this.invalidate();
+                        }
+                    });
+                }
+
+                @Override
+                public void gameStarted(String gameIdentifier)
+                {
+                    runOnUiThread(new Runnable()
+                    {
+                        @Override
+                        public void run()
+                        {
+                            EspionageActivity.this.alertDialog.hide();
+                            callback.gameStarted();
+                            EspionageActivity.this.invalidate();
+                        }
+                    });
+                }
+
+                @Override
+                public void playerPositionChanged(
+                    String gameIdentifier,
+                    final DoublePoint location)
+                {
+                    runOnUiThread(new Runnable()
+                    {
+                        @Override
+                        public void run()
+                        {
+                            callback.playerPositionChanged(location);
+                            EspionageActivity.this.invalidate();
+                        }
+                    });
+                }
+
+                @Override
+                public void sentryPositionChanged(
+                    String gameIdentifier,
+                    final String patrolIdentifier,
+                    final DoublePoint location,
+                    final DoublePoint orientation)
+                {
+                    runOnUiThread(new Runnable()
+                    {
+                        @Override
+                        public void run()
+                        {
+                            callback.sentryPositionChanged(patrolIdentifier, location, orientation);
+                            EspionageActivity.this.invalidate();
+                        }
+                    });
+                }
+
+                @Override
+                public void gameOver(String gameIdentifier)
+                {
+                    runOnUiThread(new Runnable()
+                    {
+                        @Override
+                        public void run()
+                        {
+                            callback.gameOver();
+                            EspionageActivity.this.invalidate();
+                        }
+                    });
+                    gameComplete.set(true);
+                }
+
+                @Override
+                public void victory(String gameIdentifier)
+                {
+                    runOnUiThread(new Runnable()
+                    {
+                        @Override
+                        public void run()
+                        {
+                            callback.victory();
+                            EspionageActivity.this.invalidate();
+                        }
+                    });
+                    gameComplete.set(true);
+                }
+            };
+
+
             // tile coords increase as latitude decreases <- really?
             double latitudeMin = WebMercator.lat((geometry.yTileOrigin + geometry.rowCount) * 256, ZOOM);
             double latitudeMax = WebMercator.lat(geometry.yTileOrigin * 256, ZOOM);
@@ -163,23 +275,69 @@ public class EspionageActivity
                     paths.add(normalizedWay.toPath());
                 }
 
-                return Model.createModel(paths, 1024, 1024);
-            } catch (IOException e)
+                Model model = Model.createModel(paths, 1024, 1024);
+
+                final Pixel initialLocation =
+                    computePlayerLocation(tileGeometry, tileGeometry.latitude, tileGeometry.longitude);
+                model.setPlayerLocation(initialLocation.x, initialLocation.y);
+
+                long time = System.currentTimeMillis();
+                Random random = new Random(time);
+                Server server = new Server(
+                    events,
+                    random);
+                gameIdentifier = "local-" + time;
+                server.startGame(time, gameIdentifier, model);
+
+                while (!gameComplete.get())
+                {
+                    // FIXME: use a while.
+                    Consumer<Server> polled = queue.poll();
+                    if (polled != null)
+                    {
+                        polled.consume(server);
+                    }
+                    server.tick(System.currentTimeMillis());
+                }
+            }
+            catch (IOException e)
             {
-                return null;
+                events.gameRejected("", e.getMessage());
             }
         }
 
-        @Override
-        protected void onPostExecute(Model model)
+        public void setPlayerLocation(final int playerX, final int playerY)
         {
-            callback.onModel(model);
+            queue.add(new Consumer<Server>()
+            {
+                @Override
+                public void consume(Server server)
+                {
+                    server.onPlayerLocation(gameIdentifier, playerX, playerY);
+                }
+            });
+        }
+
+        public void onClick(final int x, final int y)
+        {
+            queue.add(new Consumer<Server>()
+            {
+                @Override
+                public void consume(Server server)
+                {
+                    server.onClick(gameIdentifier, x, y);
+                }
+            });
         }
     }
 
-    private static void setPlayerLocation(
+    private void invalidate()
+    {
+        modelView.invalidate();
+    }
+
+    private static Pixel computePlayerLocation(
         TileGeometry geometry,
-        Model model,
         double latitude,
         double longitude)
     {
@@ -192,27 +350,26 @@ public class EspionageActivity
             (int) (WebMercator.y(latitude, ZOOM, 512) - yOrigin);
 
         Log.w(ESPIONAGE_TAG, "Locating player at (" + playerX + ", " + playerY + ")");
-        model.setPlayerLocation(playerX, playerY);
+
+        return new Pixel(playerX, playerY);
     }
 
     private static class ModelView extends View
         implements View.OnClickListener, View.OnTouchListener
     {
-        private final Model model;
         private final Map<Pixel, Bitmap> tiles;
-        private final Random random = new Random(234234234L);
         private final TileGeometry geometry;
 
         private Paint paint;
-        private boolean gameOver = false;
+
+        public GameView gameView;
+        public RunGame runGame;
 
         ModelView(
             Context context,
-            Model model,
             TileGeometry tileGeometry,
             Map<Pixel, Bitmap> tiles) {
             super(context);
-            this.model = model;
             this.geometry = tileGeometry;
             this.tiles = tiles;
 
@@ -224,8 +381,6 @@ public class EspionageActivity
 
         @Override
         protected void onDraw(Canvas canvas) {
-            this.gameOver = model.tick(random);
-
             int tileSize = 512;
             for (Map.Entry<Pixel, Bitmap> pixelBitmapEntry : tiles.entrySet())
             {
@@ -236,27 +391,15 @@ public class EspionageActivity
                 canvas.drawBitmap(value, left, top, paint);
             }
 
-            for (JoiningSentry sentry : model.joiningSentries) {
-                final Pixel renderable = sentry.position.round();
-                final DoublePoint direction = sentry.delta;
+            for (GameView.SentryView sentry : gameView.sentries()) {
+                final Pixel renderable = sentry.location.round();
+                final DoublePoint direction = sentry.orientation;
                 renderSentry(renderable, direction, canvas);
-
-                drawLine(
-                    canvas,
-                    renderable.x,
-                    renderable.y,
-                    Maths.round(sentry.connection.connectionPoint.x),
-                    Maths.round(sentry.connection.connectionPoint.y));
             }
 
-            for (Patrol patrol: model.patrols)
+            if (gameView.playerLocation() != null)
             {
-                renderSentry(patrol.point.round(), patrol.delta, canvas);
-            }
-
-            if (model.player != null)
-            {
-                Pixel round = model.player.position.round();
+                Pixel round = gameView.playerLocation().round();
                 paint.setColor(Color.MAGENTA);
                 int radius = 8;
                 canvas.drawOval(
@@ -268,19 +411,7 @@ public class EspionageActivity
                 paint.setColor(Color.BLACK);
             }
 
-            if (!gameOver)
-            {
-                try
-                {
-                    Thread.sleep(30);
-                } catch (InterruptedException e)
-                {
-                    Thread.currentThread().interrupt();
-                }
-
-                invalidate();  // Force a re-draw
-            }
-            else
+            if (gameView.isGameOver())
             {
                 int halfHeight = geometry.screenHeight / 2;
                 paint.setTextSize(64);
@@ -344,7 +475,7 @@ public class EspionageActivity
         {
             if (!touchDrag)
             {
-                model.click(
+                runGame.onClick(
                     Math.round(lastTouchX) - geometry.xOffset,
                     Math.round(lastTouchY) - geometry.yOffset);
             }
@@ -384,7 +515,8 @@ public class EspionageActivity
 
         void onLocationChanged(double latitude, double longitude)
         {
-            setPlayerLocation(geometry, model, latitude, longitude);
+            Pixel pixel = computePlayerLocation(geometry, latitude, longitude);
+            runGame.setPlayerLocation(pixel.x, pixel.y);
         }
     }
 
@@ -434,6 +566,7 @@ public class EspionageActivity
         requestLocation();
     }
 
+    @SuppressWarnings("ResourceType")
     @SuppressLint("MissingPermission")
     private void requestLocation()
     {

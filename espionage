@@ -1,4 +1,6 @@
 #!/bin/bash
 
+set -euo pipefail
+
 buck build //src/net/digihippo/cryptnet/espionage:espionage-apk
 $ANDROID_SDK/platform-tools/adb install -r buck-out/gen/src/net/digihippo/cryptnet/espionage/espionage-apk.apk

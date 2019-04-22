@@ -18,9 +18,9 @@ public class JoiningSentryTest
         Line lineThree = Line.createLine(new Pixel(66, 223), new Pixel(44, 120));
         Path path = new Path(Arrays.asList(lineOne, lineTwo, lineThree));
 
-        Connection connection = new Connection(new DoublePoint(44, 120), lineOne, path);
+        Connection connection = new Connection<>(new DoublePoint(44, 120), lineOne, path);
 
-        JoiningSentry sentry = new JoiningSentry(connection, new DoublePoint(11, 10), new DoublePoint(1, 0));
+        JoiningSentry sentry = new JoiningSentry("goon", connection, new DoublePoint(11, 10), new DoublePoint(1, 0));
 
         assertThat(JoiningSentry.parse(sentry.toString()), equalTo(sentry));
     }
