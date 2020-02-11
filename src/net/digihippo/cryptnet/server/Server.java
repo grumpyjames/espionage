@@ -33,10 +33,10 @@ public class Server
             this.nextTickMillis = lastTickMillis + 40;
         }
 
-        public void tick(
-            long currentTimeMillis,
-            Random random,
-            final Events events)
+        void tick(
+                long currentTimeMillis,
+                Random random,
+                final Events events)
         {
             while (nextTickMillis < currentTimeMillis)
             {
@@ -83,12 +83,12 @@ public class Server
             }
         }
 
-        public void onPlayerLocation(int playerX, int playerY)
+        void onPlayerLocation(int playerX, int playerY)
         {
             model.setPlayerLocation(playerX, playerY);
         }
 
-        public void onClick(int x, int y)
+        void onClick(int x, int y)
         {
             model.click(x, y);
         }
@@ -131,35 +131,6 @@ public class Server
         {
             game.tick(currentTimeMillis, random, events);
         }
-    }
-
-    // Immutable values only, this is likely to become a thread hop.
-    public interface Events
-    {
-        void gameRejected(
-            String gameIdentifier,
-            String message);
-
-        void gameStarted(
-            String gameIdentifier);
-
-        void playerPositionChanged(
-            String gameIdentifier,
-            DoublePoint location);
-
-        void sentryPositionChanged(
-            String gameIdentifier,
-            String patrolIdentifier,
-            DoublePoint location,
-            DoublePoint orientation);
-
-        void gameOver(
-            String gameIdentifier
-        );
-
-        void victory(
-            String gameIdentifier
-        );
     }
 
 }

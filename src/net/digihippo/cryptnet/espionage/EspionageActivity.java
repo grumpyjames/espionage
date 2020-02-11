@@ -27,6 +27,7 @@ import net.digihippo.cryptnet.model.Model;
 import net.digihippo.cryptnet.model.TileGeometry;
 import net.digihippo.cryptnet.roadmap.NormalizedWay;
 import net.digihippo.cryptnet.roadmap.OsmSource;
+import net.digihippo.cryptnet.server.Events;
 import net.digihippo.cryptnet.server.Server;
 
 import java.io.IOException;
@@ -159,7 +160,7 @@ public class EspionageActivity
         public void run()
         {
             final AtomicBoolean gameComplete = new AtomicBoolean(false);
-            Server.Events events = new Server.Events()
+            Events events = new Events()
             {
                 @Override
                 public void gameRejected(String gameIdentifier, final String message)
