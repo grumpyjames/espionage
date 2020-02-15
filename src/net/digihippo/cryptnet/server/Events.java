@@ -1,6 +1,6 @@
 package net.digihippo.cryptnet.server;
 
-import net.digihippo.cryptnet.dimtwo.DoublePoint;
+import net.digihippo.cryptnet.roadmap.LatLn;
 
 // Immutable values only, this is likely to become a thread hop.
 public interface Events
@@ -14,13 +14,13 @@ public interface Events
 
     void playerPositionChanged(
             String gameIdentifier,
-            DoublePoint location);
+            LatLn location);
 
     void sentryPositionChanged(
             String gameIdentifier,
             String patrolIdentifier,
-            DoublePoint location,
-            DoublePoint orientation);
+            LatLn location,
+            LatLn orientation);
 
     void gameOver(
             String gameIdentifier

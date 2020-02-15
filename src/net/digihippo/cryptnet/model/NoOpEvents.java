@@ -1,18 +1,16 @@
 package net.digihippo.cryptnet.model;
 
-import net.digihippo.cryptnet.dimtwo.DoublePoint;
+import net.digihippo.cryptnet.roadmap.LatLn;
 
-class NoOpEvents implements Model.Events
+public class NoOpEvents implements Model.Events
 {
     @Override
-    public void playerPositionChanged(DoublePoint location)
-    {
+    public void playerPositionChanged(LatLn location) {
 
     }
 
     @Override
-    public void sentryPositionChanged(String patrolIdentifier, DoublePoint location, DoublePoint orientation)
-    {
+    public void sentryPositionChanged(String patrolIdentifier, LatLn location, LatLn orientation) {
 
     }
 

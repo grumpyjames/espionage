@@ -22,11 +22,11 @@ import net.digihippo.cryptnet.compat.Consumer;
 import net.digihippo.cryptnet.dimtwo.DoublePoint;
 import net.digihippo.cryptnet.dimtwo.Path;
 import net.digihippo.cryptnet.dimtwo.Pixel;
-import net.digihippo.cryptnet.dimtwo.WebMercator;
+import net.digihippo.cryptnet.roadmap.LatLn;
+import net.digihippo.cryptnet.roadmap.WebMercator;
 import net.digihippo.cryptnet.model.Model;
-import net.digihippo.cryptnet.model.TileGeometry;
-import net.digihippo.cryptnet.roadmap.NormalizedWay;
 import net.digihippo.cryptnet.roadmap.OsmSource;
+import net.digihippo.cryptnet.roadmap.Way;
 import net.digihippo.cryptnet.server.Events;
 import net.digihippo.cryptnet.server.Server;
 
@@ -194,7 +194,7 @@ public class EspionageActivity
                 @Override
                 public void playerPositionChanged(
                     String gameIdentifier,
-                    final DoublePoint location)
+                    final LatLn location)
                 {
                     runOnUiThread(new Runnable()
                     {
@@ -211,8 +211,8 @@ public class EspionageActivity
                 public void sentryPositionChanged(
                     String gameIdentifier,
                     final String patrolIdentifier,
-                    final DoublePoint location,
-                    final DoublePoint orientation)
+                    final LatLn location,
+                    final LatLn orientation)
                 {
                     runOnUiThread(new Runnable()
                     {
@@ -267,13 +267,13 @@ public class EspionageActivity
 
             try
             {
-                List<NormalizedWay> ways =
+                Collection<Way> ways =
                     OsmSource.fetchWays(
-                        latitudeMin, latitudeMax, longitudeMin, longitudeMax, 512D, 0, 0);
+                        latitudeMin, latitudeMax, longitudeMin, longitudeMax);
                 final List<Path> paths = new ArrayList<>();
-                for (NormalizedWay normalizedWay : ways)
+                for (Way way : ways)
                 {
-                    paths.add(normalizedWay.toPath());
+                    paths.add(way.toPath());
                 }
 
                 Model model = Model.createModel(paths, 1024, 1024);

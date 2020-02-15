@@ -1,16 +1,13 @@
 package net.digihippo.cryptnet.roadmap;
 
-import net.digihippo.cryptnet.dimtwo.DoublePoint;
-import net.digihippo.cryptnet.dimtwo.WebMercator;
-
 import java.util.ArrayList;
 import java.util.List;
 
-final class Way
+public final class Way
 {
-    final List<Node> nodes;
+    public final List<Node> nodes;
 
-    Way(List<Node> nodes)
+    public Way(List<Node> nodes)
     {
         this.nodes = nodes;
     }
@@ -21,21 +18,20 @@ final class Way
         return nodes.toString();
     }
 
-    @SuppressWarnings("SameParameterValue")
-    NormalizedWay translate(double originX, double originY, int zoomLevel, double tileSize)
-    {
-        final List<DoublePoint> result = new ArrayList<>(nodes.size());
-        for (Node node : nodes)
-        {
-            double ourXPixel = WebMercator.x(node.latLn.lon, zoomLevel, tileSize);
-            double x = ourXPixel - originX;
-            double ourYPixel = WebMercator.y(node.latLn.lat, zoomLevel, tileSize);
-            double y = ourYPixel - originY;
-            result.add(new DoublePoint(x, y));
-        }
-
-        return new NormalizedWay(result);
-    }
+//    NormalizedWay translate(double originX, double originY, int zoomLevel, double tileSize)
+//    {
+//        final List<DoublePoint> result = new ArrayList<>(nodes.size());
+//        for (Node node : nodes)
+//        {
+//            double ourXPixel = WebMercator.x(node.latLn.lon, zoomLevel, tileSize);
+//            double x = ourXPixel - originX;
+//            double ourYPixel = WebMercator.y(node.latLn.lat, zoomLevel, tileSize);
+//            double y = ourYPixel - originY;
+//            result.add(new DoublePoint(x, y));
+//        }
+//
+//        return new NormalizedWay(result);
+//    }
 
     Way concat(long joiningNode, Way another)
     {
@@ -100,5 +96,9 @@ final class Way
             return lastNodeId();
         }
         return firstNodeId();
+    }
+
+    public int nodeCount() {
+        return nodes.size();
     }
 }

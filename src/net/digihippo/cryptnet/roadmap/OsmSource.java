@@ -11,11 +11,9 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
 import java.net.URLEncoder;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 
-import static net.digihippo.cryptnet.dimtwo.WebMercator.*;
+import static net.digihippo.cryptnet.roadmap.WebMercator.*;
 
 public class OsmSource
 {
@@ -61,12 +59,11 @@ public class OsmSource
         }
     }
 
-    public static List<NormalizedWay> fetchWays(
-        double latitudeMin,
-        double latitudeMax,
-        double longitudeMin,
-        double longitudeMax,
-        double tileSize, int offsetX, int offsetY) throws IOException
+    public static Collection<Way> fetchWays(
+            double latitudeMin,
+            double latitudeMax,
+            double longitudeMin,
+            double longitudeMax) throws IOException
     {
         double latSt = Math.toDegrees(latitudeMin);
         double latEnd = Math.toDegrees(latitudeMax);
@@ -119,21 +116,7 @@ public class OsmSource
 
             Collection<Way> ways = wayCollector.reducedWays();
 
-
-
-            final List<NormalizedWay> normalizedWays = new ArrayList<>(ways.size());
-
-            for (Way way : ways)
-            {
-                NormalizedWay translate = way.translate(
-                    x(Math.toRadians(lonSt), 17, tileSize),
-                    y(Math.toRadians(latEnd), 17, tileSize),
-                    17,
-                    tileSize);
-                normalizedWays.add(translate);
-            }
-
-            return normalizedWays;
+            return ways;
         }
     }
 

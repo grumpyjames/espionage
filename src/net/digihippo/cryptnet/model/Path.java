@@ -1,0 +1,78 @@
+package net.digihippo.cryptnet.model;
+
+import net.digihippo.cryptnet.roadmap.LatLn;
+
+import java.util.Collection;
+import java.util.List;
+import java.util.Random;
+
+public class Path {
+    private final List<Segment> segments;
+
+    public Path(List<Segment> segments) {
+        this.segments = segments;
+    }
+
+    public int indexOf(Segment segment) {
+        for (int i = 0; i < segments.size(); i++) {
+            final Segment candidate = segments.get(i);
+            if (candidate.sameAs(segment))
+            {
+                return i;
+            }
+        }
+
+        throw new IllegalArgumentException();
+    }
+
+    public boolean startsAt(LatLn location) {
+        return initialSegment().startsAt(location);
+    }
+
+    public boolean endsAt(LatLn location) {
+        return lastSegment().endsAt(location);
+    }
+
+    Segment initialSegment() {
+        return segments.get(0);
+    }
+
+    Segment lastSegment() {
+        return segments.get(segments.size() - 1);
+    }
+
+    boolean circularWithOrigin(LatLn origin) {
+        return startsAt(origin) && endsAt(origin);
+    }
+
+    public Segment nextLine(Direction direction, int lineIndex) {
+        throw new UnsupportedOperationException();
+    }
+
+    public Collection<? extends Segment> segments() {
+        return null;
+    }
+
+    public void move(Patrol patrol, Random random) {
+        throw new UnsupportedOperationException();
+        // Thoughts:
+        // If we know the segment, all we really need to know
+        // is the patrol's speed and direction along this path.
+        // The path can have prior knowledge of intersections and
+        // its own boundaries, and can act accordingly, reorienting the
+        // patrol as necessary.
+        // We will probably require a random here to choose between possible
+        // options.
+    }
+
+    void visitVertices() {
+        for (Segment segment : segments) {
+            segment.visitVertices(this);
+        }
+    }
+
+    public Vertex vertexAt(int i)
+    {
+        return segments.get(i - 1).tail();
+    }
+}

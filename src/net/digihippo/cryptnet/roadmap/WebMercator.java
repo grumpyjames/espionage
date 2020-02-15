@@ -1,4 +1,4 @@
-package net.digihippo.cryptnet.dimtwo;
+package net.digihippo.cryptnet.roadmap;
 
 public final class WebMercator
 {

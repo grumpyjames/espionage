@@ -1,11 +1,11 @@
 package net.digihippo.cryptnet;
 
 import net.digihippo.cryptnet.dimtwo.*;
-import net.digihippo.cryptnet.model.JoiningSentry;
-import net.digihippo.cryptnet.model.Model;
-import net.digihippo.cryptnet.model.Patrol;
-import net.digihippo.cryptnet.roadmap.NormalizedWay;
+import net.digihippo.cryptnet.model.*;
+import net.digihippo.cryptnet.roadmap.LatLn;
 import net.digihippo.cryptnet.roadmap.OsmSource;
+import net.digihippo.cryptnet.roadmap.Way;
+import net.digihippo.cryptnet.roadmap.WebMercator;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
@@ -15,8 +15,7 @@ import java.awt.event.MouseListener;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Collection;
 import java.util.Random;
 import java.util.concurrent.*;
 
@@ -24,31 +23,11 @@ public class Experiment
 {
     @SuppressWarnings("SameParameterValue")
     private static Model startingModel(
-        List<NormalizedWay> normalizedWays,
-        int width,
-        int height)
+            Collection<Way> ways,
+            int width,
+            int height)
     {
-        final List<Path> paths = new ArrayList<>();
-
-        for (NormalizedWay normalizedWay : normalizedWays)
-        {
-            int lineCount = normalizedWay.doublePoints.size() - 1;
-            final List<Line> pieces = new ArrayList<>(lineCount);
-            for (int i = 0; i < lineCount; i++)
-            {
-                Pixel start =
-                    normalizedWay.doublePoints.get(i).round();
-                Pixel end = normalizedWay.doublePoints.get(i + 1).round();
-                Line line = Line.createLine(start.x, end.x, start.y, end.y);
-                if (!start.equals(end))
-                {
-                    pieces.add(line);
-                }
-            }
-            paths.add(new Path(pieces));
-        }
-
-        return Model.createModel(paths, width, height);
+        return Model.createModel(ways, width, height);
     }
 
     interface Event
@@ -58,18 +37,18 @@ public class Experiment
 
     private static class ClickEvent implements Event
     {
-        private final int x, y;
+        private final LatLn location;
 
-        ClickEvent(int x, int y)
+        private ClickEvent(LatLn location)
         {
-            this.x = x;
-            this.y = y;
+            this.location = location;
         }
+
 
         @Override
         public void enact(Model model)
         {
-            model.click(x, y);
+            model.click(location);
         }
     }
 
@@ -120,70 +99,81 @@ public class Experiment
                     g.drawImage(bufferedImage, offsetX + (i * 256), offsetY + (j * 256), null);
                 }
             }
-            for (Line line: model.lines)
+            for (Segment line: model.segments)
             {
                 drawLine(g, line);
             }
-            for (Pixel point: model.intersections.keySet()) {
-                g.drawPolygon(
-                    new int[] {
-                        offsetX + point.x - 2,
-                        offsetX + point.x + 2,
-                        offsetX + point.x + 2,
-                        offsetX + point.x - 2},
-                    new int[] {
-                        offsetY + point.y + 2,
-                        offsetY + point.y + 2,
-                        offsetY + point.y - 2,
-                        offsetY + point.y - 2},
-                    4);
+            for (LatLn latLn: model.intersections.locations()) {
+//                g.drawPolygon(
+//                    new int[] {
+//                        offsetX + point.x - 2,
+//                        offsetX + point.x + 2,
+//                        offsetX + point.x + 2,
+//                        offsetX + point.x - 2},
+//                    new int[] {
+//                        offsetY + point.y + 2,
+//                        offsetY + point.y + 2,
+//                        offsetY + point.y - 2,
+//                        offsetY + point.y - 2},
+//                    4);
             }
             for (JoiningSentry sentry : model.joiningSentries) {
-                final Pixel renderable = sentry.position.round();
-                final DoublePoint direction = sentry.delta;
-                renderSentry(renderable, direction, g);
-
-                g.drawLine(
-                    offsetX + renderable.x,
-                    offsetY + renderable.y,
-                    offsetX + Maths.round(sentry.connection.connectionPoint.x),
-                    offsetY + Maths.round(sentry.connection.connectionPoint.y));
+                final LatLn location = sentry.location;
+                final LatLn velocity = sentry.velocity;
+                renderJoiningSentry(g, sentry, location, velocity);
             }
 
             for (Patrol patrol: model.patrols)
             {
-                renderSentry(patrol.point.round(), patrol.delta, g);
+                renderSentry(patrol.location, patrol.velocity, g);
             }
 
             if (model.player != null)
             {
-                Pixel round = model.player.position.round();
-                g.drawOval(offsetX + round.x - 4, offsetY + round.y - 4, 4 * 2, 4 * 2);
-                g.setColor(Color.MAGENTA);
-                g.fillOval(offsetX + round.x - 4, offsetY + round.y - 4, 4 * 2, 4 * 2);
-                g.setColor(Color.BLACK);
+                LatLn playerLocation = model.player.position;
+                renderPlayer(g, playerLocation);
             }
         }
 
-        private void renderSentry(Pixel renderable, DoublePoint direction, Graphics g)
+        private void renderJoiningSentry(Graphics g, JoiningSentry sentry, LatLn location, LatLn velocity) {
+            throw new UnsupportedOperationException();
+//            renderSentry(location, velocity, g);
+//
+//            g.drawLine(
+//                offsetX + renderable.x,
+//                offsetY + renderable.y,
+//                offsetX + Maths.round(sentry.connection.connectionPoint.x),
+//                offsetY + Maths.round(sentry.connection.connectionPoint.y));
+        }
+
+        private void renderPlayer(Graphics g, LatLn playerLocation) {
+            throw new UnsupportedOperationException();
+//            g.drawOval(offsetX + playerLocation.x - 4, offsetY + playerLocation.y - 4, 4 * 2, 4 * 2);
+//            g.setColor(Color.MAGENTA);
+//            g.fillOval(offsetX + playerLocation.x - 4, offsetY + playerLocation.y - 4, 4 * 2, 4 * 2);
+//            g.setColor(Color.BLACK);
+        }
+
+        private void renderSentry(LatLn location, LatLn velocity, Graphics g)
         {
-            final double orientation = direction.orientation();
-            final Pixel tView = direction.rotate(Math.PI / 12).times(10).round();
-            int radius = 3;
-            int tx1 = (int) Math.round(renderable.x + (radius * Math.cos(orientation + (Math.PI / 2))));
-            int ty1 = (int) Math.round(renderable.y + (radius * Math.sin(orientation + (Math.PI / 2))));
-            int tx2 = tView.x + tx1;
-            int ty2 = tView.y + ty1;
-
-            final Pixel uView = direction.rotate(-Math.PI / 12).times(10).round();
-            int ux1 = (int) Math.round(renderable.x - (radius * Math.cos(orientation + (Math.PI / 2))));
-            int uy1 = (int) Math.round(renderable.y - (radius * Math.sin(orientation + (Math.PI / 2))));
-            int ux2 = uView.x + ux1;
-            int uy2 = uView.y + uy1;
-
-            drawCircle(renderable, g, radius);
-            g.drawLine(offsetX + tx1, offsetY + ty1, offsetX + tx2, offsetY + ty2);
-            g.drawLine(offsetX + ux1, offsetY + uy1, offsetX + ux2, offsetY + uy2);
+            throw new UnsupportedOperationException();
+//            final double orientation = velocity.orientation();
+//            final Pixel tView = velocity.rotate(Math.PI / 12).times(10).round();
+//            int radius = 3;
+//            int tx1 = (int) Math.round(location.x + (radius * Math.cos(orientation + (Math.PI / 2))));
+//            int ty1 = (int) Math.round(location.y + (radius * Math.sin(orientation + (Math.PI / 2))));
+//            int tx2 = tView.x + tx1;
+//            int ty2 = tView.y + ty1;
+//
+//            final Pixel uView = velocity.rotate(-Math.PI / 12).times(10).round();
+//            int ux1 = (int) Math.round(location.x - (radius * Math.cos(orientation + (Math.PI / 2))));
+//            int uy1 = (int) Math.round(location.y - (radius * Math.sin(orientation + (Math.PI / 2))));
+//            int ux2 = uView.x + ux1;
+//            int uy2 = uView.y + uy1;
+//
+//            drawCircle(location, g, radius);
+//            g.drawLine(offsetX + tx1, offsetY + ty1, offsetX + tx2, offsetY + ty2);
+//            g.drawLine(offsetX + ux1, offsetY + uy1, offsetX + ux2, offsetY + uy2);
         }
 
         private void drawCircle(Pixel renderable, Graphics g, int radius)
@@ -191,9 +181,10 @@ public class Experiment
             g.drawOval(offsetX + renderable.x - radius, offsetY + renderable.y - radius, radius * 2, radius * 2);
         }
 
-        private void drawLine(Graphics g, Line line)
+        private void drawLine(Graphics g, Segment line)
         {
-            g.drawLine(offsetX + line.x1, offsetY + line.y1, offsetX + line.x2, offsetY + line.y2);
+            throw new UnsupportedOperationException();
+//            g.drawLine(offsetX + line.x1, offsetY + line.y1, offsetX + line.x2, offsetY + line.y2);
         }
 
         private class EventQueueListener implements MouseListener
@@ -210,13 +201,18 @@ public class Experiment
             {
                 if (e.getY() >= offsetY)
                 {
-                    ClickEvent event = new ClickEvent(e.getX() - offsetX, e.getY() - offsetY);
+                    ClickEvent event = new ClickEvent(latLn(e.getX() - offsetX, e.getY() - offsetY));
                     pushEvent(event, events);
                 }
                 else
                 {
                     pushEvent(new PrintEvent(), events);
                 }
+            }
+
+            private LatLn latLn(int x, int y)
+            {
+                throw new UnsupportedOperationException();
             }
 
             private void pushEvent(Event event, BlockingQueue<Event> events)
@@ -243,15 +239,15 @@ public class Experiment
         int xTile = 65480;
         int yTile = 43572;
         // tile coords increase as latitude decreases
-        double latitudeMin = OsmSource.lat((yTile + 2) * 256, 17);
-        double latitudeMax = OsmSource.lat(yTile * 256, 17);
+        double latitudeMin = WebMercator.lat((yTile + 2) * 256, 17);
+        double latitudeMax = WebMercator.lat(yTile * 256, 17);
 
         // tile coords increase with longitude
-        double longitudeMin = OsmSource.lon(xTile * 256, 17);
-        double longitudeMax = OsmSource.lon((xTile + 2) * 256, 17);
+        double longitudeMin = WebMercator.lon(xTile * 256, 17);
+        double longitudeMax = WebMercator.lon((xTile + 2) * 256, 17);
 
         final Model model = startingModel(
-            OsmSource.fetchWays(latitudeMin, latitudeMax, longitudeMin, longitudeMax, 256D, 0, 0),
+            OsmSource.fetchWays(latitudeMin, latitudeMax, longitudeMin, longitudeMax),
             512,
             512
         );
@@ -289,7 +285,7 @@ public class Experiment
                         {
                             event.enact(model);
                         }
-                        model.tick(random);
+                        model.tick(random, new NoOpEvents());
                         viewer.repaint();
                     }
                 }, 40, 40, TimeUnit.MILLISECONDS);

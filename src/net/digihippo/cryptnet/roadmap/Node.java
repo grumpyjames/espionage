@@ -1,11 +1,11 @@
 package net.digihippo.cryptnet.roadmap;
 
-final class Node
+public final class Node
 {
-    final long nodeId;
-    LatLn latLn;
+    public final long nodeId;
+    public LatLn latLn;
 
-    Node(long nodeId)
+    public Node(long nodeId)
     {
         this.nodeId = nodeId;
     }

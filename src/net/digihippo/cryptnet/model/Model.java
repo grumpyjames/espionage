@@ -1,20 +1,20 @@
 package net.digihippo.cryptnet.model;
 
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonToken;
-import net.digihippo.cryptnet.dimtwo.*;
+import net.digihippo.cryptnet.roadmap.LatLn;
+import net.digihippo.cryptnet.roadmap.Way;
 
-import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Random;
 
 public final class Model
 {
-    public final Map<Pixel, Intersection> intersections;
+    public final IntersectionIndex intersections;
     public final List<JoiningSentry> joiningSentries = new ArrayList<>();
     public final List<Patrol> patrols = new ArrayList<>();
     private final List<Path> paths;
-    public final List<Line> lines;
+    public final List<Segment> segments;
     public final int width;
     public final int height;
 
@@ -24,12 +24,12 @@ public final class Model
     public interface Events
     {
         void playerPositionChanged(
-            DoublePoint location);
+                LatLn location);
 
         void sentryPositionChanged(
-            String patrolIdentifier,
-            DoublePoint location,
-            DoublePoint orientation);
+                String patrolIdentifier,
+                LatLn location,
+                LatLn orientation);
 
         void gameOver();
 
@@ -41,146 +41,34 @@ public final class Model
     }
 
     public static Model createModel(
-        List<Path> paths,
+        Collection<Way> ways,
         int width,
         int height)
     {
-        return new Model(paths, Intersection.intersections(paths), lines(paths), width, height);
-    }
-
-    @Override
-    public String toString()
-    {
-        return "{\n\t" +
-            "\"intersections\" : [\n\t\t" + jsonArray(intersections.values(), false) + "\n\t],\n\t" +
-            "\"joiningSentries\" : [\n\t\t" + jsonArray(joiningSentries, false) + "\n\t],\n\t" +
-            "\"patrols\" : [\n\t\t" + jsonArray(patrols, true) + "\n\t],\n\t" +
-            "\"paths\" : [\n\t\t" + jsonArray(paths, false) + "\n\t],\n\t" +
-            "\"player\" : " + player + "\n" +
-        "}";
-    }
-
-    static Model parse(String string)
-    {
-        JsonFactory jfactory = new JsonFactory();
-        try
-        {
-            JsonParser jParser = jfactory.createParser(string);
-
-            jParser.nextToken();
-
-            skipTo(jParser, "intersections");
-            final List<Intersection> intersections = new ArrayList<>();
-            while (jParser.nextToken() != JsonToken.END_ARRAY)
-            {
-                intersections.add(Intersection.parse(jParser.getValueAsString()));
-            }
-
-
-            skipTo(jParser, "joiningSentries");
-            final List<JoiningSentry> joiningSentries = new ArrayList<>();
-            while (jParser.nextToken() != JsonToken.END_ARRAY)
-            {
-                joiningSentries.add(JoiningSentry.parse(jParser.getValueAsString()));
-            }
-
-            skipTo(jParser, "patrols");
-            final List<Patrol> patrols = new ArrayList<>();
-            while (jParser.nextToken() != JsonToken.END_ARRAY)
-            {
-                patrols.add(Patrol.parse(jParser));
-            }
-
-            skipTo(jParser, "paths");
-            final List<Path> paths = new ArrayList<>();
-            while (jParser.nextToken() != JsonToken.END_ARRAY)
-            {
-                paths.add(Path.parse(jParser.getValueAsString()));
-            }
-
-            skipTo(jParser, "player");
-            final Player player;
-            if (jParser.getCurrentToken() == JsonToken.START_OBJECT)
-            {
-                player = Player.parse(jParser);
-            }
-            else
-            {
-                player = null;
-            }
-
-            Model model = new Model(paths, index(intersections), lines(paths), 256, 256);
-            model.joiningSentries.addAll(joiningSentries);
-            model.patrols.addAll(patrols);
-            model.player = player;
-            return model;
-
-        } catch (IOException e)
-        {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private static Map<Pixel, Intersection> index(List<Intersection> intersections)
-    {
-        final Map<Pixel, Intersection> result = new HashMap<>();
-        for (Intersection intersection : intersections)
-        {
-            result.put(intersection.point, intersection);
-        }
-
-        return result;
-    }
-
-    private static void skipTo(JsonParser jParser, String fieldName) throws IOException
-    {
-        while (!fieldName.equals(jParser.currentName()))
-        {
-            jParser.nextFieldName();
-        }
-
-        jParser.nextToken();
-    }
-
-    private String jsonArray(Collection<?> values, boolean object)
-    {
-        boolean first = true;
-        StringBuilder result = new StringBuilder();
-        for (Object value : values)
-        {
-            if (!first)
-            {
-                result.append(",\n\t\t");
-            }
-
-            if (object)
-            {
-                result.append(value.toString());
-            }
-            else
-            {
-                result.append("\"").append(value.toString()).append("\"");
-            }
-            first = false;
-        }
-        return result.toString();
+        List<Path> paths = Paths.from(ways);
+        return new Model(
+                paths,
+                Intersection.intersections(paths),
+                segments(paths),
+                width,
+                height);
     }
 
     private Model(
-        List<Path> paths,
-        Map<Pixel, Intersection> intersections,
-        List<Line> lines,
-        int width,
-        int height)
+            List<Path> paths,
+            IntersectionIndex intersections,
+            List<Segment> segments,
+            int width,
+            int height)
     {
         this.paths = paths;
         this.intersections = intersections;
-        this.lines = lines;
+        this.segments = segments;
         this.width = width;
         this.height = height;
     }
 
-    public boolean tick(Random random, Events events)
+    public void tick(Random random, Events events)
     {
         DeferredModelActions modelActions = new DeferredModelActions();
 
@@ -191,11 +79,12 @@ public final class Model
 
         for (Patrol patrol : patrols)
         {
-            patrol.tick(intersections, random, events);
+            patrol.tick(random, events);
 
             if (player != null)
             {
-                double distanceToPlayer = DoublePoint.distanceBetween(patrol.point, player.position);
+                double distanceToPlayer =
+                        patrol.location.distanceTo(player.position);
                 if (distanceToPlayer < 5)
                 {
                     events.gameOver();
@@ -208,43 +97,42 @@ public final class Model
         }
 
         modelActions.enact(this, events);
-        return false;
     }
 
-    void addSentry(int x, int y)
+    void addSentry(final LatLn location)
     {
-        final Pixel clickPoint = new Pixel(x, y);
         Connection best =
-            Connection.nearestConnection(paths, clickPoint.asDoublePoint());
+            Connection.nearestConnection(paths, location);
 
-        final Pixel point = new Pixel(x, y);
         joiningSentries.add(
             new JoiningSentry(
                 "sentry-" + sentryIndex++,
                 best,
-                point.asDoublePoint(),
-                best.connectionPoint.minus(point.asDoublePoint()).over(5)));
+                location,
+                best.snapVelocityFrom(location)));
     }
 
-    private static List<Line> lines(List<Path> paths)
+    private static List<Segment> segments(List<Path> paths)
     {
-        final List<Line> lines = new ArrayList<>();
+        final List<Segment> segments = new ArrayList<>();
 
         for (Path path : paths)
         {
-            lines.addAll(path.lines);
+            segments.addAll(path.segments());
         }
 
-        return lines;
+        return segments;
     }
 
-    public void setPlayerLocation(int x, int y)
+    public void setPlayerLocation(final LatLn latLn)
     {
-        final Pixel point = new Pixel(x, y);
         Connection connection =
-            Connection.nearestConnection(paths, point.asDoublePoint());
+            Connection.nearestConnection(paths, latLn);
 
-        player = new Player(connection.getPath(), connection.line, connection.connectionPoint);
+        player = new Player(
+                connection.path(),
+                connection.line(),
+                connection.location());
     }
 
     void removeJoining(List<JoiningSentry> outgoing)
@@ -257,55 +145,18 @@ public final class Model
         this.patrols.addAll(incoming);
     }
 
-    @Override
-    public boolean equals(Object o)
-    {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-
-        Model model = (Model) o;
-
-        if (width != model.width) return false;
-        if (height != model.height) return false;
-        if (sentryIndex != model.sentryIndex) return false;
-        if (intersections != null ? !intersections.equals(model.intersections) : model.intersections != null)
-            return false;
-        if (joiningSentries != null ? !joiningSentries.equals(model.joiningSentries) : model.joiningSentries != null)
-            return false;
-        if (patrols != null ? !patrols.equals(model.patrols) : model.patrols != null) return false;
-        if (paths != null ? !paths.equals(model.paths) : model.paths != null) return false;
-        if (lines != null ? !lines.equals(model.lines) : model.lines != null) return false;
-        return !(player != null ? !player.equals(model.player) : model.player != null);
-
-    }
-
-    @Override
-    public int hashCode()
-    {
-        int result = intersections != null ? intersections.hashCode() : 0;
-        result = 31 * result + (joiningSentries != null ? joiningSentries.hashCode() : 0);
-        result = 31 * result + (patrols != null ? patrols.hashCode() : 0);
-        result = 31 * result + (paths != null ? paths.hashCode() : 0);
-        result = 31 * result + (lines != null ? lines.hashCode() : 0);
-        result = 31 * result + width;
-        result = 31 * result + height;
-        result = 31 * result + sentryIndex;
-        result = 31 * result + (player != null ? player.hashCode() : 0);
-        return result;
-    }
-
-    public void click(int x, int y)
+    public void click(LatLn location)
     {
         if (joiningSentries.size() + patrols.size() > 3)
         {
             if (player == null)
             {
-                setPlayerLocation(x, y);
+                setPlayerLocation(location);
             }
         }
         else
         {
-            addSentry(x, y);
+            addSentry(location);
         }
     }
 }

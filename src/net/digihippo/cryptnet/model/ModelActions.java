@@ -1,14 +1,14 @@
 package net.digihippo.cryptnet.model;
 
-import net.digihippo.cryptnet.dimtwo.*;
+import net.digihippo.cryptnet.roadmap.LatLn;
 
 public interface ModelActions
 {
     void joined(
         JoiningSentry sentry,
-        Pixel pixel, DoublePoint point,
+        LatLn location,
         Path path,
-        Line line,
-        DoublePoint delta,
+        Segment segment,
+        LatLn velocity,
         Direction direction);
 }

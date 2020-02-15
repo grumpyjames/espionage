@@ -1,7 +1,7 @@
 package net.digihippo.cryptnet.server;
 
-import net.digihippo.cryptnet.dimtwo.DoublePoint;
 import net.digihippo.cryptnet.model.Model;
+import net.digihippo.cryptnet.roadmap.LatLn;
 
 import java.util.Random;
 
@@ -34,14 +34,14 @@ final class Game
         }
     }
 
-    void onPlayerLocation(int playerX, int playerY)
+    void onPlayerLocation(LatLn location)
     {
-        model.setPlayerLocation(playerX, playerY);
+        model.setPlayerLocation(location);
     }
 
-    void onClick(int x, int y)
+    void onClick(LatLn location)
     {
-        model.click(x, y);
+        model.click(location);
     }
 
     private final class GameEvents implements Model.Events {
@@ -52,14 +52,13 @@ final class Game
         }
 
         @Override
-        public void playerPositionChanged(DoublePoint location)
+        public void playerPositionChanged(LatLn location)
         {
             events.playerPositionChanged(identifier, location);
         }
 
         @Override
-        public void sentryPositionChanged(
-            String patrolIdentifier, DoublePoint location, DoublePoint orientation)
+        public void sentryPositionChanged(String patrolIdentifier, LatLn location, LatLn orientation)
         {
             events.sentryPositionChanged(identifier, patrolIdentifier, location, orientation);
         }

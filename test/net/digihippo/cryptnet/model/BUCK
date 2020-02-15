@@ -3,7 +3,7 @@ java_test(
   srcs = glob(['*.java']),
   deps = [
     '//src/net/digihippo/cryptnet/model:model',
-    '//src/net/digihippo/cryptnet/dimtwo:dimtwo',
+    '//src/net/digihippo/cryptnet/roadmap:roadmap',
     '//:hamcrest',
     '//:jackson',
     '//:junit',

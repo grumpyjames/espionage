@@ -1,246 +1,76 @@
 package net.digihippo.cryptnet.model;
 
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.JsonParser;
-import net.digihippo.cryptnet.dimtwo.*;
+import net.digihippo.cryptnet.roadmap.LatLn;
 
-import java.io.IOException;
-import java.util.Map;
 import java.util.Random;
 
-public final class Patrol
-{
+public final class Patrol {
     private final String identifier;
     Path path;
-    Line line;
-    public DoublePoint delta;
-    public DoublePoint point;
+    Segment segment;
+    public LatLn velocity; // separate class soon please!
+    public LatLn location;
     private Direction direction;
     private Intersection previous;
-    private Pixel previousTurn;
+    private LatLn lastVertex;
 
     private transient int lineIndex;
 
     Patrol(
-        String identifier,
-        Path path,
-        Line line,
-        DoublePoint delta,
-        DoublePoint doublePoint,
-        Direction direction)
-    {
+            String identifier,
+            Path path,
+            Segment segment,
+            LatLn velocity,
+            LatLn doublePoint,
+            Direction direction) {
         this.identifier = identifier;
         this.path = path;
-        this.line = line;
-        this.lineIndex = path.indexOf(line);
-        this.delta = delta;
-        this.point = doublePoint;
+        this.segment = segment;
+        this.lineIndex = path.indexOf(segment);
+        this.velocity = velocity;
+        this.location = doublePoint;
         this.direction = direction;
     }
 
-    private void snapToLine(Pixel pixel, Path path, Line line, Direction direction)
+    private void snapToLine(
+            LatLn location,
+            Path path,
+            Segment segment,
+            Direction direction)
     {
         this.path = path;
-        this.line = line;
-        this.lineIndex = path.indexOf(line);
-        this.delta = direction.orient(line.direction());
-        this.point = pixel.asDoublePoint();
+        this.segment = segment;
+        this.lineIndex = path.indexOf(segment);
+        this.velocity = direction.orient(segment.direction());
+        this.location = location;
         this.direction = direction;
     }
 
     void tick(
-        final Map<Pixel, Intersection> intersections,
-        final Random random,
-        Model.Events events)
-    {
-        this.point = this.point.plus(delta);
+            final Random random,
+            final Model.Events events) {
 
-        final Iterable<Pixel> pixels = this.point.pixelBounds();
-        for (Pixel pixel : pixels)
-        {
-            Intersection intersection = intersections.get(pixel);
-            if (intersection != null)
-            {
-                // as we move away from an intersection, we'll get 'spurious' collisions
-                if (intersection.equals(previous))
-                {
-                    continue;
-                }
-                intersection(random, pixel, intersection);
-                break;
-            }
-            else if (this.path.startsAt(pixel) && this.path.endsAt(pixel) && !pixel.equals(previousTurn))
-            {
-                boolean forwards = random.nextBoolean();
-                if (forwards)
-                {
-                    turn(pixel, this.path, this.path.lines.get(0), Direction.Forwards);
-                }
-                else
-                {
-                    turn(pixel, this.path, this.path.lines.get(this.path.lines.size() - 1), Direction.Backwards);
-                }
-                break;
-            }
-            else if (this.path.startsAt(pixel) && this.direction == Direction.Backwards && !pixel.equals(previousTurn))
-            {
-                turn(pixel, this.path, this.line, Direction.Forwards);
-                break;
-            }
-            else if (this.path.endsAt(pixel) && this.direction == Direction.Forwards && !pixel.equals(previousTurn))
-            {
-                turn(pixel, this.path, this.line, Direction.Backwards);
-                break;
-            }
-            else if (direction.turnsAt(this.path, this.lineIndex, pixel) && !pixel.equals(previousTurn))
-            {
-                final Line nextLine = this.path.lines.get(direction.nextLineIndex(lineIndex));
-                turn(pixel, this.path, nextLine, this.direction);
-                break;
-            }
-        }
+        this.path.move(this, random);
 
-        events.sentryPositionChanged(identifier, this.point, this.delta);
+        events.sentryPositionChanged(identifier, this.location, this.velocity);
     }
 
-    private void turn(Pixel pixel, Path path, Line line, Direction dir)
-    {
-        snapToLine(pixel, path, line, dir);
-        turnComplete(pixel);
+    private void turn(LatLn turnLocation, Path path, Segment segment, Direction dir) {
+        snapToLine(turnLocation, path, segment, dir);
+        turnComplete(turnLocation);
     }
 
-    private void turnComplete(Pixel pixel)
-    {
+    private void turnComplete(LatLn vertexLocation) {
         this.previous = null;
-        this.previousTurn = pixel;
+        this.lastVertex = vertexLocation;
     }
 
-    private void intersection(Random random, Pixel pixel, Intersection intersection)
-    {
-        IntersectionEntry[] lines =
-            intersection.entries.toArray(new IntersectionEntry[intersection.entries.size()]);
-        IntersectionEntry entry =
-            lines[random.nextInt(lines.length)];
+    private void intersection(Random random, Intersection intersection) {
+        IntersectionEntry entry = intersection.pickEntry(random);
 
-        snapToLine(pixel, entry.path, entry.line, entry.direction);
+        snapToLine(this.location, entry.path, entry.segment, entry.direction);
 
         this.previous = intersection;
-        this.previousTurn = null;
-    }
-
-    @Override
-    public String toString()
-    {
-        return "{\n\t" +
-            "   \"identifier\": \"" + identifier + "\",\n\t" +
-            "   \"path\": \"" + path.toString() + "\",\n\t" +
-            "   \"line\": \"" + line.toString() + "\",\n\t" +
-            "   \"delta\": \"" + delta.toString() + "\",\n\t" +
-            "   \"point\": \"" + point.toString() + "\",\n\t" +
-            "   \"direction\": \"" + direction.toString() + "\",\n\t" +
-            "   \"previous\": \"" + (previous == null ? "null" : previous.toString()) + "\",\n\t" +
-            "   \"previousTurn\": \"" + (previousTurn == null ? "null" : previousTurn.toString()) + "\"\n" +
-            "}";
-    }
-
-    static Patrol parse(String s)
-    {
-        JsonFactory jfactory = new JsonFactory();
-        try
-        {
-            JsonParser jParser = jfactory.createParser(s);
-
-            return parse(jParser);
-
-        }
-        catch (IOException e)
-        {
-            throw new RuntimeException(e);
-        }
-    }
-
-    static Patrol parse(JsonParser jParser) throws IOException
-    {
-        jParser.nextToken();
-        skipTo(jParser, "identifier");
-        final String identifier = jParser.getValueAsString();
-
-        skipTo(jParser, "path");
-        final Path path = Path.parse(jParser.getValueAsString());
-
-        skipTo(jParser, "line");
-        final Line line = Line.parse(jParser.getValueAsString());
-
-        skipTo(jParser, "delta");
-        final DoublePoint delta = DoublePoint.parse(jParser.getValueAsString());
-
-        skipTo(jParser, "point");
-        final DoublePoint point = DoublePoint.parse(jParser.getValueAsString());
-
-        skipTo(jParser, "direction");
-        final Direction direction = Direction.valueOf(jParser.getValueAsString());
-
-        skipTo(jParser, "previous");
-        String maybeValue = jParser.getValueAsString();
-        final Intersection previous = maybeValue.equals("null") ? null : Intersection.parse(maybeValue);
-
-        skipTo(jParser, "previousTurn");
-        maybeValue = jParser.getValueAsString();
-        final Pixel previousTurn = maybeValue.equals("null") ? null : Pixel.parse(maybeValue);
-
-        Patrol patrol = new Patrol(identifier, path, line, delta, point, direction);
-
-        patrol.previous = previous;
-        patrol.previousTurn = previousTurn;
-
-        jParser.nextToken();
-
-        return patrol;
-    }
-
-    private static void skipTo(JsonParser jParser, String fieldName) throws IOException
-    {
-        while (!fieldName.equals(jParser.currentName()))
-        {
-            jParser.nextFieldName();
-        }
-
-        jParser.nextToken();
-    }
-
-    @SuppressWarnings("SimplifiableIfStatement")
-    @Override
-    public boolean equals(Object o)
-    {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-
-        Patrol patrol = (Patrol) o;
-
-        if (lineIndex != patrol.lineIndex) return false;
-        if (identifier != null ? !identifier.equals(patrol.identifier) : patrol.identifier != null) return false;
-        if (path != null ? !path.equals(patrol.path) : patrol.path != null) return false;
-        if (line != null ? !line.equals(patrol.line) : patrol.line != null) return false;
-        if (delta != null ? !delta.equals(patrol.delta) : patrol.delta != null) return false;
-        if (point != null ? !point.equals(patrol.point) : patrol.point != null) return false;
-        if (direction != patrol.direction) return false;
-        if (previous != null ? !previous.equals(patrol.previous) : patrol.previous != null) return false;
-        return !(previousTurn != null ? !previousTurn.equals(patrol.previousTurn) : patrol.previousTurn != null);
-
-    }
-
-    @Override
-    public int hashCode()
-    {
-        int result = identifier != null ? identifier.hashCode() : 0;
-        result = 31 * result + (path != null ? path.hashCode() : 0);
-        result = 31 * result + (line != null ? line.hashCode() : 0);
-        result = 31 * result + (delta != null ? delta.hashCode() : 0);
-        result = 31 * result + (point != null ? point.hashCode() : 0);
-        result = 31 * result + (direction != null ? direction.hashCode() : 0);
-        result = 31 * result + (previous != null ? previous.hashCode() : 0);
-        result = 31 * result + (previousTurn != null ? previousTurn.hashCode() : 0);
-        result = 31 * result + lineIndex;
-        return result;
+        this.lastVertex = null;
     }
 }

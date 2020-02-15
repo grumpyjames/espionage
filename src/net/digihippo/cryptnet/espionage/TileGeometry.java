@@ -1,6 +1,6 @@
-package net.digihippo.cryptnet.model;
+package net.digihippo.cryptnet.espionage;
 
-import net.digihippo.cryptnet.dimtwo.WebMercator;
+import net.digihippo.cryptnet.roadmap.WebMercator;
 
 public final class TileGeometry
 {

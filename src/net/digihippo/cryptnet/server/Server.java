@@ -1,6 +1,7 @@
 package net.digihippo.cryptnet.server;
 
 import net.digihippo.cryptnet.model.Model;
+import net.digihippo.cryptnet.roadmap.LatLn;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -36,14 +37,14 @@ public class Server
         }
     }
 
-    public void onPlayerLocation(String gameIdentifier, int playerX, int playerY)
+    public void onPlayerLocation(String gameIdentifier, LatLn location)
     {
-        games.get(gameIdentifier).onPlayerLocation(playerX, playerY);
+        games.get(gameIdentifier).onPlayerLocation(location);
     }
 
-    public void onClick(String gameIdentifier, int x, int y)
+    public void onClick(String gameIdentifier, LatLn location)
     {
-        games.get(gameIdentifier).onClick(x, y);
+        games.get(gameIdentifier).onClick(location);
     }
 
     public void tick(

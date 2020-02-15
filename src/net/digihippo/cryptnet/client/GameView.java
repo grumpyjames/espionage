@@ -2,6 +2,7 @@ package net.digihippo.cryptnet.client;
 
 import net.digihippo.cryptnet.dimtwo.DoublePoint;
 import net.digihippo.cryptnet.model.Model.Events;
+import net.digihippo.cryptnet.roadmap.LatLn;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -14,13 +15,13 @@ public class GameView implements Events
     }
 
     @Override
-    public void playerPositionChanged(DoublePoint location)
+    public void playerPositionChanged(LatLn location)
     {
         this.playerLocation = location;
     }
 
     @Override
-    public void sentryPositionChanged(String patrolIdentifier, DoublePoint location, DoublePoint orientation)
+    public void sentryPositionChanged(String patrolIdentifier, LatLn location, LatLn orientation)
     {
         SentryView sentryView = sentries.get(patrolIdentifier);
         if (sentryView == null)
@@ -69,7 +70,7 @@ public class GameView implements Events
         return sentries.values();
     }
 
-    public DoublePoint playerLocation()
+    public LatLn playerLocation()
     {
         return playerLocation;
     }
@@ -77,15 +78,15 @@ public class GameView implements Events
     public static class SentryView
     {
         private final String identifier;
-        public DoublePoint location;
-        public DoublePoint orientation;
+        public LatLn location;
+        public LatLn orientation;
 
         private SentryView(String identifier)
         {
             this.identifier = identifier;
         }
 
-        public void setLocation(DoublePoint location, DoublePoint orientation)
+        public void setLocation(LatLn location, LatLn orientation)
         {
             this.location = location;
             this.orientation = orientation;
@@ -94,7 +95,7 @@ public class GameView implements Events
 
     private final String identifier;
     private final Map<String, SentryView> sentries = new HashMap<>();
-    private DoublePoint playerLocation;
+    private LatLn playerLocation;
     private State state = State.Idle;
 
     enum State
