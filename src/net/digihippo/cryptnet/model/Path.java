@@ -50,7 +50,7 @@ public class Path {
     }
 
     public Collection<? extends Segment> segments() {
-        return null;
+        return segments;
     }
 
     public void move(Patrol patrol, Random random) {

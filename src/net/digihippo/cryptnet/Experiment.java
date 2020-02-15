@@ -2,6 +2,7 @@ package net.digihippo.cryptnet;
 
 import net.digihippo.cryptnet.dimtwo.*;
 import net.digihippo.cryptnet.model.*;
+import net.digihippo.cryptnet.model.Path;
 import net.digihippo.cryptnet.roadmap.LatLn;
 import net.digihippo.cryptnet.roadmap.OsmSource;
 import net.digihippo.cryptnet.roadmap.Way;
@@ -15,19 +16,19 @@ import java.awt.event.MouseListener;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.net.URL;
+import java.text.DecimalFormat;
 import java.util.Collection;
 import java.util.Random;
 import java.util.concurrent.*;
+import java.util.concurrent.locks.LockSupport;
 
 public class Experiment
 {
     @SuppressWarnings("SameParameterValue")
     private static Model startingModel(
-            Collection<Way> ways,
-            int width,
-            int height)
+            Collection<Way> ways)
     {
-        return Model.createModel(ways, width, height);
+        return Model.createModel(ways);
     }
 
     interface Event
@@ -63,6 +64,10 @@ public class Experiment
 
     private static final class Viewer extends Component
     {
+        private final LatLn topLeft;
+        private final LatLn bottomRight;
+        private final int width;
+        private final int height;
         // FIXME: and, you know, our updates to this field aren't exactly atomic,
         // ...and happen on a completely different thread.
         private final Model model;
@@ -72,14 +77,22 @@ public class Experiment
 
         @Override
         public Dimension getPreferredSize() {
-            return new Dimension(model.width + (2 * offsetX), model.height + (2 * offsetY));
+            return new Dimension(width + (2 * offsetX), height + (2 * offsetY));
         }
 
         private Viewer(
-            final Model model,
-            final BufferedImage[][] images,
-            final BlockingQueue<Event> events)
+                final LatLn topLeft,
+                final LatLn bottomRight,
+                final int width,
+                final int height,
+                final Model model,
+                final BufferedImage[][] images,
+                final BlockingQueue<Event> events)
         {
+            this.topLeft = topLeft;
+            this.bottomRight = bottomRight;
+            this.width = width;
+            this.height = height;
             this.model = model;
             this.images = images;
 
@@ -99,9 +112,21 @@ public class Experiment
                     g.drawImage(bufferedImage, offsetX + (i * 256), offsetY + (j * 256), null);
                 }
             }
-            for (Segment line: model.segments)
+
+            Graphics2D g2 = (Graphics2D)g;
+            RenderingHints rh = new RenderingHints(
+                    RenderingHints.KEY_TEXT_ANTIALIASING,
+                    RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+            g2.setRenderingHints(rh);
+            g.drawString(toHumanCoords(topLeft), offsetX, offsetY);
+            g.drawString(toHumanCoords(bottomRight), offsetX + width, offsetY + height);
+
+            for (Path path : model.paths)
             {
-                drawLine(g, line);
+                for (Segment line: path.segments())
+                {
+                    drawLine(g, line);
+                }
             }
 //            for (LatLn latLn: model.paths.locations()) {
 //                g.drawPolygon(
@@ -135,15 +160,18 @@ public class Experiment
             }
         }
 
+        private static final DecimalFormat format = new DecimalFormat("#.#####");
+
+        private String toHumanCoords(LatLn topLeft)
+        {
+            return format.format(Math.toDegrees(topLeft.lat)) + "," + format.format(Math.toDegrees(topLeft.lon));
+        }
+
         private void renderJoiningSentry(Graphics g, JoiningSentry sentry, LatLn location, LatLn velocity) {
-            throw new UnsupportedOperationException();
+//            throw new UnsupportedOperationException();
 //            renderSentry(location, velocity, g);
 //
-//            g.drawLine(
-//                offsetX + renderable.x,
-//                offsetY + renderable.y,
-//                offsetX + Maths.round(sentry.connection.connectionPoint.x),
-//                offsetY + Maths.round(sentry.connection.connectionPoint.y));
+            drawLine(g, sentry.location, sentry.connection.location());
         }
 
         private void renderPlayer(Graphics g, LatLn playerLocation) {
@@ -181,14 +209,60 @@ public class Experiment
             g.drawOval(offsetX + renderable.x - radius, offsetY + renderable.y - radius, radius * 2, radius * 2);
         }
 
-        private void drawLine(Graphics g, Segment line)
+        private void drawLine(Graphics g, Segment segment)
         {
-            throw new UnsupportedOperationException();
-//            g.drawLine(offsetX + line.x1, offsetY + line.y1, offsetX + line.x2, offsetY + line.y2);
+            // reminder: the swing origin is also the top left.
+            final LatLn head = segment.head.location;
+            final LatLn tail = segment.tail.location;
+
+            drawLine(g, head, tail);
+        }
+
+        private void drawLine(Graphics g, LatLn head, LatLn tail)
+        {
+            final int x1 = offsetX + toX(head.lon);
+            final int y1 = offsetY + toY(head.lat);
+            final int x2 = offsetX + toX(tail.lon);
+            final int y2 = offsetY + toY(tail.lat);
+            g.drawLine(x1, y1, x2, y2);
+//            g.drawString(toHumanCoords(head), x1, y1);
+//            g.drawString(toHumanCoords(tail), x2, y2);
+        }
+
+        private int toY(double latRads)
+        {
+            // FIXME: pretty certain the projection geometry is wrong here.
+            final double latRadHeight = (topLeft.lat - bottomRight.lat);
+            final double depthRatio = (topLeft.lat - latRads) / latRadHeight;
+            return (int) (depthRatio * height);
+        }
+
+        private int toX(double lonRads)
+        {
+            // FIXME: and here...
+            final double lonRadWidth = (bottomRight.lon - topLeft.lon);
+            final double widthRatio = (lonRads - topLeft.lon) / lonRadWidth;
+            return (int) (widthRatio * width);
+        }
+
+        private LatLn latLn(int x, int y)
+        {
+            int x1 = x - offsetX;
+            int y1 = y - offsetY;
+
+            int depthRatio = y1 / height;
+            final double latRads = topLeft.lat + (depthRatio * (topLeft.lat - bottomRight.lat));
+
+            int widthRatio = x1 / width;
+            final double lonRads = topLeft.lon + ((widthRatio) * (bottomRight.lon - topLeft.lon));
+
+
+            return new LatLn(latRads, lonRads);
         }
 
         private class EventQueueListener implements MouseListener
         {
+
             private final BlockingQueue<Event> events;
 
             EventQueueListener(BlockingQueue<Event> events)
@@ -208,11 +282,6 @@ public class Experiment
                 {
                     pushEvent(new PrintEvent(), events);
                 }
-            }
-
-            private LatLn latLn(int x, int y)
-            {
-                throw new UnsupportedOperationException();
             }
 
             private void pushEvent(Event event, BlockingQueue<Event> events)
@@ -247,20 +316,25 @@ public class Experiment
         double longitudeMax = WebMercator.lon((xTile + 2) * 256, 17);
 
         final Model model = startingModel(
-            OsmSource.fetchWays(latitudeMin, latitudeMax, longitudeMin, longitudeMax),
-            512,
-            512
+            OsmSource.fetchWays(latitudeMin, latitudeMax, longitudeMin, longitudeMax)
         );
+
+        final LatLn topLeft = new LatLn(Math.max(latitudeMin, latitudeMax), Math.min(longitudeMin, longitudeMax));
+        final LatLn bottomRight = new LatLn(Math.min(latitudeMin, latitudeMax), Math.max(longitudeMin, longitudeMax));
+
         final BufferedImage[][] images =
             new BufferedImage[2][2];
-        images[0][0] = ImageIO.read(new URL("http://c.tile.openstreetmap.org/17/" + xTile + "/" + yTile + ".png"));
-        images[1][0] = ImageIO.read(new URL("http://c.tile.openstreetmap.org/17/" + (xTile + 1) + "/" + yTile + ".png"));
-        images[0][1] = ImageIO.read(new URL("http://c.tile.openstreetmap.org/17/" + xTile + "/" + (yTile + 1) + ".png"));
-        images[1][1] = ImageIO.read(new URL("http://c.tile.openstreetmap.org/17/" + (xTile + 1) + "/" + (yTile + 1) + ".png"));
+        images[0][0] = ImageIO.read(new URL("http://a.tile.stamen.com/toner/17/" + xTile + "/" + yTile + ".png"));
+        LockSupport.parkNanos(10_000_000);
+        images[1][0] = ImageIO.read(new URL("http://a.tile.stamen.com/toner/17/" + (xTile + 1) + "/" + yTile + ".png"));
+        LockSupport.parkNanos(10_000_000);
+        images[0][1] = ImageIO.read(new URL("http://a.tile.stamen.com/toner/17/" + xTile + "/" + (yTile + 1) + ".png"));
+        LockSupport.parkNanos(10_000_000);
+        images[1][1] = ImageIO.read(new URL("http://a.tile.stamen.com/toner/17/" + (xTile + 1) + "/" + (yTile + 1) + ".png"));
 
         final BlockingQueue<Event> events = new LinkedBlockingQueue<>();
         final Random random = new Random(238824982L);
-        final Viewer viewer = new Viewer(model, images, events);
+        final Viewer viewer = new Viewer(topLeft, bottomRight, 512, 512, model, images, events);
         final ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
 
         SwingUtilities.invokeLater(new Runnable()

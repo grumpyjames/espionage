@@ -2,7 +2,8 @@ package net.digihippo.cryptnet.roadmap;
 
 public final class LatLn
 {
-    private final double lat, lon;
+    public final double lat;
+    public final double lon;
 
     public LatLn(double lat, double lon)
     {
@@ -13,7 +14,7 @@ public final class LatLn
     @Override
     public String toString()
     {
-        return "(" + lon + ", " + lat + ")";
+        return "( lat: " + lat + ", lon: " + lon + ")";
     }
 
     public LatLn applyTo(LatLn location) {

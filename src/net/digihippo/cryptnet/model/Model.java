@@ -13,9 +13,6 @@ public final class Model
     public final List<JoiningSentry> joiningSentries = new ArrayList<>();
     public final List<Patrol> patrols = new ArrayList<>();
     public final List<Path> paths;
-    public final List<Segment> segments;
-    public final int width;
-    public final int height;
 
     private int sentryIndex = 0;
     public Player player = null;
@@ -39,29 +36,15 @@ public final class Model
         void gameStarted();
     }
 
-    public static Model createModel(
-        Collection<Way> ways,
-        int width,
-        int height)
+    public static Model createModel(Collection<Way> ways)
     {
         List<Path> paths = Paths.from(ways);
-        return new Model(
-                paths,
-                segments(paths),
-                width,
-                height);
+        return new Model(paths);
     }
 
-    private Model(
-            List<Path> paths,
-            List<Segment> segments,
-            int width,
-            int height)
+    private Model(List<Path> paths)
     {
         this.paths = paths;
-        this.segments = segments;
-        this.width = width;
-        this.height = height;
     }
 
     public void tick(Random random, Events events)

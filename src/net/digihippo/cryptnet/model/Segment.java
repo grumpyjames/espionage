@@ -3,8 +3,8 @@ package net.digihippo.cryptnet.model;
 import net.digihippo.cryptnet.roadmap.LatLn;
 
 public class Segment {
-    private final Vertex head;
-    private final Vertex tail;
+    public final Vertex head;
+    public final Vertex tail;
 
     public Segment(Vertex head, Vertex tail) {
         this.head = head;

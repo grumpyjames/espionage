@@ -5,9 +5,9 @@ import net.digihippo.cryptnet.roadmap.LatLn;
 import java.util.ArrayList;
 import java.util.List;
 
-class Vertex
+public class Vertex
 {
-    final LatLn location;
+    public final LatLn location;
     final List<Link> links = new ArrayList<>();
 
     public Vertex(LatLn location) {
