@@ -103,7 +103,7 @@ public class Experiment
             {
                 drawLine(g, line);
             }
-            for (LatLn latLn: model.intersections.locations()) {
+//            for (LatLn latLn: model.paths.locations()) {
 //                g.drawPolygon(
 //                    new int[] {
 //                        offsetX + point.x - 2,
@@ -116,7 +116,7 @@ public class Experiment
 //                        offsetY + point.y - 2,
 //                        offsetY + point.y - 2},
 //                    4);
-            }
+//            }
             for (JoiningSentry sentry : model.joiningSentries) {
                 final LatLn location = sentry.location;
                 final LatLn velocity = sentry.velocity;

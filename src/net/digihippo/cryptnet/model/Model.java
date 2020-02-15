@@ -10,10 +10,9 @@ import java.util.Random;
 
 public final class Model
 {
-    public final IntersectionIndex intersections;
     public final List<JoiningSentry> joiningSentries = new ArrayList<>();
     public final List<Patrol> patrols = new ArrayList<>();
-    private final List<Path> paths;
+    public final List<Path> paths;
     public final List<Segment> segments;
     public final int width;
     public final int height;
@@ -48,7 +47,6 @@ public final class Model
         List<Path> paths = Paths.from(ways);
         return new Model(
                 paths,
-                Intersection.intersections(paths),
                 segments(paths),
                 width,
                 height);
@@ -56,13 +54,11 @@ public final class Model
 
     private Model(
             List<Path> paths,
-            IntersectionIndex intersections,
             List<Segment> segments,
             int width,
             int height)
     {
         this.paths = paths;
-        this.intersections = intersections;
         this.segments = segments;
         this.width = width;
         this.height = height;
