@@ -231,18 +231,17 @@ public class Experiment
 
         private int toY(double latRads)
         {
-            // FIXME: pretty certain the projection geometry is wrong here.
-            final double latRadHeight = (topLeft.lat - bottomRight.lat);
-            final double depthRatio = (topLeft.lat - latRads) / latRadHeight;
-            return (int) (depthRatio * height);
+            double y = WebMercator.y(latRads, 17, 256);
+            double originY = WebMercator.y(topLeft.lat, 17, 256);
+            return (int) (y - originY);
         }
 
         private int toX(double lonRads)
         {
-            // FIXME: and here...
-            final double lonRadWidth = (bottomRight.lon - topLeft.lon);
-            final double widthRatio = (lonRads - topLeft.lon) / lonRadWidth;
-            return (int) (widthRatio * width);
+            double x = WebMercator.x(lonRads, 17, 256);
+            double originX = WebMercator.x(topLeft.lon, 17, 256);
+
+            return (int) (x - originX);
         }
 
         private LatLn latLn(int x, int y)
