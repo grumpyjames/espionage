@@ -2,13 +2,44 @@ package net.digihippo.cryptnet.model;
 
 import net.digihippo.cryptnet.roadmap.LatLn;
 
+import java.util.Collections;
 import java.util.List;
 
 public class Connection {
-    public static Connection nearestConnection(
+    public final Path path;
+
+    private Connection(Path path)
+    {
+        this.path = path;
+    }
+
+    static Connection nearestConnection(
             List<Path> paths,
             LatLn location) {
-        throw new UnsupportedOperationException();
+
+        double bestDistance = Double.MAX_VALUE;
+        Vertex bestVertex = null;
+
+        for (Path path : paths)
+        {
+            for (Segment segment : path.segments())
+            {
+                double distance = segment.head.location.distanceTo(location);
+                if (distance < bestDistance)
+                {
+                    bestDistance = distance;
+                    bestVertex = segment.head;
+                }
+            }
+        }
+
+        assert bestVertex != null;
+        final Path path = new Path(Collections.singletonList(new Segment(new Vertex(location), bestVertex)));
+        // DON'T DO THIS!
+        // path.visitVertices();
+        // Or the joining path becomes part of the map.
+
+        return new Connection(path);
     }
 
     public LatLn snapVelocityFrom(LatLn location) {
@@ -21,11 +52,11 @@ public class Connection {
     }
 
     public LatLn location() {
-        throw new UnsupportedOperationException();
+        return path.lastSegment().tail.location;
     }
 
     public Path path() {
-        throw new UnsupportedOperationException();
+        return path;
     }
 
     public Segment line() {

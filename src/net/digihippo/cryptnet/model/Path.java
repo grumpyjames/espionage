@@ -53,8 +53,7 @@ public class Path {
         return segments;
     }
 
-    public void move(Patrol patrol, Random random) {
-        throw new UnsupportedOperationException();
+    void move(Patrol patrol, Random random) {
         // Thoughts:
         // If we know the segment, all we really need to know
         // is the patrol's speed and direction along this path.
@@ -63,6 +62,27 @@ public class Path {
         // patrol as necessary.
         // We will probably require a random here to choose between possible
         // options.
+    }
+
+    void move(JoiningSentry joiningSentry)
+    {
+        // Previously:
+//        this.location = this.velocity.applyTo(this.location);
+//        if (this.connection.endsNear(this.location))
+//        {
+//            modelActions.joined(
+//                    this,
+//                    this.connection.location(),
+//                    this.connection.path(),
+//                    this.connection.line(),
+//                    this.connection.joinVelocity(),
+//                    this.connection.joinDirection());
+//        }
+//        else
+//        {
+//            events.sentryPositionChanged(
+//                    identifier, this.location, this.velocity);
+//        }
     }
 
     void visitVertices() {

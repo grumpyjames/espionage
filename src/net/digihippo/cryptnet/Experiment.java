@@ -68,8 +68,7 @@ public class Experiment
         private final LatLn bottomRight;
         private final int width;
         private final int height;
-        // FIXME: and, you know, our updates to this field aren't exactly atomic,
-        // ...and happen on a completely different thread.
+
         private final Model model;
         private final int offsetX = 50;
         private final int offsetY = 50;
@@ -143,9 +142,7 @@ public class Experiment
 //                    4);
 //            }
             for (JoiningSentry sentry : model.joiningSentries) {
-                final LatLn location = sentry.location;
-                final LatLn velocity = sentry.velocity;
-                renderJoiningSentry(g, sentry, location, velocity);
+                renderJoiningSentry(g, sentry);
             }
 
             for (Patrol patrol: model.patrols)
@@ -167,11 +164,11 @@ public class Experiment
             return format.format(Math.toDegrees(topLeft.lat)) + "," + format.format(Math.toDegrees(topLeft.lon));
         }
 
-        private void renderJoiningSentry(Graphics g, JoiningSentry sentry, LatLn location, LatLn velocity) {
+        private void renderJoiningSentry(Graphics g, JoiningSentry sentry) {
 //            throw new UnsupportedOperationException();
 //            renderSentry(location, velocity, g);
 //
-            drawLine(g, sentry.location, sentry.connection.location());
+            drawLine(g, sentry.location, sentry.connection.location(), true);
         }
 
         private void renderPlayer(Graphics g, LatLn playerLocation) {
@@ -215,18 +212,22 @@ public class Experiment
             final LatLn head = segment.head.location;
             final LatLn tail = segment.tail.location;
 
-            drawLine(g, head, tail);
+            drawLine(g, head, tail, false);
         }
 
-        private void drawLine(Graphics g, LatLn head, LatLn tail)
+        private void drawLine(Graphics g, LatLn head, LatLn tail, boolean debug)
         {
             final int x1 = offsetX + toX(head.lon);
             final int y1 = offsetY + toY(head.lat);
             final int x2 = offsetX + toX(tail.lon);
             final int y2 = offsetY + toY(tail.lat);
             g.drawLine(x1, y1, x2, y2);
-//            g.drawString(toHumanCoords(head), x1, y1);
-//            g.drawString(toHumanCoords(tail), x2, y2);
+
+            if (debug)
+            {
+                g.drawString(toHumanCoords(head), x1, y1);
+                g.drawString(toHumanCoords(tail), x2, y2);
+            }
         }
 
         private int toY(double latRads)
@@ -249,12 +250,13 @@ public class Experiment
             int x1 = x - offsetX;
             int y1 = y - offsetY;
 
-            int depthRatio = y1 / height;
-            final double latRads = topLeft.lat + (depthRatio * (topLeft.lat - bottomRight.lat));
+            double originY = WebMercator.y(topLeft.lat, 17, 256);
+            double clickY = originY + y1;
+            final double latRads = WebMercator.lat(clickY, 17, 256);
 
-            int widthRatio = x1 / width;
-            final double lonRads = topLeft.lon + ((widthRatio) * (bottomRight.lon - topLeft.lon));
-
+            double originX = WebMercator.x(topLeft.lon, 17, 256);
+            double clickX = originX + x1;
+            final double lonRads = WebMercator.lon(clickX, 17, 256D);
 
             return new LatLn(latRads, lonRads);
         }
@@ -274,7 +276,7 @@ public class Experiment
             {
                 if (e.getY() >= offsetY)
                 {
-                    ClickEvent event = new ClickEvent(latLn(e.getX() - offsetX, e.getY() - offsetY));
+                    ClickEvent event = new ClickEvent(latLn(e.getX(), e.getY()));
                     pushEvent(event, events);
                 }
                 else
@@ -307,12 +309,12 @@ public class Experiment
         int xTile = 65480;
         int yTile = 43572;
         // tile coords increase as latitude decreases
-        double latitudeMin = WebMercator.lat((yTile + 2) * 256, 17);
-        double latitudeMax = WebMercator.lat(yTile * 256, 17);
+        double latitudeMin = WebMercator.lat((yTile + 2) * 256, 17, 256D);
+        double latitudeMax = WebMercator.lat(yTile * 256, 17, 256D);
 
         // tile coords increase with longitude
-        double longitudeMin = WebMercator.lon(xTile * 256, 17);
-        double longitudeMax = WebMercator.lon((xTile + 2) * 256, 17);
+        double longitudeMin = WebMercator.lon(xTile * 256, 17, 256D);
+        double longitudeMax = WebMercator.lon((xTile + 2) * 256, 17, 256D);
 
         final Model model = startingModel(
             OsmSource.fetchWays(latitudeMin, latitudeMax, longitudeMin, longitudeMax)
@@ -352,14 +354,21 @@ public class Experiment
                     @Override
                     public void run()
                     {
-                        // Could be more Elm-like here and make model immutable?
-                        Event event;
-                        while ((event = events.poll()) != null)
+                        SwingUtilities.invokeLater(new Runnable()
                         {
-                            event.enact(model);
-                        }
-                        model.tick(random, new NoOpEvents());
-                        viewer.repaint();
+                            @Override
+                            public void run()
+                            {
+                                // Could be more Elm-like here and make model immutable?
+                                Event event;
+                                while ((event = events.poll()) != null)
+                                {
+                                    event.enact(model);
+                                }
+                                model.tick(random, new NoOpEvents());
+                                viewer.repaint();
+                            }
+                        });
                     }
                 }, 40, 40, TimeUnit.MILLISECONDS);
             }

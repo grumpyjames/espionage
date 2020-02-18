@@ -35,12 +35,12 @@ public class OsmSource
     public static void main(String[] args) throws IOException
     {
         double latYOrig = 3545567.64;
-        double latRads = lat(latYOrig, 17);
+        double latRads = lat(latYOrig, 17, 256D);
 
         System.out.printf("%s %s %s\n", latYOrig, latRads, y(latRads, 17, 256D));
 
         double lonXOrig = 3637774.66774;
-        double lonRads = lon(lonXOrig, 17);
+        double lonRads = lon(lonXOrig, 17, 256D);
 
         System.out.printf("%s %s %s\n", lonXOrig, lonRads, x(lonRads, 17, 256D));
 

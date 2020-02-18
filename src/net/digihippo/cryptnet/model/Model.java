@@ -80,15 +80,14 @@ public final class Model
 
     void addSentry(final LatLn location)
     {
-        Connection best =
+        final Connection best =
             Connection.nearestConnection(paths, location);
 
         joiningSentries.add(
-            new JoiningSentry(
-                "sentry-" + sentryIndex++,
-                best,
-                location,
-                best.snapVelocityFrom(location)));
+                new JoiningSentry(
+                        "sentry-" + sentryIndex++,
+                        best,
+                        location));
     }
 
     private static List<Segment> segments(List<Path> paths)
