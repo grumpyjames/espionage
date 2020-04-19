@@ -2,6 +2,7 @@ package net.digihippo.cryptnet.roadmap;
 
 public final class LatLn
 {
+    // Radians!
     public final double lat;
     public final double lon;
 
@@ -47,19 +48,10 @@ public final class LatLn
         return(c * r);
     }
 
-    public LatLn directionFrom(LatLn another) {
-        return new LatLn(
-                this.lat - another.lat,
-                this.lon - another.lon);
-    }
-
-    public LatLn dividedBy(double distanceTo)
-    {
-        return new LatLn(this.lat / distanceTo, this.lon / distanceTo);
-    }
-
-    public LatLn reverse()
-    {
-        return new LatLn(-this.lat, -this.lon);
+    public UnitVector directionFrom(LatLn another) {
+        double distance = this.distanceTo(another);
+        return new UnitVector(
+                (this.lat - another.lat) / distance,
+                (this.lon - another.lon) / distance);
     }
 }

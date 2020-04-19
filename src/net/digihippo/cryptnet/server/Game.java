@@ -2,6 +2,7 @@ package net.digihippo.cryptnet.server;
 
 import net.digihippo.cryptnet.model.Model;
 import net.digihippo.cryptnet.roadmap.LatLn;
+import net.digihippo.cryptnet.roadmap.UnitVector;
 
 import java.util.Random;
 
@@ -58,7 +59,7 @@ final class Game
         }
 
         @Override
-        public void sentryPositionChanged(String patrolIdentifier, LatLn location, LatLn orientation)
+        public void sentryPositionChanged(String patrolIdentifier, LatLn location, UnitVector orientation)
         {
             events.sentryPositionChanged(identifier, patrolIdentifier, location, orientation);
         }

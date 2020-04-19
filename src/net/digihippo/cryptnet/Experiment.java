@@ -2,10 +2,7 @@ package net.digihippo.cryptnet;
 
 import net.digihippo.cryptnet.dimtwo.Pixel;
 import net.digihippo.cryptnet.model.*;
-import net.digihippo.cryptnet.roadmap.LatLn;
-import net.digihippo.cryptnet.roadmap.OsmSource;
-import net.digihippo.cryptnet.roadmap.Way;
-import net.digihippo.cryptnet.roadmap.WebMercator;
+import net.digihippo.cryptnet.roadmap.*;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
@@ -187,7 +184,7 @@ public class Experiment
             g.setColor(Color.BLACK);
         }
 
-        private void renderSentry(LatLn location, LatLn velocity, Graphics g)
+        private void renderSentry(LatLn location, UnitVector velocity, Graphics g)
         {
             filledCircleAt(g, location, Color.CYAN);
 //            throw new UnsupportedOperationException();

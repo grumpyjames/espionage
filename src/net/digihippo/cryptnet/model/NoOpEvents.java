@@ -1,6 +1,7 @@
 package net.digihippo.cryptnet.model;
 
 import net.digihippo.cryptnet.roadmap.LatLn;
+import net.digihippo.cryptnet.roadmap.UnitVector;
 
 public class NoOpEvents implements Model.Events
 {
@@ -10,7 +11,7 @@ public class NoOpEvents implements Model.Events
     }
 
     @Override
-    public void sentryPositionChanged(String patrolIdentifier, LatLn location, LatLn orientation) {
+    public void sentryPositionChanged(String patrolIdentifier, LatLn location, UnitVector orientation) {
 
     }
 

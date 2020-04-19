@@ -1,6 +1,7 @@
 package net.digihippo.cryptnet.model;
 
 import net.digihippo.cryptnet.roadmap.LatLn;
+import net.digihippo.cryptnet.roadmap.UnitVector;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -19,7 +20,7 @@ public class Vertex
         links.add(new Link(end, path, segment));
     }
 
-    LatLn directionFrom(Vertex other) {
+    UnitVector directionFrom(Vertex other) {
         return this.location.directionFrom(other.location);
     }
 

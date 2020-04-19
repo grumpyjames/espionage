@@ -1,6 +1,7 @@
 package net.digihippo.cryptnet.model;
 
 import net.digihippo.cryptnet.roadmap.LatLn;
+import net.digihippo.cryptnet.roadmap.UnitVector;
 
 import java.util.Random;
 
@@ -8,7 +9,7 @@ public final class Patrol {
     private final String identifier;
     Path path;
     Segment segment;
-    public LatLn velocity; // separate class soon please!
+    public UnitVector velocity;
     public LatLn location;
     public Direction direction;
     private Intersection previous;
@@ -20,7 +21,7 @@ public final class Patrol {
             String identifier,
             Path path,
             Segment segment,
-            LatLn velocity,
+            UnitVector velocity,
             LatLn doublePoint,
             Direction direction) {
         this.identifier = identifier;
@@ -38,12 +39,12 @@ public final class Patrol {
             Segment segment,
             Direction direction)
     {
-        this.path = path;
-        this.segment = segment;
-        this.lineIndex = path.indexOf(segment);
-        this.velocity = direction.orient(segment.direction());
-        this.location = location;
-        this.direction = direction;
+//        this.path = path;
+//        this.segment = segment;
+//        this.lineIndex = path.indexOf(segment);
+//        this.velocity = direction.orient(segment.direction());
+//        this.location = location;
+//        this.direction = direction;
     }
 
     void tick(

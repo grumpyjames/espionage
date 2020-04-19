@@ -1,6 +1,7 @@
 package net.digihippo.cryptnet.model;
 
 import net.digihippo.cryptnet.roadmap.LatLn;
+import net.digihippo.cryptnet.roadmap.UnitVector;
 import net.digihippo.cryptnet.roadmap.Way;
 
 import java.util.ArrayList;
@@ -25,7 +26,7 @@ public final class Model
         void sentryPositionChanged(
                 String patrolIdentifier,
                 LatLn location,
-                LatLn orientation);
+                UnitVector orientation);
 
         void gameOver();
 

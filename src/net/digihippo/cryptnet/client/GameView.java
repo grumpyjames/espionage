@@ -1,8 +1,8 @@
 package net.digihippo.cryptnet.client;
 
-import net.digihippo.cryptnet.dimtwo.DoublePoint;
 import net.digihippo.cryptnet.model.Model.Events;
 import net.digihippo.cryptnet.roadmap.LatLn;
+import net.digihippo.cryptnet.roadmap.UnitVector;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -21,7 +21,7 @@ public class GameView implements Events
     }
 
     @Override
-    public void sentryPositionChanged(String patrolIdentifier, LatLn location, LatLn orientation)
+    public void sentryPositionChanged(String patrolIdentifier, LatLn location, UnitVector orientation)
     {
         SentryView sentryView = sentries.get(patrolIdentifier);
         if (sentryView == null)

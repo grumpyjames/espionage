@@ -1,6 +1,7 @@
 package net.digihippo.cryptnet.model;
 
 import net.digihippo.cryptnet.roadmap.LatLn;
+import net.digihippo.cryptnet.roadmap.UnitVector;
 
 import java.util.Collection;
 import java.util.List;
@@ -54,10 +55,9 @@ public class Path {
     }
 
     void move(Patrol patrol, Random random) {
-        LatLn stepChange = patrol.direction.orient(patrol.segment.direction());
-        LatLn newLocation = stepChange.applyTo(patrol.location);
+        UnitVector stepChange = patrol.direction.orient(patrol.segment.direction());
 
-        patrol.location = newLocation;
+        patrol.location = stepChange.applyTo(patrol.location);
 
 
         // Thoughts:

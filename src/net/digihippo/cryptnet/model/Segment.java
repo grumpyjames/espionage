@@ -1,6 +1,7 @@
 package net.digihippo.cryptnet.model;
 
 import net.digihippo.cryptnet.roadmap.LatLn;
+import net.digihippo.cryptnet.roadmap.UnitVector;
 
 public class Segment {
     public final Vertex head;
@@ -14,8 +15,8 @@ public class Segment {
     // How to get from the head to the tail
     // Should this be a unit vector or what?
     // Should return a velocity or a vector type, really...
-    public LatLn direction() {
-        return tail.directionFrom(head).dividedBy(tail.distanceTo(head));
+    public UnitVector direction() {
+        return tail.directionFrom(head);
     }
 
     boolean sameAs(Segment segment) {
