@@ -10,7 +10,7 @@ public final class Patrol {
     Segment segment;
     public LatLn velocity; // separate class soon please!
     public LatLn location;
-    private Direction direction;
+    public Direction direction;
     private Intersection previous;
     private LatLn lastVertex;
 

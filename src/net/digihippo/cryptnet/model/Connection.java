@@ -2,15 +2,14 @@ package net.digihippo.cryptnet.model;
 
 import net.digihippo.cryptnet.roadmap.LatLn;
 
-import java.util.Collections;
 import java.util.List;
 
 public class Connection {
-    public final Path path;
+    public final Segment segment;
 
-    private Connection(Path path)
+    private Connection(Segment segment)
     {
-        this.path = path;
+        this.segment = segment;
     }
 
     static Connection nearestConnection(
@@ -34,12 +33,9 @@ public class Connection {
         }
 
         assert bestVertex != null;
-        final Path path = new Path(Collections.singletonList(new Segment(new Vertex(location), bestVertex)));
-        // DON'T DO THIS!
-        // path.visitVertices();
-        // Or the joining path becomes part of the map.
+        final Segment segment = new Segment(new Vertex(location), bestVertex);
 
-        return new Connection(path);
+        return new Connection(segment);
     }
 
     public LatLn snapVelocityFrom(LatLn location) {
@@ -52,15 +48,11 @@ public class Connection {
     }
 
     public LatLn location() {
-        return path.lastSegment().tail.location;
-    }
-
-    public Path path() {
-        return path;
+        return segment.tail.location;
     }
 
     public Segment line() {
-        throw new UnsupportedOperationException();
+        return segment;
     }
 
     public LatLn joinVelocity() {
@@ -69,5 +61,24 @@ public class Connection {
 
     public Direction joinDirection() {
         throw new UnsupportedOperationException();
+    }
+
+    void move(ModelActions modelActions, JoiningSentry joiningSentry)
+    {
+        LatLn movedTo = this.segment.direction().applyTo(joiningSentry.location);
+
+        if (this.segment.tail.distanceTo(movedTo) < 5)
+        {
+            movedTo = this.segment.tail.location;
+            // FIXME:                                              v random required
+            final Vertex.Link link = this.segment.tail().links.get(0);
+            modelActions.joined(
+                    joiningSentry,
+                    movedTo,
+                    link);
+
+        }
+
+        joiningSentry.location = movedTo;
     }
 }

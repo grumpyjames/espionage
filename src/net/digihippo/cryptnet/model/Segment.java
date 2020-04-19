@@ -15,7 +15,7 @@ public class Segment {
     // Should this be a unit vector or what?
     // Should return a velocity or a vector type, really...
     public LatLn direction() {
-        return tail.directionFrom(head);
+        return tail.directionFrom(head).dividedBy(tail.distanceTo(head));
     }
 
     boolean sameAs(Segment segment) {
@@ -33,7 +33,7 @@ public class Segment {
 
     void visitVertices(Path path) {
         head.onLink(Vertex.End.Head, path, this);
-        head.onLink(Vertex.End.Tail, path, this);
+        tail.onLink(Vertex.End.Tail, path, this);
     }
 
     Vertex tail()

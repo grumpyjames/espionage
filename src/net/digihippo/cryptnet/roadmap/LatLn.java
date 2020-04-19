@@ -52,4 +52,14 @@ public final class LatLn
                 this.lat - another.lat,
                 this.lon - another.lon);
     }
+
+    public LatLn dividedBy(double distanceTo)
+    {
+        return new LatLn(this.lat / distanceTo, this.lon / distanceTo);
+    }
+
+    public LatLn reverse()
+    {
+        return new LatLn(-this.lat, -this.lon);
+    }
 }

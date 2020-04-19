@@ -54,6 +54,12 @@ public class Path {
     }
 
     void move(Patrol patrol, Random random) {
+        LatLn stepChange = patrol.direction.orient(patrol.segment.direction());
+        LatLn newLocation = stepChange.applyTo(patrol.location);
+
+        patrol.location = newLocation;
+
+
         // Thoughts:
         // If we know the segment, all we really need to know
         // is the patrol's speed and direction along this path.
@@ -66,6 +72,8 @@ public class Path {
 
     void move(JoiningSentry joiningSentry)
     {
+//        final LatLn newLocation = joiningSentry.location
+
         // Previously:
 //        this.location = this.velocity.applyTo(this.location);
 //        if (this.connection.endsNear(this.location))

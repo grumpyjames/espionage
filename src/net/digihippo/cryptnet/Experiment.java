@@ -1,8 +1,7 @@
 package net.digihippo.cryptnet;
 
-import net.digihippo.cryptnet.dimtwo.*;
+import net.digihippo.cryptnet.dimtwo.Pixel;
 import net.digihippo.cryptnet.model.*;
-import net.digihippo.cryptnet.model.Path;
 import net.digihippo.cryptnet.roadmap.LatLn;
 import net.digihippo.cryptnet.roadmap.OsmSource;
 import net.digihippo.cryptnet.roadmap.Way;
@@ -14,8 +13,8 @@ import java.awt.*;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.image.BufferedImage;
+import java.io.File;
 import java.io.IOException;
-import java.net.URL;
 import java.text.DecimalFormat;
 import java.util.Collection;
 import java.util.Random;
@@ -169,19 +168,29 @@ public class Experiment
 //            renderSentry(location, velocity, g);
 //
             drawLine(g, sentry.location, sentry.connection.location(), true);
+            filledCircleAt(g, sentry.location, Color.BLUE);
         }
 
         private void renderPlayer(Graphics g, LatLn playerLocation) {
-            throw new UnsupportedOperationException();
-//            g.drawOval(offsetX + playerLocation.x - 4, offsetY + playerLocation.y - 4, 4 * 2, 4 * 2);
-//            g.setColor(Color.MAGENTA);
-//            g.fillOval(offsetX + playerLocation.x - 4, offsetY + playerLocation.y - 4, 4 * 2, 4 * 2);
-//            g.setColor(Color.BLACK);
+
+            filledCircleAt(g, playerLocation, Color.MAGENTA);
+        }
+
+        private void filledCircleAt(Graphics g, LatLn latln, Color color)
+        {
+            final int x1 = offsetX + toX(latln.lon);
+            final int y1 = offsetY + toY(latln.lat);
+
+            g.drawOval(x1 - 4, y1 - 4, 4 * 2, 4 * 2);
+            g.setColor(color);
+            g.fillOval(x1 - 4, y1 - 4, 4 * 2, 4 * 2);
+            g.setColor(Color.BLACK);
         }
 
         private void renderSentry(LatLn location, LatLn velocity, Graphics g)
         {
-            throw new UnsupportedOperationException();
+            filledCircleAt(g, location, Color.CYAN);
+//            throw new UnsupportedOperationException();
 //            final double orientation = velocity.orientation();
 //            final Pixel tView = velocity.rotate(Math.PI / 12).times(10).round();
 //            int radius = 3;
@@ -325,13 +334,13 @@ public class Experiment
 
         final BufferedImage[][] images =
             new BufferedImage[2][2];
-        images[0][0] = ImageIO.read(new URL("http://a.tile.stamen.com/toner/17/" + xTile + "/" + yTile + ".png"));
+        images[0][0] = readTile(xTile, yTile);
         LockSupport.parkNanos(10_000_000);
-        images[1][0] = ImageIO.read(new URL("http://a.tile.stamen.com/toner/17/" + (xTile + 1) + "/" + yTile + ".png"));
+        images[1][0] = readTile(xTile + 1, yTile);
         LockSupport.parkNanos(10_000_000);
-        images[0][1] = ImageIO.read(new URL("http://a.tile.stamen.com/toner/17/" + xTile + "/" + (yTile + 1) + ".png"));
+        images[0][1] = readTile(xTile, yTile + 1);
         LockSupport.parkNanos(10_000_000);
-        images[1][1] = ImageIO.read(new URL("http://a.tile.stamen.com/toner/17/" + (xTile + 1) + "/" + (yTile + 1) + ".png"));
+        images[1][1] = readTile(xTile + 1, yTile + 1);
 
         final BlockingQueue<Event> events = new LinkedBlockingQueue<>();
         final Random random = new Random(238824982L);
@@ -373,6 +382,13 @@ public class Experiment
                 }, 40, 40, TimeUnit.MILLISECONDS);
             }
         });
+    }
+
+    private static BufferedImage readTile(int xTile, int yTile) throws IOException
+    {
+        String fileName = "osm/17/" + xTile + "/" + yTile + ".png";
+
+        return ImageIO.read(new File(fileName));
     }
 
 }

@@ -108,7 +108,6 @@ public final class Model
             Connection.nearestConnection(paths, latLn);
 
         player = new Player(
-                connection.path(),
                 connection.line(),
                 connection.location());
     }

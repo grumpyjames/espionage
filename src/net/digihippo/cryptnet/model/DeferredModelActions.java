@@ -20,18 +20,15 @@ public class DeferredModelActions implements ModelActions
     public void joined(
             JoiningSentry sentry,
             LatLn location,
-            Path path,
-            Segment segment,
-            LatLn velocity,
-            Direction direction)
+            Vertex.Link link)
     {
         outgoing.add(sentry);
         incoming.add(new Patrol(
                 sentry.identifier,
-                path,
-                segment,
-                velocity,
+                link.path,
+                link.segment,
+                link.segment.direction(),
                 location,
-                direction));
+                link.end == Vertex.End.Head ? Direction.Forwards : Direction.Backwards));
     }
 }

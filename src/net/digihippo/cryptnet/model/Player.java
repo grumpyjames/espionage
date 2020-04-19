@@ -4,7 +4,7 @@ import net.digihippo.cryptnet.roadmap.LatLn;
 
 public final class Player
 {
-    Path path;
+//    Path path;
     Segment segment;
     public LatLn position;
 
@@ -14,14 +14,14 @@ public final class Player
 
 
     Player(
-        Path path,
+//        Path path,
         Segment segment,
         LatLn position)
     {
-        this.path = path;
+//        this.path = path;
         this.segment = segment;
         this.position = position;
-        this.lineIndex = path.indexOf(segment);
+//        this.lineIndex = path.indexOf(segment);
     }
 
     void tick(Model.Events events)

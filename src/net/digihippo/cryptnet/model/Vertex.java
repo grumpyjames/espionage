@@ -16,7 +16,7 @@ public class Vertex
 
     void onLink(End end, Path path, Segment segment)
     {
-
+        links.add(new Link(end, path, segment));
     }
 
     LatLn directionFrom(Vertex other) {
@@ -31,6 +31,16 @@ public class Vertex
         return this.location.sameAs(location);
     }
 
+    public double distanceTo(Vertex other)
+    {
+        return this.location.distanceTo(other.location);
+    }
+
+    public double distanceTo(LatLn location)
+    {
+        return this.location.distanceTo(location);
+    }
+
     enum End
     {
         Head,
@@ -39,9 +49,9 @@ public class Vertex
 
     static final class Link
     {
-        private final End end;
-        private final Path path;
-        private final Segment segment;
+        public final End end;
+        public final Path path;
+        public final Segment segment;
 
         Link(End end, Path path, Segment segment) {
             this.end = end;
