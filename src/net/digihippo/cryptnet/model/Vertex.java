@@ -5,6 +5,7 @@ import net.digihippo.cryptnet.roadmap.UnitVector;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 public class Vertex
 {
@@ -40,6 +41,11 @@ public class Vertex
     public double distanceTo(LatLn location)
     {
         return this.location.distanceTo(location);
+    }
+
+    public Link pickLink(Random random)
+    {
+        return links.get(random.nextInt(links.size()));
     }
 
     enum End

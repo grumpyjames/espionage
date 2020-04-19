@@ -55,9 +55,23 @@ public class Path {
     }
 
     void move(Patrol patrol, Random random) {
-        UnitVector stepChange = patrol.direction.orient(patrol.segment.direction());
+        Segment segment = patrol.segment;
+        UnitVector stepChange = patrol.direction.orient(segment.direction());
+        Vertex lineEnd = patrol.direction.pickBound(patrol.segment);
+        LatLn newLocation = stepChange.applyTo(patrol.location);
+        if (lineEnd.location.distanceTo(newLocation) < 1.6)
+        {
+            Vertex.Link link = lineEnd.pickLink(random);
+            patrol.location = lineEnd.location;
+            patrol.segment = link.segment;
+            patrol.direction = link.end == Vertex.End.Head ? Direction.Forwards : Direction.Backwards;
+        }
+        else
+        {
+            patrol.location = newLocation;
+        }
 
-        patrol.location = stepChange.applyTo(patrol.location);
+
 
 
         // Thoughts:
@@ -101,6 +115,6 @@ public class Path {
 
     public Vertex vertexAt(int i)
     {
-        return segments.get(i - 1).tail();
+        return segments.get(i - 1).tail;
     }
 }

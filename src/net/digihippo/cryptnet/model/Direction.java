@@ -10,12 +10,24 @@ public enum Direction {
         {
             return direction;
         }
+
+        @Override
+        public Vertex pickBound(Segment segment)
+        {
+            return segment.tail;
+        }
     },
     Backwards {
         @Override
         public UnitVector orient(UnitVector direction)
         {
             return direction.reverse();
+        }
+
+        @Override
+        public Vertex pickBound(Segment segment)
+        {
+            return segment.head;
         }
     };
 
@@ -24,4 +36,6 @@ public enum Direction {
     public boolean turnsAt(Path path, int lineIndex, LatLn intersectionPoint) {
         return false;
     }
+
+    public abstract Vertex pickBound(Segment segment);
 }

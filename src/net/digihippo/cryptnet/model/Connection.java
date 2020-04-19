@@ -70,8 +70,8 @@ public class Connection {
         if (this.segment.tail.distanceTo(movedTo) < 5)
         {
             movedTo = this.segment.tail.location;
-            // FIXME:                                              v random required
-            final Vertex.Link link = this.segment.tail().links.get(0);
+            // FIXME:                                            v random required
+            final Vertex.Link link = this.segment.tail.links.get(0);
             modelActions.joined(
                     joiningSentry,
                     movedTo,

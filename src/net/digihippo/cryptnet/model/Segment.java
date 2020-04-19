@@ -36,9 +36,4 @@ public class Segment {
         head.onLink(Vertex.End.Head, path, this);
         tail.onLink(Vertex.End.Tail, path, this);
     }
-
-    Vertex tail()
-    {
-        return tail;
-    }
 }
