@@ -94,12 +94,6 @@ public class ModelTest
         }
 
         @Override
-        public void gameRejected(String message)
-        {
-
-        }
-
-        @Override
         public void gameStarted()
         {
 

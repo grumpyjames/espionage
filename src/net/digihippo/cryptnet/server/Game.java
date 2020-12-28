@@ -77,12 +77,6 @@ final class Game
         }
 
         @Override
-        public void gameRejected(String message)
-        {
-            events.gameStarted(identifier);
-        }
-
-        @Override
         public void gameStarted()
         {
             events.gameStarted(identifier);

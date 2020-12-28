@@ -58,12 +58,6 @@ public class GameView implements Events
     }
 
     @Override
-    public void gameRejected(String message)
-    {
-
-    }
-
-    @Override
     public void gameStarted()
     {
         this.state = State.Live;

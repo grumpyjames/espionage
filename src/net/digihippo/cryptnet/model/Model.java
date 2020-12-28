@@ -27,7 +27,8 @@ public final class Model
 
     public interface Events
     {
-        // This happens outside a frame?
+        // This happens outside a frame.
+        // Do we actually need this event?
         void gameStarted();
 
         void frameStart(int frameCounter);
@@ -47,8 +48,6 @@ public final class Model
         void victory();
 
         void frameEnd(int frameCounter);
-
-        void gameRejected(String message);
     }
 
     public static Model createModel(
@@ -78,6 +77,7 @@ public final class Model
         this.time = timeMillis;
         this.nextTick = this.time + MILLISECONDS_PER_TICK;
         this.gameOn = true;
+        this.events.gameStarted();
     }
 
     public void time(long timeMillis)

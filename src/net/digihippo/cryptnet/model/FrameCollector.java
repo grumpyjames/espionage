@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
-public class FrameCollector implements Model.Events
+public final class FrameCollector implements Model.Events
 {
     private final Consumer<Frame> consumer;
 
@@ -92,11 +92,5 @@ public class FrameCollector implements Model.Events
     public void frameEnd(int frameCounter)
     {
         this.consumer.accept(frame);
-    }
-
-    @Override
-    public void gameRejected(String message)
-    {
-
     }
 }
