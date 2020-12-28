@@ -8,6 +8,9 @@ import java.util.stream.Collectors;
 
 public final class Model
 {
+    private static final double TICKS_PER_SECOND = 25;
+    private static final int MILLISECONDS_PER_TICK = 40;
+
     private final List<JoiningSentry> joiningSentries = new ArrayList<>();
     private final List<Patrol> patrols = new ArrayList<>();
     private final List<Path> paths;
@@ -21,7 +24,6 @@ public final class Model
     private long nextTick;
     private boolean gameOn = false;
     private long startTime;
-    private final double ticksPerSecond = 25;
 
     public interface Events
     {
@@ -74,14 +76,13 @@ public final class Model
     {
         this.startTime = timeMillis;
         this.time = timeMillis;
-        this.nextTick = this.time + 40;
+        this.nextTick = this.time + MILLISECONDS_PER_TICK;
         this.gameOn = true;
     }
 
     public void time(long timeMillis)
     {
-        // we tick 25 times per second, i.e once every 40ms...
-        while (this.nextTick < timeMillis && gameOn)
+        while (gameOn && this.nextTick < timeMillis)
         {
             events.frameStart(frameCounter);
             this.tick();
@@ -108,7 +109,7 @@ public final class Model
             events.frameEnd(frameCounter);
 
             frameCounter++;
-            this.nextTick += 40;
+            this.nextTick += MILLISECONDS_PER_TICK;
 
         }
         this.time = timeMillis;
@@ -157,19 +158,7 @@ public final class Model
                         "sentry-" + sentryIndex++,
                         best,
                         location,
-                        rules.sentrySpeed() / this.ticksPerSecond));
-    }
-
-    private static List<Segment> segments(List<Path> paths)
-    {
-        final List<Segment> segments = new ArrayList<>();
-
-        for (Path path : paths)
-        {
-            segments.addAll(path.segments());
-        }
-
-        return segments;
+                        rules.sentrySpeed() / TICKS_PER_SECOND));
     }
 
     public void snapPlayerLocationToNearestVertex(final LatLn latLn)
