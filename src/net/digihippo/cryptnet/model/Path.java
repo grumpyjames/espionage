@@ -58,7 +58,7 @@ public class Path {
         Segment segment = patrol.segment;
         UnitVector stepChange = patrol.direction.orient(segment.direction());
         Vertex lineEnd = patrol.direction.pickBound(patrol.segment);
-        LatLn newLocation = stepChange.applyTo(patrol.location);
+        LatLn newLocation = stepChange.applyWithScalar(patrol.location, patrol.speed);
         if (lineEnd.location.distanceTo(newLocation) < 1.6)
         {
             Vertex.Link link = lineEnd.pickLink(random);

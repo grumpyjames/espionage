@@ -18,6 +18,11 @@ public class UnitVector
         return new LatLn(location.lat + dLat, location.lon + dLon);
     }
 
+    public LatLn applyWithScalar(LatLn location, double scalar)
+    {
+        return new LatLn(location.lat + (dLat * scalar), location.lon + (dLon * scalar));
+    }
+
     public UnitVector reverse()
     {
         return new UnitVector(-dLat, -dLon);

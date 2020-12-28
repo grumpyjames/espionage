@@ -14,17 +14,20 @@ public final class Patrol {
     public Direction direction;
     private Intersection previous;
     private LatLn lastVertex;
+    public final double speed; // in m/tick (a tick is 40ms)
 
     private transient int lineIndex;
 
     Patrol(
             String identifier,
+            double speed,
             Path path,
             Segment segment,
             UnitVector velocity,
             LatLn doublePoint,
             Direction direction) {
         this.identifier = identifier;
+        this.speed = speed;
         this.path = path;
         this.segment = segment;
         this.lineIndex = path.indexOf(segment);

@@ -20,6 +20,9 @@ public final class Model
     private Rules rules;
     private long time;
     private long nextTick;
+    private boolean gameOn = false;
+    private long startTime;
+    private final double ticksPerSecond = 25;
 
     public void rules(Rules rules)
     {
@@ -66,27 +69,31 @@ public final class Model
 
     public void startGame(long timeMillis)
     {
+        this.startTime = timeMillis;
         this.time = timeMillis;
         this.nextTick = this.time + 40;
+        this.gameOn = true;
     }
 
     public void time(long timeMillis)
     {
         // we tick 25 times per second, i.e once every 40ms...
-        while (this.nextTick < timeMillis)
+        while (this.nextTick < timeMillis && gameOn)
         {
             this.tick();
             Rules.State state = this.rules.gameState(
-                    this.nextTick,
+                    this.nextTick - this.startTime,
                     this.player.position,
                     this.patrols.stream().map(p -> p.location).collect(Collectors.toList()));
             switch (state)
             {
                 case GameOver:
                     events.gameOver();
+                    this.gameOn = false;
                     return;
                 case Victory:
                     events.victory();
+                    this.gameOn = false;
                     return;
                 case Continue:
                 default:
@@ -137,7 +144,8 @@ public final class Model
                 new JoiningSentry(
                         "sentry-" + sentryIndex++,
                         best,
-                        location));
+                        location,
+                        rules.sentrySpeed() / this.ticksPerSecond));
     }
 
     private static List<Segment> segments(List<Path> paths)
@@ -152,14 +160,21 @@ public final class Model
         return segments;
     }
 
-    public void setPlayerLocation(final LatLn latLn)
+    public void snapPlayerLocationToNearestVertex(final LatLn latLn)
     {
         Connection connection =
             Connection.nearestConnection(paths, latLn);
 
-        player = new Player(
+        this.player = new Player(
                 connection.line(),
                 connection.location());
+    }
+
+    public void setPlayerLocation(final LatLn latLn)
+    {
+        this.player = new Player(
+                null,
+                latLn);
     }
 
     void removeJoining(List<JoiningSentry> outgoing)
@@ -178,7 +193,7 @@ public final class Model
         {
             if (player == null)
             {
-                setPlayerLocation(location);
+                snapPlayerLocationToNearestVertex(location);
             }
         }
         else

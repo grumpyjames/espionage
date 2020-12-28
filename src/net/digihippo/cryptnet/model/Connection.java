@@ -65,7 +65,7 @@ public class Connection {
 
     void move(ModelActions modelActions, JoiningSentry joiningSentry)
     {
-        LatLn movedTo = this.segment.direction().applyTo(joiningSentry.location);
+        LatLn movedTo = this.segment.direction().applyWithScalar(joiningSentry.location, joiningSentry.speed);
 
         double distance = this.segment.tail.distanceTo(movedTo);
         if (distance < 5)

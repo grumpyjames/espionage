@@ -31,7 +31,7 @@ final class Game
 
     void onPlayerLocation(LatLn location)
     {
-        model.setPlayerLocation(location);
+        model.snapPlayerLocationToNearestVertex(location);
     }
 
     void onClick(LatLn location)

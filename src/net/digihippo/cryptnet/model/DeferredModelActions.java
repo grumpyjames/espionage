@@ -25,10 +25,12 @@ public class DeferredModelActions implements ModelActions
         outgoing.add(sentry);
         incoming.add(new Patrol(
                 sentry.identifier,
+                sentry.speed,
                 link.path,
                 link.segment,
                 link.segment.direction(),
                 location,
-                link.end == Vertex.End.Head ? Direction.Forwards : Direction.Backwards));
+                link.end == Vertex.End.Head ? Direction.Forwards : Direction.Backwards
+        ));
     }
 }

@@ -10,6 +10,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 import java.util.Random;
 
 import static org.junit.Assert.assertTrue;
@@ -18,11 +19,17 @@ public class ModelTest
 {
     private final TestEvents events = new TestEvents();
     // This is Spaniards road at the top of Hampstead Heath. It's very straight.
-    private final Model model = Model.createModel(ways(way(
-            node(51.5629829089533, -0.1793216022757321),
-            node(51.56899086921811, -0.17475457002941547))),
-            new Random(),
-            events);
+    private final LatLn jackStrawsCastle = latLn(51.5629829089533, -0.1793216022757321);
+    private final LatLn zebraNearSpaniards = latLn(51.56899086921811, -0.17475457002941547);
+    private final Model model;
+    {
+        model = Model.createModel(ways(way(
+                node(jackStrawsCastle),
+                node(zebraNearSpaniards))),
+                new Random(),
+                events);
+    }
+
     private final Clock clock = at("2020-12-27T13:00:00.000Z");
 
     private static final class Clock
@@ -37,10 +44,13 @@ public class ModelTest
         public long forward(int scalar, ChronoUnit unit)
         {
             this.timeMillis += unit.getDuration().getSeconds() * scalar * 1_000;
+            this.timeMillis += (unit.getDuration().getNano() * scalar) / 1_000_000;
+
             return this.timeMillis;
         }
     }
 
+    @SuppressWarnings("SameParameterValue")
     Clock at(final String instant)
     {
         Instant parsed = Instant.parse(instant);
@@ -93,24 +103,14 @@ public class ModelTest
     @Test
     public void simplestPossibleVictory()
     {
-        long startTime = clock.timeMillis;
-
-        model.setPlayerLocation(new LatLn(51.5664837824125, -0.17661640054047678));
-        model.rules((timeMillis, playerLocation, sentryLocations) ->
-        {
-            long durationMillis = timeMillis - startTime;
-            if (durationMillis >= 30_000)
-            {
-                return Rules.State.Victory;
-            }
-
-            return Rules.State.Continue;
-        });
+        model.setPlayerLocation(latLn(51.5664837824125, -0.17661640054047678));
+        model.rules(new StayAliveRules(1.2));
 
         model.startGame(clock.timeMillis);
         model.time(clock.forward(10, ChronoUnit.SECONDS));
         model.time(clock.forward(10, ChronoUnit.SECONDS));
         model.time(clock.forward(10, ChronoUnit.SECONDS));
+        model.time(clock.forward(41, ChronoUnit.MILLIS));
 
         assertTrue(events.victory);
     }
@@ -118,35 +118,65 @@ public class ModelTest
     @Test
     public void simplestPossibleDefeat()
     {
-        long startTime = clock.timeMillis;
-
-        model.setPlayerLocation(new LatLn(51.5629829089533, -0.1793216022757321));
+        model.setPlayerLocation(latLn(51.5629829089533, -0.1793216022757321));
+        model.rules(new StayAliveRules(1.2));
         // Very near, but not exactly the same - there's a bug in LatLn::directionFrom
-        model.addSentry(new LatLn(51.562982, -0.179321));
-        model.rules((timeMillis, playerLocation, sentryLocations) ->
-        {
-            long durationMillis = timeMillis - startTime;
-            if (durationMillis >= 30_000)
-            {
-                return Rules.State.Victory;
-            }
-            for (LatLn sentryLocation: sentryLocations)
-            {
-                double v = sentryLocation.distanceTo(playerLocation);
-                if (v <= 2)
-                {
-                    return Rules.State.GameOver;
-                }
-            }
-
-            return Rules.State.Continue;
-        });
+        model.addSentry(latLn(51.56298291, -0.1793216));
 
         model.startGame(clock.timeMillis);
         model.time(clock.forward(1, ChronoUnit.SECONDS));
 
         assertTrue(events.gameOver);
     }
+
+    @Test
+    public void playerEscapes()
+    {
+        LatLn initialLocation = latLn(51.5629829089533, -0.1793216022757321);
+        model.setPlayerLocation(initialLocation);
+        model.rules(new StayAliveRules(1.2));
+        // Far enough to give the player a headstart
+        model.addSentry(latLn(51.56298, -0.17932));
+
+        UnitVector thisWay = zebraNearSpaniards.directionFrom(jackStrawsCastle);
+
+        model.startGame(clock.timeMillis);
+        for (int i = 0; i < 30_040; i++)
+        {
+            double playerSpeedKmh = 6; //6km/h -> 1.67m/s -> 0.00167m/ms
+            double playerSpeedMetresPerMilli = (playerSpeedKmh * 1000) / (60 * 60 * 1000);
+            LatLn latLn = thisWay.applyWithScalar(initialLocation, i * playerSpeedMetresPerMilli);
+            model.setPlayerLocation(latLn);
+            model.time(clock.forward(1, ChronoUnit.MILLIS));
+        }
+
+        assertTrue(events.victory);
+    }
+
+    @Test
+    public void playerIsSlowlyCaught()
+    {
+        LatLn initialLocation = latLn(51.5629829089533, -0.1793216022757321);
+        model.setPlayerLocation(initialLocation);
+        model.rules(new StayAliveRules(1.8)); // quicker than player.
+        // Far enough to give the player a headstart
+        model.addSentry(latLn(51.56298, -0.17932));
+
+        UnitVector thisWay = zebraNearSpaniards.directionFrom(jackStrawsCastle);
+
+        model.startGame(clock.timeMillis);
+        for (int i = 0; i < 30_040; i++)
+        {
+            double playerSpeedKmh = 6; //6km/h -> 1.67m/s -> 0.00167m/ms
+            double playerSpeedMetresPerMilli = (playerSpeedKmh * 1000) / (60 * 60 * 1000);
+            LatLn latLn = thisWay.applyWithScalar(initialLocation, i * playerSpeedMetresPerMilli);
+            model.setPlayerLocation(latLn);
+            model.time(clock.forward(1, ChronoUnit.MILLIS));
+        }
+
+        assertTrue(events.victory);
+    }
+
 
     @Test
     public void roundTrip()
@@ -189,10 +219,53 @@ public class ModelTest
         return new Way(Arrays.asList(nodes));
     }
 
-    private Node node(double lat, double lon)
+    private Node node(LatLn latLn)
     {
         Node node = new Node(nextNodeId++);
-        node.latLn = new LatLn(lat, lon);
+        node.latLn = latLn;
         return node;
+    }
+
+    private LatLn latLn(double lat, double lon)
+    {
+        return new LatLn(lat, lon);
+    }
+
+    private static class StayAliveRules implements Rules
+    {
+        private final double sentrySpeed;
+
+        public StayAliveRules(double sentrySpeed)
+        {
+            this.sentrySpeed = sentrySpeed;
+        }
+
+        @Override
+        public double sentrySpeed()
+        {
+            return sentrySpeed;
+        }
+
+        @Override
+        public State gameState(
+                long gameDurationMillis,
+                LatLn playerLocation,
+                List<LatLn> sentryLocations)
+        {
+            if (gameDurationMillis >= 30_000)
+            {
+                return State.Victory;
+            }
+            for (LatLn sentryLocation : sentryLocations)
+            {
+                double v = sentryLocation.distanceTo(playerLocation);
+                if (v <= 2)
+                {
+                    return State.GameOver;
+                }
+            }
+
+            return State.Continue;
+        }
     }
 }
