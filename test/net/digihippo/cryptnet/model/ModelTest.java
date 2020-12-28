@@ -20,13 +20,15 @@ public class ModelTest
     // This is Spaniards road at the top of Hampstead Heath. It's very straight.
     private final LatLn jackStrawsCastle = latLn(51.5629829089533, -0.1793216022757321);
     private final LatLn zebraNearSpaniards = latLn(51.56899086921811, -0.17475457002941547);
-    private final Model model;
+    private Model model;
+
+    private Model createModel(double sentrySpeed)
     {
-        model = Model.createModel(
+        return Model.createModel(
                 Paths.from(ways(way(
                         node(jackStrawsCastle),
                         node(zebraNearSpaniards)))),
-                new StayAliveRules(1.2),
+                new StayAliveRules(sentrySpeed),
                 new Random(),
                 events);
     }
@@ -119,6 +121,7 @@ public class ModelTest
     @Test
     public void simplestPossibleVictory()
     {
+        model = createModel(1.2);
         model.setPlayerLocation(latLn(51.5664837824125, -0.17661640054047678));
 
         model.startGame(clock.timeMillis);
@@ -133,6 +136,7 @@ public class ModelTest
     @Test
     public void simplestPossibleDefeat()
     {
+        model = createModel(1.2);
         model.setPlayerLocation(latLn(51.5629829089533, -0.1793216022757321));
         // Very near, but not exactly the same - there's a bug in LatLn::directionFrom
         model.addSentry(latLn(51.56298291, -0.1793216));
@@ -146,10 +150,12 @@ public class ModelTest
     @Test
     public void playerEscapes()
     {
+        model = createModel(0.8);
+
         LatLn initialLocation = latLn(51.5629829089533, -0.1793216022757321);
         model.setPlayerLocation(initialLocation);
         // Far enough to give the player a headstart
-        model.addSentry(latLn(51.56298, -0.17932));
+        model.addSentry(latLn(51.5629, -0.1793));
 
         UnitVector thisWay = zebraNearSpaniards.directionFrom(jackStrawsCastle);
 
@@ -169,6 +175,8 @@ public class ModelTest
     @Test
     public void playerIsSlowlyCaught()
     {
+        model = createModel(1.8);
+
         LatLn initialLocation = latLn(51.5629829089533, -0.1793216022757321);
         model.setPlayerLocation(initialLocation);
         // Far enough to give the player a headstart
@@ -186,9 +194,8 @@ public class ModelTest
             model.time(clock.forward(1, ChronoUnit.MILLIS));
         }
 
-        assertTrue(events.victory);
+        assertTrue(events.gameOver);
     }
-
 
     @Test
     public void roundTrip()
@@ -240,7 +247,7 @@ public class ModelTest
 
     private LatLn latLn(double lat, double lon)
     {
-        return new LatLn(lat, lon);
+        return LatLn.toRads(lat, lon);
     }
 
 }

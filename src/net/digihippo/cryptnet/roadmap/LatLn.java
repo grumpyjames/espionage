@@ -10,8 +10,14 @@ public final class LatLn
 
     public LatLn(double lat, double lon)
     {
+        assert(Math.abs(lat) <= Math.PI && Math.abs(lon) <= (Math.PI/2));
         this.lat = lat;
         this.lon = lon;
+    }
+
+    public static LatLn toRads(double latDegs, double lonDegs)
+    {
+        return new LatLn(Math.toRadians(latDegs), Math.toRadians(lonDegs));
     }
 
     @Override

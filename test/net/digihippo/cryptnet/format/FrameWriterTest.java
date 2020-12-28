@@ -15,25 +15,27 @@ public class FrameWriterTest
     public void roundTrip()
     {
         FrameCollector.Frame frame = new FrameCollector.Frame(2342);
-        frame.playerLocation = new LatLn(43.5635644D, 12.23453436D);
+        double latDegs = 43.5635644D;
+        double lonDegs = 12.23453436D;
+        frame.playerLocation = LatLn.toRads(latDegs, lonDegs);
         frame.gameOver = true;
         frame.victory = false;
         frame.joining.add(new FrameCollector.JoiningView(
-                new LatLn(46.243466D, 45.5253443D),
+                LatLn.toRads(46.243466D, 45.5253443D),
                 new UnitVector(0.004D, 0.0001D),
-                new LatLn(16.243466D, 15.53D)
+                LatLn.toRads(16.243466D, 15.53D)
         ));
         frame.joining.add(new FrameCollector.JoiningView(
-                new LatLn(76.273766D, 75.5253743D),
+                LatLn.toRads(76.273766D, 75.5253743D),
                 new UnitVector(0.001D, 0.0004D),
-                new LatLn(26.243466D, 25.53D)
+                LatLn.toRads(26.243466D, 25.53D)
         ));
         frame.patrols.add(new FrameCollector.PatrolView(
-                new LatLn(86.283866D, 85.5253843D),
+                LatLn.toRads(86.283866D, 85.5253843D),
                 new UnitVector(0.003D, 0.0002D)
         ));
         frame.patrols.add(new FrameCollector.PatrolView(
-                new LatLn(66.263666D, 65.5253643D),
+                LatLn.toRads(66.263666D, 65.5253643D),
                 new UnitVector(0.002D, 0.0003D)
                 ));
 
