@@ -53,7 +53,7 @@ final class Game
         }
 
         @Override
-        public void sentryPositionChanged(String patrolIdentifier, LatLn location, UnitVector orientation)
+        public void sentryPositionChanged(boolean joining, String patrolIdentifier, LatLn location, UnitVector orientation, LatLn connectionLocation)
         {
             events.sentryPositionChanged(identifier, patrolIdentifier, location, orientation);
         }
@@ -71,6 +71,12 @@ final class Game
         }
 
         @Override
+        public void frameEnd(int frameCounter)
+        {
+
+        }
+
+        @Override
         public void gameRejected(String message)
         {
             events.gameStarted(identifier);
@@ -80,6 +86,12 @@ final class Game
         public void gameStarted()
         {
             events.gameStarted(identifier);
+        }
+
+        @Override
+        public void frameStart(int frameCounter)
+        {
+
         }
     }
 }

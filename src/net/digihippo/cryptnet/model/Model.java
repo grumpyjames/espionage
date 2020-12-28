@@ -2,21 +2,20 @@ package net.digihippo.cryptnet.model;
 
 import net.digihippo.cryptnet.roadmap.LatLn;
 import net.digihippo.cryptnet.roadmap.UnitVector;
-import net.digihippo.cryptnet.roadmap.Way;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
 public final class Model
 {
-    public final List<JoiningSentry> joiningSentries = new ArrayList<>();
-    public final List<Patrol> patrols = new ArrayList<>();
-    public final List<Path> paths;
+    private final List<JoiningSentry> joiningSentries = new ArrayList<>();
+    private final List<Patrol> patrols = new ArrayList<>();
+    private final List<Path> paths;
     private final Random random;
     private final Events events;
 
     private int sentryIndex = 0;
-    public Player player = null;
+    private Player player = null;
     private Rules rules;
     private long time;
     private long nextTick;
@@ -31,29 +30,35 @@ public final class Model
 
     public interface Events
     {
+        // This happens outside a frame?
+        void gameStarted();
+
+        void frameStart(int frameCounter);
+
         void playerPositionChanged(
                 LatLn location);
 
         void sentryPositionChanged(
+                boolean joining,
                 String patrolIdentifier,
                 LatLn location,
-                UnitVector orientation);
+                UnitVector orientation,
+                LatLn connectionLocation);
 
         void gameOver();
 
         void victory();
 
-        void gameRejected(String message);
+        void frameEnd(int frameCounter);
 
-        void gameStarted();
+        void gameRejected(String message);
     }
 
     public static Model createModel(
-            Collection<Way> ways,
             Random random,
-            Events events)
+            Events events,
+            List<Path> paths)
     {
-        List<Path> paths = Paths.from(ways);
         return new Model(paths, random, events);
     }
 
@@ -80,6 +85,7 @@ public final class Model
         // we tick 25 times per second, i.e once every 40ms...
         while (this.nextTick < timeMillis && gameOn)
         {
+            events.frameStart(frameCounter);
             this.tick();
             Rules.State state = this.rules.gameState(
                     this.nextTick - this.startTime,
@@ -89,20 +95,28 @@ public final class Model
             {
                 case GameOver:
                     events.gameOver();
+                    events.frameEnd(frameCounter);
                     this.gameOn = false;
                     return;
                 case Victory:
                     events.victory();
+                    events.frameEnd(frameCounter);
                     this.gameOn = false;
                     return;
                 case Continue:
                 default:
                     // carry on
             }
+            events.frameEnd(frameCounter);
+
+            frameCounter++;
             this.nextTick += 40;
+
         }
         this.time = timeMillis;
     }
+
+    int frameCounter = 0;
 
     public void tick()
     {

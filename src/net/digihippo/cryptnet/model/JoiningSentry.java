@@ -25,6 +25,6 @@ public final class JoiningSentry
     void tick(
         final ModelActions modelActions, Model.Events events)
     {
-        this.connection.move(modelActions, this);
+        this.connection.move(modelActions, this, events);
     }
 }

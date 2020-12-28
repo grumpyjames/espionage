@@ -63,11 +63,18 @@ public class Connection {
         throw new UnsupportedOperationException();
     }
 
-    void move(ModelActions modelActions, JoiningSentry joiningSentry)
+    void move(ModelActions modelActions, JoiningSentry joiningSentry, Model.Events events)
     {
         LatLn movedTo = this.segment.direction().applyWithScalar(joiningSentry.location, joiningSentry.speed);
 
         double distance = this.segment.tail.distanceTo(movedTo);
+        events.sentryPositionChanged(
+                true,
+                joiningSentry.identifier,
+                movedTo,
+                this.segment.direction(),
+                joiningSentry.connection.location()
+        );
         if (distance < 5)
         {
             movedTo = this.segment.tail.location;

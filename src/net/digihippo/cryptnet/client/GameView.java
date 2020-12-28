@@ -21,20 +21,23 @@ public class GameView implements Events
     }
 
     @Override
-    public void sentryPositionChanged(String patrolIdentifier, LatLn location, UnitVector orientation)
+    public void sentryPositionChanged(boolean joining, String patrolIdentifier, LatLn location, UnitVector orientation, LatLn connectionLocation)
     {
-        SentryView sentryView = sentries.get(patrolIdentifier);
-        if (sentryView == null)
+        if (!joining)
         {
-            SentryView view = new SentryView(patrolIdentifier);
-            sentries.put(patrolIdentifier, view);
-            view.setLocation(location, orientation);
-        }
-        else
-        {
-            sentryView.setLocation(location, orientation);
+            SentryView sentryView = sentries.get(patrolIdentifier);
+            if (sentryView == null)
+            {
+                SentryView view = new SentryView(patrolIdentifier);
+                sentries.put(patrolIdentifier, view);
+                view.setLocation(location, orientation);
+            } else
+            {
+                sentryView.setLocation(location, orientation);
+            }
         }
     }
+
 
     @Override
     public void gameOver()
@@ -49,6 +52,12 @@ public class GameView implements Events
     }
 
     @Override
+    public void frameEnd(int frameCounter)
+    {
+
+    }
+
+    @Override
     public void gameRejected(String message)
     {
 
@@ -58,6 +67,12 @@ public class GameView implements Events
     public void gameStarted()
     {
         this.state = State.Live;
+    }
+
+    @Override
+    public void frameStart(int frameCounter)
+    {
+
     }
 
     public boolean isGameOver()

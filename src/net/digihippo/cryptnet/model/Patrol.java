@@ -56,7 +56,7 @@ public final class Patrol {
 
         this.path.move(this, random);
 
-        events.sentryPositionChanged(identifier, this.location, this.velocity);
+        events.sentryPositionChanged(false, this.identifier, this.location, this.velocity, null);
     }
 
     private void turn(LatLn turnLocation, Path path, Segment segment, Direction dir) {

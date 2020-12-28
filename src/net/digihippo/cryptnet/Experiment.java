@@ -14,6 +14,7 @@ import java.io.File;
 import java.io.IOException;
 import java.text.DecimalFormat;
 import java.util.Collection;
+import java.util.List;
 import java.util.Random;
 import java.util.concurrent.*;
 import java.util.concurrent.locks.LockSupport;
@@ -22,10 +23,11 @@ public class Experiment
 {
     @SuppressWarnings("SameParameterValue")
     private static Model startingModel(
-            Collection<Way> ways,
-            Random random)
+            Random random,
+            Model.Events events,
+            List<Path> paths)
     {
-        return Model.createModel(ways, random, new NoOpEvents());
+        return Model.createModel(random, events, paths);
     }
 
     interface Event
@@ -66,10 +68,12 @@ public class Experiment
         private final int width;
         private final int height;
 
-        private final Model model;
+//        private final Model model;
         private final int offsetX = 50;
         private final int offsetY = 50;
         private final BufferedImage[][] images;
+        private final BlockingQueue<FrameCollector.Frame> frames = new ArrayBlockingQueue<>(32);
+        private final List<Path> paths;
 
         @Override
         public Dimension getPreferredSize() {
@@ -81,16 +85,16 @@ public class Experiment
                 final LatLn bottomRight,
                 final int width,
                 final int height,
-                final Model model,
                 final BufferedImage[][] images,
-                final BlockingQueue<Event> events)
+                final BlockingQueue<Event> events,
+                List<Path> paths)
         {
             this.topLeft = topLeft;
             this.bottomRight = bottomRight;
             this.width = width;
             this.height = height;
-            this.model = model;
             this.images = images;
+            this.paths = paths;
 
             addMouseListener(new EventQueueListener(events));
         }
@@ -98,6 +102,8 @@ public class Experiment
         @Override
         public void paint(final Graphics g)
         {
+            FrameCollector.Frame f = frames.poll();
+
             for (int i = 0; i < images.length; i++)
             {
                 BufferedImage[] image = images[i];
@@ -117,7 +123,7 @@ public class Experiment
             g.drawString(toHumanCoords(topLeft), offsetX, offsetY);
             g.drawString(toHumanCoords(bottomRight), offsetX + width, offsetY + height);
 
-            for (Path path : model.paths)
+            for (Path path : paths)
             {
                 for (Segment line: path.segments())
                 {
@@ -138,19 +144,29 @@ public class Experiment
 //                        offsetY + point.y - 2},
 //                    4);
 //            }
-            for (JoiningSentry sentry : model.joiningSentries) {
-                renderJoiningSentry(g, sentry);
-            }
-
-            for (Patrol patrol: model.patrols)
+            if (f != null)
             {
-                renderSentry(patrol.location, patrol.velocity, g);
-            }
+                for (FrameCollector.SentryView sentry : f.sentries)
+                {
+                    if (sentry.joining)
+                    {
+                        renderJoiningSentry(g, sentry.location, sentry.connection);
+                    } else
+                    {
+                        renderSentry(sentry.location, sentry.orientation, g);
+                    }
+                }
 
-            if (model.player != null)
-            {
-                LatLn playerLocation = model.player.position;
-                renderPlayer(g, playerLocation);
+                renderPlayer(g, f.playerLocation);
+
+                if (f.victory)
+                {
+                    g.drawString("Victory!", offsetX + (width / 2), offsetY + (height / 2));
+                }
+                if (f.gameOver)
+                {
+                    g.drawString("Game over!", offsetX + (width / 2), offsetY + (height / 2));
+                }
             }
         }
 
@@ -161,12 +177,9 @@ public class Experiment
             return format.format(Math.toDegrees(topLeft.lat)) + "," + format.format(Math.toDegrees(topLeft.lon));
         }
 
-        private void renderJoiningSentry(Graphics g, JoiningSentry sentry) {
-//            throw new UnsupportedOperationException();
-//            renderSentry(location, velocity, g);
-//
-            drawLine(g, sentry.location, sentry.connection.location(), true);
-            filledCircleAt(g, sentry.location, Color.BLUE);
+        private void renderJoiningSentry(Graphics g, LatLn location, LatLn connectionLocation) {
+            drawLine(g, location, connectionLocation, true);
+            filledCircleAt(g, location, Color.BLUE);
         }
 
         private void renderPlayer(Graphics g, LatLn playerLocation) {
@@ -268,9 +281,19 @@ public class Experiment
             return new LatLn(latRads, lonRads);
         }
 
+        public void enqueueFrame(FrameCollector.Frame frame)
+        {
+            try
+            {
+                frames.put(frame);
+            } catch (InterruptedException e)
+            {
+                e.printStackTrace();
+            }
+        }
+
         private class EventQueueListener implements MouseListener
         {
-
             private final BlockingQueue<Event> events;
 
             EventQueueListener(BlockingQueue<Event> events)
@@ -311,7 +334,7 @@ public class Experiment
         }
     }
 
-    public static void main(String[] args) throws IOException
+    public static void main(String[] args) throws IOException, InterruptedException
     {
         int xTile = 65480;
         int yTile = 43572;
@@ -324,10 +347,6 @@ public class Experiment
         double longitudeMax = WebMercator.lon((xTile + 2) * 256, 17, 256D);
 
         final Random random = new Random(238824982L);
-        final Model model = startingModel(
-            OsmSource.fetchWays(latitudeMin, latitudeMax, longitudeMin, longitudeMax),
-            random
-        );
 
         final LatLn topLeft = new LatLn(Math.max(latitudeMin, latitudeMax), Math.min(longitudeMin, longitudeMax));
         final LatLn bottomRight = new LatLn(Math.min(latitudeMin, latitudeMax), Math.max(longitudeMin, longitudeMax));
@@ -343,44 +362,41 @@ public class Experiment
         images[1][1] = readTile(xTile + 1, yTile + 1);
 
         final BlockingQueue<Event> events = new LinkedBlockingQueue<>();
-        final Viewer viewer = new Viewer(topLeft, bottomRight, 512, 512, model, images, events);
-        final ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
 
-        SwingUtilities.invokeLater(new Runnable()
+        Collection<Way> ways = OsmSource.fetchWays(latitudeMin, latitudeMax, longitudeMin, longitudeMax);
+        List<Path> paths = Paths.from(ways);
+        final Viewer viewer = new Viewer(topLeft, bottomRight, 512, 512, images, events, paths);
+        final Model model = startingModel(
+                random,
+                new FrameCollector(frame -> {
+                    viewer.enqueueFrame(frame);
+                    SwingUtilities.invokeLater(viewer::repaint);
+                }),
+                paths
+        );
+        model.rules(new StayAliveRules(1.2));
+
+        SwingUtilities.invokeLater(() ->
         {
-            @Override
-            public void run()
-            {
-                JFrame f = new JFrame("Lines and intersections");
-                f.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
-                f.add(viewer);
-                f.pack();
-                f.setVisible(true);
-
-                scheduledExecutorService.scheduleWithFixedDelay(new Runnable()
-                {
-                    @Override
-                    public void run()
-                    {
-                        SwingUtilities.invokeLater(new Runnable()
-                        {
-                            @Override
-                            public void run()
-                            {
-                                // Could be more Elm-like here and make model immutable?
-                                Event event;
-                                while ((event = events.poll()) != null)
-                                {
-                                    event.enact(model);
-                                }
-                                model.tick();
-                                viewer.repaint();
-                            }
-                        });
-                    }
-                }, 40, 40, TimeUnit.MILLISECONDS);
-            }
+            JFrame f = new JFrame("Lines and intersections");
+            f.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+            f.add(viewer);
+            f.pack();
+            f.setVisible(true);
         });
+
+        for (int i = 0; i < 5; i++)
+        {
+            Event event = events.take();
+
+            event.enact(model);
+        }
+
+        model.startGame(System.currentTimeMillis());
+        while (true)
+        {
+            model.time(System.currentTimeMillis());
+        }
     }
 
     private static BufferedImage readTile(int xTile, int yTile) throws IOException

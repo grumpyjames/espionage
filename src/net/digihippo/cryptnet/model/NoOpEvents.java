@@ -11,7 +11,8 @@ public class NoOpEvents implements Model.Events
     }
 
     @Override
-    public void sentryPositionChanged(String patrolIdentifier, LatLn location, UnitVector orientation) {
+    public void sentryPositionChanged(
+            boolean joining, String patrolIdentifier, LatLn location, UnitVector orientation, LatLn connection) {
 
     }
 
@@ -28,6 +29,12 @@ public class NoOpEvents implements Model.Events
     }
 
     @Override
+    public void frameEnd(int frameCounter)
+    {
+
+    }
+
+    @Override
     public void gameRejected(String message)
     {
 
@@ -35,6 +42,12 @@ public class NoOpEvents implements Model.Events
 
     @Override
     public void gameStarted()
+    {
+
+    }
+
+    @Override
+    public void frameStart(int frameCounter)
     {
 
     }

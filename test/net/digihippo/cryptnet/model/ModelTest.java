@@ -10,7 +10,6 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.List;
 import java.util.Random;
 
 import static org.junit.Assert.assertTrue;
@@ -23,11 +22,11 @@ public class ModelTest
     private final LatLn zebraNearSpaniards = latLn(51.56899086921811, -0.17475457002941547);
     private final Model model;
     {
-        model = Model.createModel(ways(way(
-                node(jackStrawsCastle),
-                node(zebraNearSpaniards))),
+        model = Model.createModel(
                 new Random(),
-                events);
+                events, Paths.from(ways(way(
+                        node(jackStrawsCastle),
+                        node(zebraNearSpaniards)))));
     }
 
     private final Clock clock = at("2020-12-27T13:00:00.000Z");
@@ -69,7 +68,7 @@ public class ModelTest
         }
 
         @Override
-        public void sentryPositionChanged(String patrolIdentifier, LatLn location, UnitVector orientation)
+        public void sentryPositionChanged(boolean joining, String patrolIdentifier, LatLn location, UnitVector orientation, LatLn connectionLocation)
         {
 
         }
@@ -87,6 +86,12 @@ public class ModelTest
         }
 
         @Override
+        public void frameEnd(int frameCounter)
+        {
+
+        }
+
+        @Override
         public void gameRejected(String message)
         {
 
@@ -94,6 +99,12 @@ public class ModelTest
 
         @Override
         public void gameStarted()
+        {
+
+        }
+
+        @Override
+        public void frameStart(int frameCounter)
         {
 
         }
@@ -231,41 +242,4 @@ public class ModelTest
         return new LatLn(lat, lon);
     }
 
-    private static class StayAliveRules implements Rules
-    {
-        private final double sentrySpeed;
-
-        public StayAliveRules(double sentrySpeed)
-        {
-            this.sentrySpeed = sentrySpeed;
-        }
-
-        @Override
-        public double sentrySpeed()
-        {
-            return sentrySpeed;
-        }
-
-        @Override
-        public State gameState(
-                long gameDurationMillis,
-                LatLn playerLocation,
-                List<LatLn> sentryLocations)
-        {
-            if (gameDurationMillis >= 30_000)
-            {
-                return State.Victory;
-            }
-            for (LatLn sentryLocation : sentryLocations)
-            {
-                double v = sentryLocation.distanceTo(playerLocation);
-                if (v <= 2)
-                {
-                    return State.GameOver;
-                }
-            }
-
-            return State.Continue;
-        }
-    }
 }

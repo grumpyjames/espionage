@@ -5,8 +5,8 @@ import net.digihippo.cryptnet.roadmap.Way;
 
 import java.util.*;
 
-final class Paths {
-    static List<Path> from(Collection<Way> ways) {
+public final class Paths {
+    public static List<Path> from(Collection<Way> ways) {
 
         final Map<Long, Vertex> vertexBuilderMap
                 = new HashMap<>();
