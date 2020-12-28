@@ -16,6 +16,24 @@ prebuilt_jar(
   visibility = [ 'PUBLIC' ],
 )
 
+prebuilt_jar(
+  name = 'netty-buffer',
+  binary_jar = 'lib/netty-buffer-4.1.56.Final.jar',
+  source_jar = 'lib/netty-buffer-4.1.56.Final-sources.jar',
+  visibility = [ 'PUBLIC' ],
+  deps = [
+      ':netty-common'
+  ]
+)
+
+prebuilt_jar(
+  name = 'netty-common',
+  binary_jar = 'lib/netty-common-4.1.56.Final.jar',
+  source_jar = 'lib/netty-common-4.1.56.Final-sources.jar',
+  visibility = [ 'PUBLIC' ],
+  deps = []
+)
+
 keystore(
   name = 'keystore',
   store = 'temporary.keystore',

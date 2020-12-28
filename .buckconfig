@@ -4,3 +4,6 @@
     src_roots = src, test
     source_level = 11
     target_level = 11
+
+[tools]
+    javac = /usr/lib/jvm/java-11-openjdk-amd64/bin/javac

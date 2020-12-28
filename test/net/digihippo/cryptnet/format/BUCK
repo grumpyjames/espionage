@@ -1,0 +1,13 @@
+java_test(
+    name = 'format',
+    srcs = glob(['*.java']),
+    deps = [
+        '//src/net/digihippo/cryptnet/model:model',
+        '//src/net/digihippo/cryptnet/roadmap:roadmap',
+        '//src/net/digihippo/cryptnet/format:format',
+        '//:hamcrest',
+        '//:netty-buffer',
+        '//:junit',
+    ],
+    visibility = [ 'PUBLIC' ],
+)

@@ -1,0 +1,5 @@
+#!/bin/bash
+
+set -euo pipefail
+
+/home/james/software/buck-java11.pex $@

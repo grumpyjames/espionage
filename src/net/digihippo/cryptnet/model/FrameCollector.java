@@ -5,6 +5,7 @@ import net.digihippo.cryptnet.roadmap.UnitVector;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Consumer;
 
 public final class FrameCollector implements Model.Events
@@ -26,6 +27,31 @@ public final class FrameCollector implements Model.Events
             this.location = location;
             this.orientation = orientation;
         }
+
+        @Override
+        public String toString()
+        {
+            return "PatrolView{" +
+                    "location=" + location +
+                    ", orientation=" + orientation +
+                    '}';
+        }
+
+        @Override
+        public boolean equals(Object o)
+        {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            PatrolView that = (PatrolView) o;
+            return Objects.equals(location, that.location) &&
+                    Objects.equals(orientation, that.orientation);
+        }
+
+        @Override
+        public int hashCode()
+        {
+            return Objects.hash(location, orientation);
+        }
     }
 
     public static final class JoiningView
@@ -40,6 +66,33 @@ public final class FrameCollector implements Model.Events
             this.orientation = orientation;
             this.connectionLocation = connectionLocation;
         }
+
+        @Override
+        public String toString()
+        {
+            return "JoiningView{" +
+                    "location=" + location +
+                    ", orientation=" + orientation +
+                    ", connectionLocation=" + connectionLocation +
+                    '}';
+        }
+
+        @Override
+        public boolean equals(Object o)
+        {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            JoiningView that = (JoiningView) o;
+            return Objects.equals(location, that.location) &&
+                    Objects.equals(orientation, that.orientation) &&
+                    Objects.equals(connectionLocation, that.connectionLocation);
+        }
+
+        @Override
+        public int hashCode()
+        {
+            return Objects.hash(location, orientation, connectionLocation);
+        }
     }
 
     public static final class Frame
@@ -50,9 +103,42 @@ public final class FrameCollector implements Model.Events
         public List<JoiningView> joining = new ArrayList<>();
         public List<PatrolView> patrols = new ArrayList<>();
 
-        private Frame(int frameCounter)
+        public Frame(int frameCounter)
         {
             this.frameCounter = frameCounter;
+        }
+
+        @Override
+        public boolean equals(Object o)
+        {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            Frame frame = (Frame) o;
+            return frameCounter == frame.frameCounter &&
+                    gameOver == frame.gameOver &&
+                    victory == frame.victory &&
+                    Objects.equals(playerLocation, frame.playerLocation) &&
+                    Objects.equals(joining, frame.joining) &&
+                    Objects.equals(patrols, frame.patrols);
+        }
+
+        @Override
+        public int hashCode()
+        {
+            return Objects.hash(frameCounter, gameOver, victory, playerLocation, joining, patrols);
+        }
+
+        @Override
+        public String toString()
+        {
+            return "Frame{" +
+                    "frameCounter=" + frameCounter +
+                    ", gameOver=" + gameOver +
+                    ", victory=" + victory +
+                    ", playerLocation=" + playerLocation +
+                    ", joining=" + joining +
+                    ", patrols=" + patrols +
+                    '}';
         }
     }
 

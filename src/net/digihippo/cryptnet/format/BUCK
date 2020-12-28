@@ -1,0 +1,11 @@
+java_library(
+    name = 'format',
+    srcs = glob(['*.java']),
+    deps = [
+        '//:netty-buffer',
+        '//src/net/digihippo/cryptnet/roadmap:roadmap',
+        # ick - we really only need 'Frame' and friends...
+        '//src/net/digihippo/cryptnet/model:model',
+    ],
+    visibility = [ 'PUBLIC' ]
+)
