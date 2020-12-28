@@ -123,7 +123,7 @@ public class OsmSource
     private static InputStream requestVectorData(double latSt, double latEnd, double lonSt, double lonEnd) throws IOException
     {
         final URLConnection urlConnection =
-            new URL("http://overpass-api.de/api/interpreter").openConnection();
+            new URL("https://z.overpass-api.de/api/interpreter").openConnection();
         final HttpURLConnection connection = (HttpURLConnection) urlConnection;
         connection.setDoOutput(true);
         connection.setDoInput(true);
