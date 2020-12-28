@@ -4,8 +4,6 @@ import net.digihippo.cryptnet.model.Model;
 import net.digihippo.cryptnet.roadmap.LatLn;
 import net.digihippo.cryptnet.roadmap.UnitVector;
 
-import java.util.Random;
-
 final class Game
 {
     private final String identifier;
@@ -22,15 +20,11 @@ final class Game
         this.nextTickMillis = lastTickMillis + 40;
     }
 
-    void tick(
-            long currentTimeMillis,
-            Random random,
-            final Events events)
+    void tick(long currentTimeMillis)
     {
-        final GameEvents gameEvents = new GameEvents(events);
         while (nextTickMillis < currentTimeMillis)
         {
-            model.tick(random, gameEvents);
+            model.tick();
             nextTickMillis += 40;
         }
     }

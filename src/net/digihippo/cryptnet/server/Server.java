@@ -52,7 +52,7 @@ public class Server
     {
         for (Game game : games.values())
         {
-            game.tick(currentTimeMillis, random, events);
+            game.tick(currentTimeMillis);
         }
     }
 

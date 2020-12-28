@@ -22,9 +22,10 @@ public class Experiment
 {
     @SuppressWarnings("SameParameterValue")
     private static Model startingModel(
-            Collection<Way> ways)
+            Collection<Way> ways,
+            Random random)
     {
-        return Model.createModel(ways);
+        return Model.createModel(ways, random, new NoOpEvents());
     }
 
     interface Event
@@ -322,8 +323,10 @@ public class Experiment
         double longitudeMin = WebMercator.lon(xTile * 256, 17, 256D);
         double longitudeMax = WebMercator.lon((xTile + 2) * 256, 17, 256D);
 
+        final Random random = new Random(238824982L);
         final Model model = startingModel(
-            OsmSource.fetchWays(latitudeMin, latitudeMax, longitudeMin, longitudeMax)
+            OsmSource.fetchWays(latitudeMin, latitudeMax, longitudeMin, longitudeMax),
+            random
         );
 
         final LatLn topLeft = new LatLn(Math.max(latitudeMin, latitudeMax), Math.min(longitudeMin, longitudeMax));
@@ -340,7 +343,6 @@ public class Experiment
         images[1][1] = readTile(xTile + 1, yTile + 1);
 
         final BlockingQueue<Event> events = new LinkedBlockingQueue<>();
-        final Random random = new Random(238824982L);
         final Viewer viewer = new Viewer(topLeft, bottomRight, 512, 512, model, images, events);
         final ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
 
@@ -371,7 +373,7 @@ public class Experiment
                                 {
                                     event.enact(model);
                                 }
-                                model.tick(random, new NoOpEvents());
+                                model.tick();
                                 viewer.repaint();
                             }
                         });

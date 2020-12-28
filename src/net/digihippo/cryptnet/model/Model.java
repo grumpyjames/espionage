@@ -4,19 +4,27 @@ import net.digihippo.cryptnet.roadmap.LatLn;
 import net.digihippo.cryptnet.roadmap.UnitVector;
 import net.digihippo.cryptnet.roadmap.Way;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public final class Model
 {
     public final List<JoiningSentry> joiningSentries = new ArrayList<>();
     public final List<Patrol> patrols = new ArrayList<>();
     public final List<Path> paths;
+    private final Random random;
+    private final Events events;
 
     private int sentryIndex = 0;
     public Player player = null;
+    private Rules rules;
+    private long time;
+    private long nextTick;
+
+    public void rules(Rules rules)
+    {
+        this.rules = rules;
+    }
 
     public interface Events
     {
@@ -37,18 +45,59 @@ public final class Model
         void gameStarted();
     }
 
-    public static Model createModel(Collection<Way> ways)
+    public static Model createModel(
+            Collection<Way> ways,
+            Random random,
+            Events events)
     {
         List<Path> paths = Paths.from(ways);
-        return new Model(paths);
+        return new Model(paths, random, events);
     }
 
-    private Model(List<Path> paths)
+    private Model(
+            List<Path> paths,
+            Random random,
+            Events events)
     {
         this.paths = paths;
+        this.random = random;
+        this.events = events;
     }
 
-    public void tick(Random random, Events events)
+    public void startGame(long timeMillis)
+    {
+        this.time = timeMillis;
+        this.nextTick = this.time + 40;
+    }
+
+    public void time(long timeMillis)
+    {
+        // we tick 25 times per second, i.e once every 40ms...
+        while (this.nextTick < timeMillis)
+        {
+            this.tick();
+            Rules.State state = this.rules.gameState(
+                    this.nextTick,
+                    this.player.position,
+                    this.patrols.stream().map(p -> p.location).collect(Collectors.toList()));
+            switch (state)
+            {
+                case GameOver:
+                    events.gameOver();
+                    return;
+                case Victory:
+                    events.victory();
+                    return;
+                case Continue:
+                default:
+                    // carry on
+            }
+            this.nextTick += 40;
+        }
+        this.time = timeMillis;
+    }
+
+    public void tick()
     {
         DeferredModelActions modelActions = new DeferredModelActions();
 

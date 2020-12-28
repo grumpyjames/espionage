@@ -67,7 +67,8 @@ public class Connection {
     {
         LatLn movedTo = this.segment.direction().applyTo(joiningSentry.location);
 
-        if (this.segment.tail.distanceTo(movedTo) < 5)
+        double distance = this.segment.tail.distanceTo(movedTo);
+        if (distance < 5)
         {
             movedTo = this.segment.tail.location;
             // FIXME:                                            v random required

@@ -15,6 +15,7 @@ public class Segment {
     // How to get from the head to the tail
     // Should this be a unit vector or what?
     // Should return a velocity or a vector type, really...
+    // Or maybe a bearing? And what if tail == head?
     public UnitVector direction() {
         return tail.directionFrom(head);
     }
