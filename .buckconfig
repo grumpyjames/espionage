@@ -2,5 +2,5 @@
     ; Indicates that any folder named src or test
     ; are folders that contain Java code.
     src_roots = src, test
-    source_level = 7 
-    target_level = 7
+    source_level = 11
+    target_level = 11
