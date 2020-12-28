@@ -1,6 +1,7 @@
 package net.digihippo.cryptnet.server;
 
 import net.digihippo.cryptnet.roadmap.LatLn;
+import net.digihippo.cryptnet.roadmap.UnitVector;
 
 // Immutable values only, this is likely to become a thread hop.
 public interface Events
@@ -20,7 +21,7 @@ public interface Events
             String gameIdentifier,
             String patrolIdentifier,
             LatLn location,
-            LatLn orientation);
+            UnitVector orientation);
 
     void gameOver(
             String gameIdentifier

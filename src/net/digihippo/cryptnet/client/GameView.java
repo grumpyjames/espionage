@@ -79,14 +79,14 @@ public class GameView implements Events
     {
         private final String identifier;
         public LatLn location;
-        public LatLn orientation;
+        public UnitVector orientation;
 
         private SentryView(String identifier)
         {
             this.identifier = identifier;
         }
 
-        public void setLocation(LatLn location, LatLn orientation)
+        public void setLocation(LatLn location, UnitVector orientation)
         {
             this.location = location;
             this.orientation = orientation;
