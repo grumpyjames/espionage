@@ -16,19 +16,29 @@ public final class FrameCollector implements Model.Events
         this.consumer = consumer;
     }
 
-    public static final class SentryView
+    public static final class PatrolView
     {
-        public final boolean joining;
         public final LatLn location;
         public final UnitVector orientation;
-        public final LatLn connection;
 
-        public SentryView(boolean joining, LatLn location, UnitVector orientation, LatLn connection)
+        public PatrolView(LatLn location, UnitVector orientation)
         {
-            this.joining = joining;
             this.location = location;
             this.orientation = orientation;
-            this.connection = connection;
+        }
+    }
+
+    public static final class JoiningView
+    {
+        public final LatLn location;
+        public final UnitVector orientation;
+        public final LatLn connectionLocation;
+
+        public JoiningView(LatLn location, UnitVector orientation, LatLn connectionLocation)
+        {
+            this.location = location;
+            this.orientation = orientation;
+            this.connectionLocation = connectionLocation;
         }
     }
 
@@ -37,7 +47,8 @@ public final class FrameCollector implements Model.Events
         public final int frameCounter;
         public boolean gameOver, victory;
         public LatLn playerLocation;
-        public List<SentryView> sentries = new ArrayList<>();
+        public List<JoiningView> joining = new ArrayList<>();
+        public List<PatrolView> patrols = new ArrayList<>();
 
         private Frame(int frameCounter)
         {
@@ -66,14 +77,22 @@ public final class FrameCollector implements Model.Events
     }
 
     @Override
-    public void sentryPositionChanged(
-            boolean joining,
+    public void patrolPositionChanged(
             String patrolIdentifier,
             LatLn location,
-            UnitVector orientation,
-            LatLn latLn)
+            UnitVector orientation)
     {
-        frame.sentries.add(new SentryView(joining, location, orientation, latLn));
+        frame.patrols.add(new PatrolView(location, orientation));
+    }
+
+    @Override
+    public void joiningPatrolPositionChanged(
+            String identifier,
+            LatLn movedTo,
+            UnitVector direction,
+            LatLn joiningLocation)
+    {
+        frame.joining.add(new JoiningView(movedTo, direction, joiningLocation));
     }
 
     @Override

@@ -68,8 +68,7 @@ public class Connection {
         LatLn movedTo = this.segment.direction().applyWithScalar(joiningSentry.location, joiningSentry.speed);
 
         double distance = this.segment.tail.distanceTo(movedTo);
-        events.sentryPositionChanged(
-                true,
+        events.joiningPatrolPositionChanged(
                 joiningSentry.identifier,
                 movedTo,
                 this.segment.direction(),

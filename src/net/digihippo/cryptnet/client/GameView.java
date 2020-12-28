@@ -21,23 +21,25 @@ public class GameView implements Events
     }
 
     @Override
-    public void sentryPositionChanged(boolean joining, String patrolIdentifier, LatLn location, UnitVector orientation, LatLn connectionLocation)
+    public void patrolPositionChanged(String patrolIdentifier, LatLn location, UnitVector orientation)
     {
-        if (!joining)
+        SentryView sentryView = sentries.get(patrolIdentifier);
+        if (sentryView == null)
         {
-            SentryView sentryView = sentries.get(patrolIdentifier);
-            if (sentryView == null)
-            {
-                SentryView view = new SentryView(patrolIdentifier);
-                sentries.put(patrolIdentifier, view);
-                view.setLocation(location, orientation);
-            } else
-            {
-                sentryView.setLocation(location, orientation);
-            }
+            SentryView view = new SentryView(patrolIdentifier);
+            sentries.put(patrolIdentifier, view);
+            view.setLocation(location, orientation);
+        } else
+        {
+            sentryView.setLocation(location, orientation);
         }
     }
 
+    @Override
+    public void joiningPatrolPositionChanged(String identifier, LatLn movedTo, UnitVector direction, LatLn joiningLocation)
+    {
+
+    }
 
     @Override
     public void gameOver()

@@ -53,9 +53,16 @@ final class Game
         }
 
         @Override
-        public void sentryPositionChanged(boolean joining, String patrolIdentifier, LatLn location, UnitVector orientation, LatLn connectionLocation)
+        public void patrolPositionChanged(String patrolIdentifier, LatLn location, UnitVector orientation)
         {
             events.sentryPositionChanged(identifier, patrolIdentifier, location, orientation);
+        }
+
+        @Override
+        public void joiningPatrolPositionChanged(
+                String identifier, LatLn movedTo, UnitVector direction, LatLn joiningLocation)
+        {
+
         }
 
         @Override

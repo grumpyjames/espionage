@@ -70,9 +70,18 @@ public class ModelTest
         }
 
         @Override
-        public void sentryPositionChanged(boolean joining, String patrolIdentifier, LatLn location, UnitVector orientation, LatLn connectionLocation)
+        public void patrolPositionChanged(String patrolIdentifier, LatLn location, UnitVector orientation)
         {
 
+        }
+
+        @Override
+        public void joiningPatrolPositionChanged(
+                String identifier,
+                LatLn movedTo,
+                UnitVector direction,
+                LatLn joiningLocation)
+        {
         }
 
         @Override

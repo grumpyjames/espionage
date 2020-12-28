@@ -36,12 +36,16 @@ public final class Model
         void playerPositionChanged(
                 LatLn location);
 
-        void sentryPositionChanged(
-                boolean joining,
+        void patrolPositionChanged(
                 String patrolIdentifier,
                 LatLn location,
-                UnitVector orientation,
-                LatLn connectionLocation);
+                UnitVector orientation);
+
+        void joiningPatrolPositionChanged(
+                String identifier,
+                LatLn movedTo,
+                UnitVector direction,
+                LatLn joiningLocation);
 
         void gameOver();
 

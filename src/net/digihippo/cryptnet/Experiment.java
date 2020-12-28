@@ -146,16 +146,8 @@ public class Experiment
 //            }
             if (f != null)
             {
-                for (FrameCollector.SentryView sentry : f.sentries)
-                {
-                    if (sentry.joining)
-                    {
-                        renderJoiningSentry(g, sentry.location, sentry.connection);
-                    } else
-                    {
-                        renderSentry(sentry.location, sentry.orientation, g);
-                    }
-                }
+                f.patrols.forEach(sentry -> renderSentry(sentry.location, sentry.orientation, g));
+                f.joining.forEach(joiner -> renderJoiningSentry(g, joiner.location, joiner.connectionLocation));
 
                 renderPlayer(g, f.playerLocation);
 
