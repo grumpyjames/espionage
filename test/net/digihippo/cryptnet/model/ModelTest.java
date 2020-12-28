@@ -23,10 +23,12 @@ public class ModelTest
     private final Model model;
     {
         model = Model.createModel(
-                new Random(),
-                events, Paths.from(ways(way(
+                Paths.from(ways(way(
                         node(jackStrawsCastle),
-                        node(zebraNearSpaniards)))));
+                        node(zebraNearSpaniards)))),
+                new StayAliveRules(1.2),
+                new Random(),
+                events);
     }
 
     private final Clock clock = at("2020-12-27T13:00:00.000Z");
@@ -115,7 +117,6 @@ public class ModelTest
     public void simplestPossibleVictory()
     {
         model.setPlayerLocation(latLn(51.5664837824125, -0.17661640054047678));
-        model.rules(new StayAliveRules(1.2));
 
         model.startGame(clock.timeMillis);
         model.time(clock.forward(10, ChronoUnit.SECONDS));
@@ -130,7 +131,6 @@ public class ModelTest
     public void simplestPossibleDefeat()
     {
         model.setPlayerLocation(latLn(51.5629829089533, -0.1793216022757321));
-        model.rules(new StayAliveRules(1.2));
         // Very near, but not exactly the same - there's a bug in LatLn::directionFrom
         model.addSentry(latLn(51.56298291, -0.1793216));
 
@@ -145,7 +145,6 @@ public class ModelTest
     {
         LatLn initialLocation = latLn(51.5629829089533, -0.1793216022757321);
         model.setPlayerLocation(initialLocation);
-        model.rules(new StayAliveRules(1.2));
         // Far enough to give the player a headstart
         model.addSentry(latLn(51.56298, -0.17932));
 
@@ -169,7 +168,6 @@ public class ModelTest
     {
         LatLn initialLocation = latLn(51.5629829089533, -0.1793216022757321);
         model.setPlayerLocation(initialLocation);
-        model.rules(new StayAliveRules(1.8)); // quicker than player.
         // Far enough to give the player a headstart
         model.addSentry(latLn(51.56298, -0.17932));
 

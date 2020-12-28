@@ -21,13 +21,13 @@ import java.util.concurrent.locks.LockSupport;
 
 public class Experiment
 {
-    @SuppressWarnings("SameParameterValue")
     private static Model startingModel(
             Random random,
             Model.Events events,
-            List<Path> paths)
+            List<Path> paths,
+            Rules rules)
     {
-        return Model.createModel(random, events, paths);
+        return Model.createModel(paths, rules, random, events);
     }
 
     interface Event
@@ -372,9 +372,9 @@ public class Experiment
                     viewer.enqueueFrame(frame);
                     SwingUtilities.invokeLater(viewer::repaint);
                 }),
-                paths
+                paths,
+                new StayAliveRules(1.2)
         );
-        model.rules(new StayAliveRules(1.2));
 
         SwingUtilities.invokeLater(() ->
         {

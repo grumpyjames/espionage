@@ -11,22 +11,17 @@ public final class Model
     private final List<JoiningSentry> joiningSentries = new ArrayList<>();
     private final List<Patrol> patrols = new ArrayList<>();
     private final List<Path> paths;
+    private final Rules rules;
     private final Random random;
     private final Events events;
 
     private int sentryIndex = 0;
     private Player player = null;
-    private Rules rules;
     private long time;
     private long nextTick;
     private boolean gameOn = false;
     private long startTime;
     private final double ticksPerSecond = 25;
-
-    public void rules(Rules rules)
-    {
-        this.rules = rules;
-    }
 
     public interface Events
     {
@@ -55,19 +50,22 @@ public final class Model
     }
 
     public static Model createModel(
+            List<Path> paths,
+            Rules rules,
             Random random,
-            Events events,
-            List<Path> paths)
+            Events events)
     {
-        return new Model(paths, random, events);
+        return new Model(paths, rules, random, events);
     }
 
     private Model(
             List<Path> paths,
+            Rules rules,
             Random random,
             Events events)
     {
         this.paths = paths;
+        this.rules = rules;
         this.random = random;
         this.events = events;
     }
