@@ -1,6 +1,8 @@
 package net.digihippo.cryptnet.roadmap;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 
 public final class Way
@@ -10,6 +12,16 @@ public final class Way
     public Way(List<Node> nodes)
     {
         this.nodes = nodes;
+    }
+
+    public static Way way(Node... nodes)
+    {
+        return new Way(Arrays.asList(nodes));
+    }
+
+    public static Collection<Way> ways(Way... ways)
+    {
+        return Arrays.asList(ways);
     }
 
     @Override

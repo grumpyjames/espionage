@@ -5,12 +5,13 @@ import net.digihippo.cryptnet.roadmap.UnitVector;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Random;
 
 public class Vertex
 {
     public final LatLn location;
-    final List<Link> links = new ArrayList<>();
+    transient final List<Link> links = new ArrayList<>();
 
     public Vertex(LatLn location) {
         this.location = location;
@@ -65,5 +66,29 @@ public class Vertex
             this.path = path;
             this.segment = segment;
         }
+    }
+
+    // Deliberately excluding the links!
+    @Override
+    public boolean equals(Object o)
+    {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Vertex vertex = (Vertex) o;
+        return Objects.equals(location, vertex.location);
+    }
+
+    @Override
+    public int hashCode()
+    {
+        return Objects.hash(location);
+    }
+
+    @Override
+    public String toString()
+    {
+        return "Vertex{" +
+                "location=" + location +
+                '}';
     }
 }

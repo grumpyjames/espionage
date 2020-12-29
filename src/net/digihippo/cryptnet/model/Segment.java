@@ -3,6 +3,8 @@ package net.digihippo.cryptnet.model;
 import net.digihippo.cryptnet.roadmap.LatLn;
 import net.digihippo.cryptnet.roadmap.UnitVector;
 
+import java.util.Objects;
+
 public class Segment {
     public final Vertex head;
     public final Vertex tail;
@@ -36,5 +38,30 @@ public class Segment {
     void visitVertices(Path path) {
         head.onLink(Vertex.End.Head, path, this);
         tail.onLink(Vertex.End.Tail, path, this);
+    }
+
+    @Override
+    public boolean equals(Object o)
+    {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Segment segment = (Segment) o;
+        return Objects.equals(head, segment.head) &&
+                Objects.equals(tail, segment.tail);
+    }
+
+    @Override
+    public int hashCode()
+    {
+        return Objects.hash(head, tail);
+    }
+
+    @Override
+    public String toString()
+    {
+        return "Segment{" +
+                "head=" + head +
+                ", tail=" + tail +
+                '}';
     }
 }

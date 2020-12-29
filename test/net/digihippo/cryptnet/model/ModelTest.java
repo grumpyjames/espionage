@@ -8,8 +8,6 @@ import org.junit.Test;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.Random;
 
 import static org.junit.Assert.assertTrue;
@@ -18,14 +16,14 @@ public class ModelTest
 {
     private final TestEvents events = new TestEvents();
     // This is Spaniards road at the top of Hampstead Heath. It's very straight.
-    private final LatLn jackStrawsCastle = latLn(51.5629829089533, -0.1793216022757321);
-    private final LatLn zebraNearSpaniards = latLn(51.56899086921811, -0.17475457002941547);
+    private final LatLn jackStrawsCastle = LatLn.toRads(51.5629829089533, -0.1793216022757321);
+    private final LatLn zebraNearSpaniards = LatLn.toRads(51.56899086921811, -0.17475457002941547);
     private Model model;
 
     private Model createModel(double sentrySpeed)
     {
         return Model.createModel(
-                Paths.from(ways(way(
+                Paths.from(Way.ways(Way.way(
                         node(jackStrawsCastle),
                         node(zebraNearSpaniards)))),
                 new StayAliveRules(sentrySpeed),
@@ -122,7 +120,7 @@ public class ModelTest
     public void simplestPossibleVictory()
     {
         model = createModel(1.2);
-        model.setPlayerLocation(latLn(51.5664837824125, -0.17661640054047678));
+        model.setPlayerLocation(LatLn.toRads(51.5664837824125, -0.17661640054047678));
 
         model.startGame(clock.timeMillis);
         model.time(clock.forward(10, ChronoUnit.SECONDS));
@@ -137,9 +135,9 @@ public class ModelTest
     public void simplestPossibleDefeat()
     {
         model = createModel(1.2);
-        model.setPlayerLocation(latLn(51.5629829089533, -0.1793216022757321));
+        model.setPlayerLocation(LatLn.toRads(51.5629829089533, -0.1793216022757321));
         // Very near, but not exactly the same - there's a bug in LatLn::directionFrom
-        model.addSentry(latLn(51.56298291, -0.1793216));
+        model.addSentry(LatLn.toRads(51.56298291, -0.1793216));
 
         model.startGame(clock.timeMillis);
         model.time(clock.forward(1, ChronoUnit.SECONDS));
@@ -152,10 +150,10 @@ public class ModelTest
     {
         model = createModel(0.8);
 
-        LatLn initialLocation = latLn(51.5629829089533, -0.1793216022757321);
+        LatLn initialLocation = LatLn.toRads(51.5629829089533, -0.1793216022757321);
         model.setPlayerLocation(initialLocation);
         // Far enough to give the player a headstart
-        model.addSentry(latLn(51.5629, -0.1793));
+        model.addSentry(LatLn.toRads(51.5629, -0.1793));
 
         UnitVector thisWay = zebraNearSpaniards.directionFrom(jackStrawsCastle);
 
@@ -177,10 +175,10 @@ public class ModelTest
     {
         model = createModel(1.8);
 
-        LatLn initialLocation = latLn(51.5629829089533, -0.1793216022757321);
+        LatLn initialLocation = LatLn.toRads(51.5629829089533, -0.1793216022757321);
         model.setPlayerLocation(initialLocation);
         // Far enough to give the player a headstart
-        model.addSentry(latLn(51.56298, -0.17932));
+        model.addSentry(LatLn.toRads(51.56298, -0.17932));
 
         UnitVector thisWay = zebraNearSpaniards.directionFrom(jackStrawsCastle);
 
@@ -226,28 +224,10 @@ public class ModelTest
 //        assertThat(Model.parse(model.toString()).toString(), equalTo(model.toString()));
     }
 
-    private Collection<Way> ways(Way... ways)
-    {
-        return Arrays.asList(ways);
-    }
-
     private int nextNodeId = 0;
-
-    private Way way(Node... nodes)
-    {
-        return new Way(Arrays.asList(nodes));
-    }
 
     private Node node(LatLn latLn)
     {
-        Node node = new Node(nextNodeId++);
-        node.latLn = latLn;
-        return node;
+        return Node.node(nextNodeId++, latLn);
     }
-
-    private LatLn latLn(double lat, double lon)
-    {
-        return LatLn.toRads(lat, lon);
-    }
-
 }

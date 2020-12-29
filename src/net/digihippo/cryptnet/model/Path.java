@@ -5,6 +5,7 @@ import net.digihippo.cryptnet.roadmap.UnitVector;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 import java.util.Random;
 
 public class Path {
@@ -116,5 +117,28 @@ public class Path {
     public Vertex vertexAt(int i)
     {
         return segments.get(i - 1).tail;
+    }
+
+    @Override
+    public boolean equals(Object o)
+    {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Path path = (Path) o;
+        return Objects.equals(segments, path.segments);
+    }
+
+    @Override
+    public int hashCode()
+    {
+        return Objects.hash(segments);
+    }
+
+    @Override
+    public String toString()
+    {
+        return "Path{" +
+                "segments=" + segments +
+                '}';
     }
 }

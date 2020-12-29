@@ -10,6 +10,13 @@ public final class Node
         this.nodeId = nodeId;
     }
 
+    public static Node node(int nodeId, LatLn latLn)
+    {
+        Node node = new Node(nodeId);
+        node.latLn = latLn;
+        return node;
+    }
+
     @Override
     public String toString()
     {

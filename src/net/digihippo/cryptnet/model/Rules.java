@@ -18,4 +18,5 @@ public interface Rules
         Continue;
     }
 
+    String gameType();
 }

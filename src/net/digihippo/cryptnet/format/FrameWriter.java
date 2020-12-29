@@ -32,7 +32,7 @@ public class FrameWriter
         byteBuf.writeDouble(unitVector.dLon);
     }
 
-    private static void writeLatLn(LatLn latLn, ByteBuf byteBuf)
+    public static void writeLatLn(LatLn latLn, ByteBuf byteBuf)
     {
         byteBuf.writeDouble(latLn.lat);
         byteBuf.writeDouble(latLn.lon);

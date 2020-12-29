@@ -3,6 +3,7 @@ package net.digihippo.cryptnet.model;
 import net.digihippo.cryptnet.roadmap.LatLn;
 
 import java.util.List;
+import java.util.Objects;
 
 public class StayAliveRules implements Rules
 {
@@ -39,5 +40,34 @@ public class StayAliveRules implements Rules
         }
 
         return State.Continue;
+    }
+
+    @Override
+    public String gameType()
+    {
+        return "StayAlive";
+    }
+
+    @Override
+    public String toString()
+    {
+        return "StayAliveRules{" +
+                "sentrySpeed=" + sentrySpeed +
+                '}';
+    }
+
+    @Override
+    public boolean equals(Object o)
+    {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        StayAliveRules that = (StayAliveRules) o;
+        return Double.compare(that.sentrySpeed, sentrySpeed) == 0;
+    }
+
+    @Override
+    public int hashCode()
+    {
+        return Objects.hash(sentrySpeed);
     }
 }
