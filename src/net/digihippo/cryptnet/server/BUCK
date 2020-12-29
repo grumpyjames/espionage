@@ -2,6 +2,10 @@ java_library(
   name = 'server',
   srcs = glob(['*.java']),
   deps = [
+    '//:netty-buffer',
+    '//:netty-common',
+    '//:netty-resolver',
+    '//:netty-transport',
     '//src/net/digihippo/cryptnet/roadmap:roadmap',
     '//src/net/digihippo/cryptnet/model:model',
   ],

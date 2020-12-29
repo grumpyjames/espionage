@@ -27,6 +27,26 @@ prebuilt_jar(
 )
 
 prebuilt_jar(
+  name = 'netty-resolver',
+  binary_jar = 'lib/netty-resolver-4.1.56.Final.jar',
+  source_jar = 'lib/netty-resolver-4.1.56.Final-sources.jar',
+  visibility = [ 'PUBLIC' ],
+  deps = [
+    ':netty-common'
+  ]
+)
+
+prebuilt_jar(
+  name = 'netty-transport',
+  binary_jar = 'lib/netty-transport-4.1.56.Final.jar',
+  source_jar = 'lib/netty-transport-4.1.56.Final-sources.jar',
+  visibility = [ 'PUBLIC' ],
+  deps = [
+    ':netty-common'
+  ]
+)
+
+prebuilt_jar(
   name = 'netty-common',
   binary_jar = 'lib/netty-common-4.1.56.Final.jar',
   source_jar = 'lib/netty-common-4.1.56.Final-sources.jar',
