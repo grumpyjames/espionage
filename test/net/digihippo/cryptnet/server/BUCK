@@ -1,0 +1,17 @@
+java_test(
+    name = 'server',
+    srcs = glob(['*.java']),
+    deps = [
+        '//src/net/digihippo/cryptnet/model:model',
+        '//src/net/digihippo/cryptnet/roadmap:roadmap',
+        '//src/net/digihippo/cryptnet/server:server',
+        '//:hamcrest',
+        '//:netty-buffer',
+        '//:netty-codec',
+        '//:netty-transport',
+        '//:jmock',
+        '//:jmock-junit4',
+        '//:junit',
+    ],
+    visibility = [ 'PUBLIC' ],
+)

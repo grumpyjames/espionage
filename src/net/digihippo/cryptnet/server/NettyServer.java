@@ -9,6 +9,8 @@ import io.netty.channel.socket.DatagramPacket;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioDatagramChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
+import net.digihippo.cryptnet.roadmap.LatLn;
 
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -36,7 +38,10 @@ public class NettyServer {
                         {
                             int clientId = clientCounter.getAndIncrement();
                             System.out.println("Client " + clientId + " connected");
-                            ch.pipeline().addLast(new DiscardServerHandler(clientId));
+                            ch.pipeline()
+                                    .addLast(
+                                            new LengthFieldBasedFrameDecoder(1024, 0, 2),
+                                            new DiscardServerHandler(clientId, new ProtocolV1()));
                         }
                     })
                     .option(ChannelOption.SO_BACKLOG, 128)
@@ -103,20 +108,20 @@ public class NettyServer {
 
     private static class DiscardServerHandler extends ChannelInboundHandlerAdapter {
         private final int clientId;
+        private final ProtocolV1 protocolV1;
+        private final ClientIdPrinter printer = new ClientIdPrinter();
 
-        public DiscardServerHandler(int clientId)
+        public DiscardServerHandler(int clientId, ProtocolV1 protocolV1)
         {
             this.clientId = clientId;
+            this.protocolV1 = protocolV1;
         }
 
         @Override
         public void channelRead(ChannelHandlerContext ctx, Object msg) {
             ByteBuf message = (ByteBuf) msg;
-            byte[] bytes = new byte[message.readableBytes()];
-            message.readBytes(bytes);
-
-            System.out.println(Thread.currentThread().getName() + ": Client " + clientId + " sent: " + new String(bytes, StandardCharsets.UTF_8));
-
+            message.readShort(); // evict the length
+            protocolV1.dispatch(message, printer);
             message.release();
         }
 
@@ -124,6 +129,33 @@ public class NettyServer {
         public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
             cause.printStackTrace();
             ctx.close();
+        }
+
+        private class ClientIdPrinter implements ClientToServer
+        {
+            @Override
+            public void onLocation(LatLn location)
+            {
+                System.out.println("Client " + clientId + ": onLocation " + location);
+            }
+
+            @Override
+            public void requestGame()
+            {
+                System.out.println("Client " + clientId + ": requestGame");
+            }
+
+            @Override
+            public void startGame(String gameId)
+            {
+                System.out.println("Client " + clientId + ": startGame " + gameId);
+            }
+
+            @Override
+            public void quit()
+            {
+                System.out.println("Client " + clientId + ": quit");
+            }
         }
     }
 }

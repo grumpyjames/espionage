@@ -3,6 +3,7 @@ java_library(
   srcs = glob(['*.java']),
   deps = [
     '//:netty-buffer',
+    '//:netty-codec',
     '//:netty-common',
     '//:netty-resolver',
     '//:netty-transport',

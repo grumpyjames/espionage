@@ -17,12 +17,36 @@ prebuilt_jar(
 )
 
 prebuilt_jar(
+  name = 'jmock',
+  binary_jar = 'lib/jmock-2.12.0.jar',
+  source_jar = 'lib/jmock-2.12.0-sources.jar',
+  visibility = [ 'PUBLIC' ],
+)
+
+prebuilt_jar(
+  name = 'jmock-junit4',
+  binary_jar = 'lib/jmock-junit4-2.12.0.jar',
+  source_jar = 'lib/jmock-junit4-2.12.0-sources.jar',
+  visibility = [ 'PUBLIC' ],
+)
+
+prebuilt_jar(
   name = 'netty-buffer',
   binary_jar = 'lib/netty-buffer-4.1.56.Final.jar',
   source_jar = 'lib/netty-buffer-4.1.56.Final-sources.jar',
   visibility = [ 'PUBLIC' ],
   deps = [
       ':netty-common'
+  ]
+)
+
+prebuilt_jar(
+  name = 'netty-codec',
+  binary_jar = 'lib/netty-codec-4.1.56.Final.jar',
+  source_jar = 'lib/netty-codec-4.1.56.Final-sources.jar',
+  visibility = [ 'PUBLIC' ],
+  deps = [
+    ':netty-common'
   ]
 )
 
