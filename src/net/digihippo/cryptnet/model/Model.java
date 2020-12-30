@@ -81,6 +81,13 @@ public final class Model
         this.time = timeMillis;
         this.nextTick = this.time + MILLISECONDS_PER_TICK;
         this.gameOn = true;
+        double bearingFraction = (2d * Math.PI) / (rules.sentryCount());
+        for (int i = 0; i < rules.sentryCount(); i++)
+        {
+            double bearing = bearingFraction * i;
+            LatLn sentryLocation = player.position.move(rules.initialSentryDistance(), bearing);
+            addSentry(sentryLocation);
+        }
         this.events.gameStarted();
     }
 
@@ -194,16 +201,9 @@ public final class Model
 
     public void click(LatLn location)
     {
-        if (joiningSentries.size() + patrols.size() > 3)
+        if (player == null)
         {
-            if (player == null)
-            {
-                snapPlayerLocationToNearestVertex(location);
-            }
-        }
-        else
-        {
-            addSentry(location);
+            snapPlayerLocationToNearestVertex(location);
         }
     }
 }

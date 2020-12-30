@@ -6,6 +6,11 @@ import java.util.List;
 
 public interface Rules
 {
+    int sentryCount();
+
+    // metres
+    double initialSentryDistance();
+
     // metres / second
     double sentrySpeed();
 

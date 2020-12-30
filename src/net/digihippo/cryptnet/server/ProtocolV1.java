@@ -157,7 +157,11 @@ public class ProtocolV1
         String ruleName = readString(buffer);
         if (ruleName.equals("StayAlive"))
         {
-            return new GameParameters(paths, new StayAliveRules(buffer.readDouble()));
+            int sentryCount = buffer.readInt();
+            double initialSentryDistance = buffer.readDouble();
+            double sentrySpeed = buffer.readDouble();
+            StayAliveRules rules = new StayAliveRules(sentryCount, initialSentryDistance, sentrySpeed);
+            return new GameParameters(paths, rules);
         }
         else
         {
@@ -239,6 +243,8 @@ public class ProtocolV1
             writeLatLn(last.tail.location, buffer);
         });
         writeString(gameParameters.rules.gameType(), buffer);
+        buffer.writeInt(gameParameters.rules.sentryCount());
+        buffer.writeDouble(gameParameters.rules.initialSentryDistance());
         buffer.writeDouble(gameParameters.rules.sentrySpeed());
     }
 

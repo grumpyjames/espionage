@@ -44,7 +44,6 @@ public class Experiment
             this.location = location;
         }
 
-
         @Override
         public void enact(Model model)
         {
@@ -365,7 +364,7 @@ public class Experiment
                     SwingUtilities.invokeLater(viewer::repaint);
                 }),
                 paths,
-                new StayAliveRules(1.2)
+                new StayAliveRules(4, 100, 1.2)
         );
 
         SwingUtilities.invokeLater(() ->
@@ -377,12 +376,9 @@ public class Experiment
             f.setVisible(true);
         });
 
-        for (int i = 0; i < 5; i++)
-        {
-            Event event = events.take();
-
-            event.enact(model);
-        }
+        // Accept one click to set the player location...
+        Event event = events.take();
+        event.enact(model);
 
         model.startGame(System.currentTimeMillis());
         while (true)

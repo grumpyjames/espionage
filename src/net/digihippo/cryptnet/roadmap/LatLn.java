@@ -4,6 +4,7 @@ import java.util.Objects;
 
 public final class LatLn
 {
+    public static final double EARTH_RADIUS_METRES = 6_371_000D;
     // Radians!
     public final double lat;
     public final double lon;
@@ -70,10 +71,8 @@ public final class LatLn
 
         double c = 2 * Math.asin(Math.sqrt(a));
 
-        double r = 6_371_000;
-
         // calculate the result
-        return (c * r);
+        return (c * EARTH_RADIUS_METRES);
     }
 
     public UnitVector directionFrom(LatLn another)
@@ -82,5 +81,19 @@ public final class LatLn
         return new UnitVector(
                 (this.lat - another.lat) / distance,
                 (this.lon - another.lon) / distance);
+    }
+
+    public LatLn move(double distance, double bearing)
+    {
+        double distanceRatio = distance / EARTH_RADIUS_METRES;
+        double lat2 = Math.asin(
+                Math.sin(lat) * Math.cos(distanceRatio) +
+                Math.cos(lat) * Math.sin(distanceRatio) * Math.cos(bearing));
+        double lon2 = lon +
+                Math.atan2(
+                        Math.sin(bearing) * Math.sin(distanceRatio) * Math.cos(lat),
+                        Math.cos(distanceRatio) - Math.sin(lat) * Math.sin(lat2));
+
+        return new LatLn(lat2, lon2);
     }
 }

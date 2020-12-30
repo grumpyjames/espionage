@@ -20,13 +20,13 @@ public class ModelTest
     private final LatLn zebraNearSpaniards = LatLn.toRads(51.56899086921811, -0.17475457002941547);
     private Model model;
 
-    private Model createModel(double sentrySpeed)
+    private Model createModel(int sentryCount, double initialSentryDistance, double sentrySpeed)
     {
         return Model.createModel(
                 Paths.from(Way.ways(Way.way(
                         node(jackStrawsCastle),
                         node(zebraNearSpaniards)))),
-                new StayAliveRules(sentrySpeed),
+                new StayAliveRules(sentryCount, initialSentryDistance, sentrySpeed),
                 new Random(),
                 events);
     }
@@ -119,7 +119,7 @@ public class ModelTest
     @Test
     public void simplestPossibleVictory()
     {
-        model = createModel(1.2);
+        model = createModel(0, 1, 1.2);
         model.setPlayerLocation(LatLn.toRads(51.5664837824125, -0.17661640054047678));
 
         model.startGame(clock.timeMillis);
@@ -134,10 +134,8 @@ public class ModelTest
     @Test
     public void simplestPossibleDefeat()
     {
-        model = createModel(1.2);
+        model = createModel(1, 0.1, 1.2);
         model.setPlayerLocation(LatLn.toRads(51.5629829089533, -0.1793216022757321));
-        // Very near, but not exactly the same - there's a bug in LatLn::directionFrom
-        model.addSentry(LatLn.toRads(51.56298291, -0.1793216));
 
         model.startGame(clock.timeMillis);
         model.time(clock.forward(1, ChronoUnit.SECONDS));
@@ -148,12 +146,10 @@ public class ModelTest
     @Test
     public void playerEscapes()
     {
-        model = createModel(0.8);
+        model = createModel(1, 10, 0.8);
 
         LatLn initialLocation = LatLn.toRads(51.5629829089533, -0.1793216022757321);
         model.setPlayerLocation(initialLocation);
-        // Far enough to give the player a headstart
-        model.addSentry(LatLn.toRads(51.5629, -0.1793));
 
         UnitVector thisWay = zebraNearSpaniards.directionFrom(jackStrawsCastle);
 
@@ -173,12 +169,10 @@ public class ModelTest
     @Test
     public void playerIsSlowlyCaught()
     {
-        model = createModel(1.8);
+        model = createModel(1, 10, 1.8);
 
         LatLn initialLocation = LatLn.toRads(51.5629829089533, -0.1793216022757321);
         model.setPlayerLocation(initialLocation);
-        // Far enough to give the player a headstart
-        model.addSentry(LatLn.toRads(51.56298, -0.17932));
 
         UnitVector thisWay = zebraNearSpaniards.directionFrom(jackStrawsCastle);
 

@@ -78,12 +78,12 @@ public class ProtocolV1Test
         frame.playerLocation = new LatLn(0.34, 0.11);
 
         mockery.checking(new Expectations() {{
-            oneOf(serverToClient).gameReady("foo", new GameParameters(Collections.emptyList(), new StayAliveRules(2.2)));
+            oneOf(serverToClient).gameReady("foo", new GameParameters(Collections.emptyList(), new StayAliveRules(1, 2, 2.2)));
             oneOf(serverToClient).gameStarted();
             oneOf(serverToClient).onFrame(frame);
         }});
 
-        encoder.gameReady("foo", new GameParameters(Collections.emptyList(), new StayAliveRules(2.2)));
+        encoder.gameReady("foo", new GameParameters(Collections.emptyList(), new StayAliveRules(1, 2, 2.2)));
         encoder.gameStarted();
         encoder.onFrame(frame);
     }

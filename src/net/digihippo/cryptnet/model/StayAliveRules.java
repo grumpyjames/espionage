@@ -7,11 +7,30 @@ import java.util.Objects;
 
 public class StayAliveRules implements Rules
 {
+    private final int sentryCount;
+    private final double initialSentryDistance;
     private final double sentrySpeed;
 
-    public StayAliveRules(double sentrySpeed)
+    public StayAliveRules(
+            int sentryCount,
+            double initialSentryDistance,
+            double sentrySpeed)
     {
+        this.sentryCount = sentryCount;
+        this.initialSentryDistance = initialSentryDistance;
         this.sentrySpeed = sentrySpeed;
+    }
+
+    @Override
+    public int sentryCount()
+    {
+        return sentryCount;
+    }
+
+    @Override
+    public double initialSentryDistance()
+    {
+        return initialSentryDistance;
     }
 
     @Override
@@ -52,7 +71,9 @@ public class StayAliveRules implements Rules
     public String toString()
     {
         return "StayAliveRules{" +
-                "sentrySpeed=" + sentrySpeed +
+                "sentryCount=" + sentryCount +
+                ", initialSentryDistance=" + initialSentryDistance +
+                ", sentrySpeed=" + sentrySpeed +
                 '}';
     }
 
@@ -62,12 +83,14 @@ public class StayAliveRules implements Rules
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         StayAliveRules that = (StayAliveRules) o;
-        return Double.compare(that.sentrySpeed, sentrySpeed) == 0;
+        return sentryCount == that.sentryCount &&
+                Double.compare(that.initialSentryDistance, initialSentryDistance) == 0 &&
+                Double.compare(that.sentrySpeed, sentrySpeed) == 0;
     }
 
     @Override
     public int hashCode()
     {
-        return Objects.hash(sentrySpeed);
+        return Objects.hash(sentryCount, initialSentryDistance, sentrySpeed);
     }
 }
