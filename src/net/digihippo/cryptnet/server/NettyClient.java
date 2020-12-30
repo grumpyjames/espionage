@@ -8,59 +8,127 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 import io.netty.handler.codec.LengthFieldPrepender;
+import net.digihippo.cryptnet.model.FrameCollector;
+import net.digihippo.cryptnet.model.GameParameters;
 import net.digihippo.cryptnet.roadmap.LatLn;
 
-public class NettyClient {
+public final class NettyClient implements Stoppable, ClientToServer {
+    private final EventLoopGroup workerGroup;
+    private final ClientToServer clientToServer;
+
     public static void main(String[] args) throws Exception {
+        NettyClient client = NettyClient.connect(new ServerToClient()
+        {
+            @Override
+            public void gameReady(String gameId, GameParameters gameParameters)
+            {
+                System.out.println("Game " + gameId + " is ready with parameters " + gameParameters);
+            }
+
+            @Override
+            public void gameStarted()
+            {
+                System.out.println("The game is afoot");
+            }
+
+            @Override
+            public void onFrame(FrameCollector.Frame frame)
+            {
+                System.out.println("Frame " + frame);
+            }
+        });
+
+        client.onLocation(new LatLn(0.67D, 0.32D));
+        client.requestGame();
+        client.stop();
+    }
+
+    private NettyClient(EventLoopGroup workerGroup, ClientToServer clientToServer)
+    {
+        this.workerGroup = workerGroup;
+        this.clientToServer = clientToServer;
+    }
+
+    public static NettyClient connect(ServerToClient serverToClient) throws InterruptedException
+    {
         String host = "localhost";
         int port = 7890;
-        EventLoopGroup workerGroup = new NioEventLoopGroup();
+        EventLoopGroup workerGroup = new NioEventLoopGroup(1, new NamedThreadFactory("client-loop"));
 
-        try {
-            Bootstrap b = new Bootstrap();
-            b.group(workerGroup);
-            b.channel(NioSocketChannel.class);
-            b.option(ChannelOption.SO_KEEPALIVE, true);
-            b.handler(new ChannelInitializer<SocketChannel>() {
-                @Override
-                public void initChannel(SocketChannel ch)
-                {
-                    ch.pipeline().addLast(
-                            new LengthFieldBasedFrameDecoder(1024, 0, 2),
-                            new LengthFieldPrepender(2, false),
-                            new EspionageHandler());
+        Bootstrap b = new Bootstrap();
+        b.group(workerGroup);
+        b.channel(NioSocketChannel.class);
+        b.option(ChannelOption.SO_KEEPALIVE, true);
+        b.handler(new ChannelInitializer<SocketChannel>() {
+            @Override
+            public void initChannel(SocketChannel ch)
+            {
+                ch.pipeline().addLast(
+                        new LengthFieldBasedFrameDecoder(65536, 0, 4),
+                        new LengthFieldPrepender(4, false),
+                        new EspionageHandler(serverToClient));
 
-                    ch.pipeline().addLast(new EspionageHandler());
-                }
-            });
+                ch.pipeline().addLast(new EspionageHandler(serverToClient));
+            }
+        });
 
-            ChannelFuture f = b.connect(host, port).sync();
+        ChannelFuture f = b.connect(host, port).sync();
+        return new NettyClient(workerGroup, ProtocolV1.clientToServer(byteBuf ->
+        {
+            ByteBuf buffer = f.channel().alloc().buffer();
+            byteBuf.accept(buffer);
+            f.channel().writeAndFlush(buffer).syncUninterruptibly();
+        }));
+    }
 
-            f.channel().closeFuture().sync();
-        } finally {
-            workerGroup.shutdownGracefully();
-        }
+    @Override
+    public void onLocation(LatLn location)
+    {
+        clientToServer.onLocation(location);
+    }
+
+    @Override
+    public void requestGame()
+    {
+        clientToServer.requestGame();
+    }
+
+    @Override
+    public void startGame(String gameId)
+    {
+        clientToServer.startGame(gameId);
+    }
+
+    @Override
+    public void quit()
+    {
+        clientToServer.quit();
+    }
+
+    @Override
+    public void stop()
+    {
+        workerGroup.shutdownGracefully();
     }
 
     private static class EspionageHandler extends ChannelInboundHandlerAdapter {
 
-        @Override
-        public void channelActive(ChannelHandlerContext ctx)
-        {
-            ClientToServer clientToServer = ProtocolV1.clientToServer(byteBuf ->
-            {
-                ByteBuf buffer = ctx.alloc().buffer();
-                byteBuf.accept(buffer);
-                ctx.writeAndFlush(buffer);
-            });
+        private final ServerToClient serverToClient;
+        private final ProtocolV1 protocolV1 = new ProtocolV1();
 
-            clientToServer.onLocation(new LatLn(0.67D, 0.32D));
-            clientToServer.requestGame();
+        public EspionageHandler(ServerToClient serverToClient)
+        {
+            this.serverToClient = serverToClient;
         }
 
         @Override
         public void channelRead(ChannelHandlerContext ctx, Object msg) {
-            ((ByteBuf) msg).release();
+            ByteBuf byteBuf = (ByteBuf) msg;
+            byteBuf.readInt(); // evict the length
+
+            protocolV1.dispatch(byteBuf, serverToClient);
+
+            byteBuf.release();
         }
 
         @Override

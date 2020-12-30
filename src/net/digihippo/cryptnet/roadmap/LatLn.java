@@ -96,4 +96,29 @@ public final class LatLn
 
         return new LatLn(lat2, lon2);
     }
+
+    public BoundingBox boundingBox(double distance)
+    {
+        return new BoundingBox(
+                this.move(distance, 7 * Math.PI/4),
+                this.move(distance, Math.PI/4),
+                this.move(distance, 5 * Math.PI/4),
+                this.move(distance, 3 * Math.PI/4));
+    }
+
+    public static final class BoundingBox
+    {
+        public final LatLn nw;
+        public final LatLn ne;
+        public final LatLn sw;
+        public final LatLn se;
+
+        private BoundingBox(LatLn nw, LatLn ne, LatLn sw, LatLn se)
+        {
+            this.nw = nw;
+            this.ne = ne;
+            this.sw = sw;
+            this.se = se;
+        }
+    }
 }

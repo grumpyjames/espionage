@@ -19,7 +19,7 @@ public class FrameWriter
             writeUnitVector(jv.orientation, byteBuf);
             writeLatLn(jv.connectionLocation, byteBuf);
         });
-        byteBuf.writeInt(frame.joining.size());
+        byteBuf.writeInt(frame.patrols.size());
         frame.patrols.forEach(p -> {
             writeLatLn(p.location, byteBuf);
             writeUnitVector(p.orientation, byteBuf);

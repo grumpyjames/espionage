@@ -10,20 +10,110 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioDatagramChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
+import io.netty.handler.codec.LengthFieldPrepender;
+import net.digihippo.cryptnet.model.*;
 import net.digihippo.cryptnet.roadmap.LatLn;
+import net.digihippo.cryptnet.roadmap.OsmSource;
+import net.digihippo.cryptnet.roadmap.Way;
 
+import java.io.IOException;
+import java.util.*;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BiConsumer;
 
 public class NettyServer {
-    interface Stoppable {
-        void stop();
+
+    private static final class GameIndex
+    {
+        private final AtomicInteger gameId = new AtomicInteger(0);
+        private final Map<String, Model> games = new HashMap<>();
+
+        public String registerGame(Model model)
+        {
+            String gameId = "game-" + this.gameId.getAndIncrement();
+
+            games.put(gameId, model);
+
+            return gameId;
+        }
+
+        public void tick(long timeMillis)
+        {
+            games.values().forEach(m -> m.time(timeMillis));
+        }
+    }
+
+    private static final class GamePrep
+    {
+        private final ExecutorService executor;
+
+        private GamePrep(ExecutorService executor)
+        {
+            this.executor = executor;
+        }
+
+        void prepareGame(LatLn latln, BiConsumer<Model, FrameDispatcher> modelReady)
+        {
+            executor.execute(() ->
+            {
+                try
+                {
+                    LatLn.BoundingBox boundingBox = latln.boundingBox(1_000);
+                    Collection<Way> ways = OsmSource.fetchWays(boundingBox);
+                    FrameDispatcher dispatcher = new FrameDispatcher();
+                    Model model = Model.createModel(
+                            Paths.from(ways),
+                            new StayAliveRules(4, 250, 1.3),
+                            new Random(),
+                            new FrameCollector(dispatcher));
+                    System.out.println("Model is ready!");
+                    modelReady.accept(model, dispatcher);
+                }
+                catch (IOException e)
+                {
+                    e.printStackTrace();
+                }
+            });
+        }
+    }
+
+    private static final class FrameDispatcher implements FrameConsumer
+    {
+        private final List<ServerToClient> clients = new ArrayList<>();
+
+        public void subscribe(ServerToClient client)
+        {
+            this.clients.add(client);
+        }
+
+        @Override
+        public void gameStarted()
+        {
+            clients.forEach(ServerToClient::gameStarted);
+        }
+
+        @Override
+        public void onFrame(FrameCollector.Frame frame)
+        {
+            clients.forEach(c -> c.onFrame(frame));
+        }
     }
 
     public static Stoppable runServer(final int port) throws Exception {
+        ExecutorService gamePrepThread = Executors.newSingleThreadExecutor(new NamedThreadFactory("game-prep"));
+        GamePrep gamePrep = new GamePrep(gamePrepThread);
+
+        ScheduledExecutorService pulseThread =
+                Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("pulse"));
+        pulseThread.scheduleAtFixedRate(PulseClient.defaultPulseClient(), 0, 20, TimeUnit.MILLISECONDS);
+
+        GameIndex gameIndex = new GameIndex();
+
         AtomicInteger clientCounter = new AtomicInteger(0);
-        EventLoopGroup bossGroup = new NioEventLoopGroup();
         int onlyOneThread = 1;
-        EventLoopGroup workerGroup = new NioEventLoopGroup(onlyOneThread);
+        EventLoopGroup bossGroup = new NioEventLoopGroup(onlyOneThread, new NamedThreadFactory("acceptor"));
+        EventLoopGroup workerGroup = new NioEventLoopGroup(onlyOneThread, new NamedThreadFactory("event-loop-main"));
 
         ServerBootstrap publicBootstrap = new ServerBootstrap();
         publicBootstrap.group(bossGroup, workerGroup)
@@ -36,8 +126,14 @@ public class NettyServer {
                         System.out.println("Client " + clientId + " connected");
                         ch.pipeline()
                                 .addLast(
-                                        new LengthFieldBasedFrameDecoder(1024, 0, 2),
-                                        new DiscardServerHandler(clientId, new ProtocolV1()));
+                                        new LengthFieldBasedFrameDecoder(1024, 0, 4),
+                                        new LengthFieldPrepender(4, false),
+                                        new DiscardServerHandler(
+                                                workerGroup,
+                                                clientId,
+                                                new ProtocolV1(),
+                                                gamePrep,
+                                                gameIndex));
                     }
                 })
                 .option(ChannelOption.SO_BACKLOG, 128)
@@ -53,7 +149,7 @@ public class NettyServer {
                     {
                         int clientId = clientCounter.getAndIncrement();
                         System.out.println("Client " + clientId + " connected");
-                        ch.pipeline().addLast(new UdpHandler());
+                        ch.pipeline().addLast(new UdpHandler(gameIndex));
                     }
                 });
 
@@ -66,6 +162,8 @@ public class NettyServer {
             System.out.println("Shutting down");
             workerGroup.shutdownGracefully();
             bossGroup.shutdownGracefully();
+            gamePrepThread.shutdown();
+            pulseThread.shutdown();
         };
     }
 
@@ -80,12 +178,17 @@ public class NettyServer {
     }
 
     private static class UdpHandler extends ChannelInboundHandlerAdapter {
+        private final GameIndex gameIndex;
+
+        public UdpHandler(GameIndex gameIndex)
+        {
+            this.gameIndex = gameIndex;
+        }
+
         @Override
         public void channelRead(ChannelHandlerContext ctx, Object msg) {
             DatagramPacket packet = (DatagramPacket) msg;
-            ByteBuf message = packet.content();
-            byte[] bytes = new byte[message.readableBytes()];
-            message.readBytes(bytes);
+            gameIndex.tick(System.currentTimeMillis());
             packet.release();
         }
 
@@ -97,22 +200,48 @@ public class NettyServer {
         }
     }
 
-    private static class DiscardServerHandler extends ChannelInboundHandlerAdapter {
+    private static class DiscardServerHandler extends ChannelInboundHandlerAdapter implements ClientToServer {
+        private final EventLoopGroup elg;
         private final int clientId;
         private final ProtocolV1 protocolV1;
-        private final ClientIdPrinter printer = new ClientIdPrinter();
+        private final GamePrep gamePrep;
+        private final GameIndex gameIndex;
 
-        public DiscardServerHandler(int clientId, ProtocolV1 protocolV1)
+        private Model model;
+        private boolean gamePreparing = false;
+        private LatLn location = null;
+        private ServerToClient response;
+
+        public DiscardServerHandler(
+                EventLoopGroup elg,
+                int clientId,
+                ProtocolV1 protocolV1,
+                GamePrep gamePrep,
+                GameIndex gameIndex)
         {
+            this.elg = elg;
             this.clientId = clientId;
             this.protocolV1 = protocolV1;
+            this.gamePrep = gamePrep;
+            this.gameIndex = gameIndex;
         }
 
         @Override
         public void channelRead(ChannelHandlerContext ctx, Object msg) {
+            if (this.response == null)
+            {
+                // FIXME: surely there's a better way?
+                this.response = ProtocolV1.serverToClient(byteBuf ->
+                {
+                    ByteBuf buffer = ctx.alloc().buffer();
+                    byteBuf.accept(buffer);
+                    ctx.writeAndFlush(buffer).syncUninterruptibly();
+                });
+            }
+
             ByteBuf message = (ByteBuf) msg;
-            message.readShort(); // evict the length
-            protocolV1.dispatch(message, printer);
+            message.readInt(); // evict the length
+            protocolV1.dispatch(message, this);
             message.release();
         }
 
@@ -122,31 +251,50 @@ public class NettyServer {
             ctx.close();
         }
 
-        private class ClientIdPrinter implements ClientToServer
+        @Override
+        public void onLocation(LatLn location)
         {
-            @Override
-            public void onLocation(LatLn location)
+            if (model != null)
             {
-                System.out.println("Client " + clientId + ": onLocation " + location);
+                model.setPlayerLocation(location);
             }
+            this.location = location;
+        }
 
-            @Override
-            public void requestGame()
+        @Override
+        public void requestGame()
+        {
+            // reject if in game.
+            // otherwise queue up a game request (it'll have to be done asynchronously)
+            // How do we do async work and then get called back on the event loop?!
+            if (model == null && location != null && !gamePreparing)
             {
-                System.out.println("Client " + clientId + ": requestGame");
+                gamePreparing = true;
+                gamePrep.prepareGame(location, (m, f) -> elg.submit(() ->
+                {
+                    System.out.println("Callback received...");
+                    String gameId = gameIndex.registerGame(m);
+                    this.model = m;
+                    this.model.setPlayerLocation(location);
+                    response.gameReady(gameId, m.parameters());
+                    f.subscribe(this.response);
+                }));
             }
+        }
 
-            @Override
-            public void startGame(String gameId)
+        @Override
+        public void startGame(String gameId)
+        {
+            if (model != null)
             {
-                System.out.println("Client " + clientId + ": startGame " + gameId);
+                model.startGame(System.currentTimeMillis());
             }
+        }
 
-            @Override
-            public void quit()
-            {
-                System.out.println("Client " + clientId + ": quit");
-            }
+        @Override
+        public void quit()
+        {
+            // ???
         }
     }
 }

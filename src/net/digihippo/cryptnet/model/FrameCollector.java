@@ -6,13 +6,12 @@ import net.digihippo.cryptnet.roadmap.UnitVector;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.function.Consumer;
 
 public final class FrameCollector implements Model.Events
 {
-    private final Consumer<Frame> consumer;
+    private final FrameConsumer consumer;
 
-    public FrameCollector(Consumer<Frame> consumer)
+    public FrameCollector(FrameConsumer consumer)
     {
         this.consumer = consumer;
     }
@@ -147,7 +146,7 @@ public final class FrameCollector implements Model.Events
     @Override
     public void gameStarted()
     {
-        // Good.
+        consumer.gameStarted();
     }
 
     @Override
@@ -196,6 +195,6 @@ public final class FrameCollector implements Model.Events
     @Override
     public void frameEnd(int frameCounter)
     {
-        this.consumer.accept(frame);
+        this.consumer.onFrame(frame);
     }
 }

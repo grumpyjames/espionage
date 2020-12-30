@@ -50,4 +50,15 @@ public class LatLnTest {
         final LatLn actual = velocity.applyTo(location);
         assertTrue(expected.sameAs(actual));
     }
+
+    @Test
+    public void boundingBox() {
+        LatLn hampstead = LatLn.toRads(51.556615299043486, -0.17851485725770533);
+        LatLn.BoundingBox bb = hampstead.boundingBox(400D);
+
+        assertEquals(bb.nw.lon, bb.sw.lon, 0.000001);
+        assertEquals(bb.ne.lon, bb.se.lon, 0.000001);
+        assertEquals(bb.nw.lat, bb.ne.lat, 0.000001);
+        assertEquals(bb.sw.lat, bb.se.lat, 0.000001);
+    }
 }

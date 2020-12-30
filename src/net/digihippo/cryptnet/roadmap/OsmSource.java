@@ -59,6 +59,11 @@ public class OsmSource
         }
     }
 
+    public static Collection<Way> fetchWays(LatLn.BoundingBox boundingBox) throws IOException
+    {
+        return fetchWays(boundingBox.sw.lat, boundingBox.nw.lat, boundingBox.nw.lon, boundingBox.ne.lon);
+    }
+
     public static Collection<Way> fetchWays(
             double latitudeMin,
             double latitudeMax,
@@ -122,6 +127,8 @@ public class OsmSource
 
     private static InputStream requestVectorData(double latSt, double latEnd, double lonSt, double lonEnd) throws IOException
     {
+        System.out.println(latSt + ", " + latEnd + ", " + lonSt + ", " + lonEnd);
+
         final URLConnection urlConnection =
             new URL("https://z.overpass-api.de/api/interpreter").openConnection();
         final HttpURLConnection connection = (HttpURLConnection) urlConnection;
@@ -165,5 +172,4 @@ public class OsmSource
     {
         return URLEncoder.encode(query, "UTF-8");
     }
-
 }

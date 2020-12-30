@@ -359,9 +359,20 @@ public class Experiment
         final Viewer viewer = new Viewer(topLeft, bottomRight, 512, 512, images, events, paths);
         final Model model = startingModel(
                 random,
-                new FrameCollector(frame -> {
-                    viewer.enqueueFrame(frame);
-                    SwingUtilities.invokeLater(viewer::repaint);
+                new FrameCollector(new FrameConsumer()
+                {
+                    @Override
+                    public void gameStarted()
+                    {
+
+                    }
+
+                    @Override
+                    public void onFrame(FrameCollector.Frame frame)
+                    {
+                        viewer.enqueueFrame(frame);
+                        SwingUtilities.invokeLater(viewer::repaint);
+                    }
                 }),
                 paths,
                 new StayAliveRules(4, 100, 1.2)

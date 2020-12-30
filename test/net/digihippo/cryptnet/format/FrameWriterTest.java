@@ -38,6 +38,10 @@ public class FrameWriterTest
                 LatLn.toRads(66.263666D, 65.5253643D),
                 new UnitVector(0.002D, 0.0003D)
                 ));
+        frame.patrols.add(new FrameCollector.PatrolView(
+                LatLn.toRads(66.269666D, 65.5259649D),
+                new UnitVector(0.001D, 0.0009D)
+        ));
 
         ByteBuf buffer = UnpooledByteBufAllocator.DEFAULT.buffer();
         FrameWriter.write(frame, buffer);

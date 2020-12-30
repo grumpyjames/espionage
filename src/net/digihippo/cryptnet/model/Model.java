@@ -25,6 +25,11 @@ public final class Model
     private boolean gameOn = false;
     private long startTime;
 
+    public GameParameters parameters()
+    {
+        return new GameParameters(paths, rules);
+    }
+
     public interface Events
     {
         // This happens outside a frame.
