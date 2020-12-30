@@ -12,7 +12,6 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 import net.digihippo.cryptnet.roadmap.LatLn;
 
-import java.nio.charset.StandardCharsets;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class NettyServer {
@@ -23,7 +22,6 @@ public class NettyServer {
     }
 
     public void run() throws Exception {
-
         final AtomicInteger clientCounter = new AtomicInteger(0);
         EventLoopGroup bossGroup = new NioEventLoopGroup();
         int onlyOneThread = 1;
@@ -92,9 +90,6 @@ public class NettyServer {
             ByteBuf message = packet.content();
             byte[] bytes = new byte[message.readableBytes()];
             message.readBytes(bytes);
-
-            System.out.println(Thread.currentThread().getName() + ": UDP received: " + new String(bytes, StandardCharsets.UTF_8));
-
             packet.release();
         }
 
