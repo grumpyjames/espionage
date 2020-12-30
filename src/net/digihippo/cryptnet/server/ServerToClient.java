@@ -7,7 +7,7 @@ public interface ServerToClient
 {
     void gameReady(String gameId, GameParameters gameParameters);
 
-    void gameStarted(String gameId);
+    void gameStarted();
 
     void onFrame(FrameCollector.Frame frame);
 }

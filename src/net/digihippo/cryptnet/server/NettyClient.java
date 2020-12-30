@@ -47,7 +47,7 @@ public class NettyClient {
         @Override
         public void channelActive(ChannelHandlerContext ctx)
         {
-            ClientToServer clientToServer = ProtocolV1.encoder(byteBuf ->
+            ClientToServer clientToServer = ProtocolV1.clientToServer(byteBuf ->
             {
                 ByteBuf buffer = ctx.alloc().buffer();
                 byteBuf.accept(buffer);

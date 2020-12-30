@@ -2,6 +2,9 @@ package net.digihippo.cryptnet.server;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.UnpooledByteBufAllocator;
+import net.digihippo.cryptnet.model.FrameCollector;
+import net.digihippo.cryptnet.model.GameParameters;
+import net.digihippo.cryptnet.model.StayAliveRules;
 import net.digihippo.cryptnet.roadmap.LatLn;
 import org.jmock.Expectations;
 import org.jmock.integration.junit4.JUnitRuleMockery;
@@ -9,6 +12,7 @@ import org.junit.Rule;
 import org.junit.Test;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Collections;
 
 public class ProtocolV1Test
 {
@@ -16,6 +20,7 @@ public class ProtocolV1Test
     public final JUnitRuleMockery mockery = new JUnitRuleMockery();
 
     private final ClientToServer clientToServer = mockery.mock(ClientToServer.class);
+    private final ServerToClient serverToClient = mockery.mock(ServerToClient.class);
 
     @Test
     public void dispatchLocation()
@@ -34,11 +39,11 @@ public class ProtocolV1Test
     }
 
     @Test
-    public void roundTripLocation()
+    public void roundTripClientToServer()
     {
         ProtocolV1 protocolV1 = new ProtocolV1();
 
-        ClientToServer encoder = ProtocolV1.encoder(byteBuf ->
+        ClientToServer encoder = ProtocolV1.clientToServer(byteBuf ->
         {
             ByteBuf buffer = UnpooledByteBufAllocator.DEFAULT.buffer();
             byteBuf.accept(buffer);
@@ -47,8 +52,40 @@ public class ProtocolV1Test
 
         mockery.checking(new Expectations() {{
             oneOf(clientToServer).onLocation(new LatLn(0.45D, 0.56D));
+            oneOf(clientToServer).requestGame();
+            oneOf(clientToServer).startGame("foo");
+            oneOf(clientToServer).quit();
         }});
         encoder.onLocation(new LatLn(0.45D, 0.56D));
+        encoder.requestGame();
+        encoder.startGame("foo");
+        encoder.quit();
+    }
+
+    @Test
+    public void roundTripServerToClient()
+    {
+        ProtocolV1 protocolV1 = new ProtocolV1();
+
+        ServerToClient encoder = ProtocolV1.serverToClient(byteBuf ->
+        {
+            ByteBuf buffer = UnpooledByteBufAllocator.DEFAULT.buffer();
+            byteBuf.accept(buffer);
+            protocolV1.dispatch(buffer, serverToClient);
+        });
+
+        final FrameCollector.Frame frame = new FrameCollector.Frame(1);
+        frame.playerLocation = new LatLn(0.34, 0.11);
+
+        mockery.checking(new Expectations() {{
+            oneOf(serverToClient).gameReady("foo", new GameParameters(Collections.emptyList(), new StayAliveRules(2.2)));
+            oneOf(serverToClient).gameStarted();
+            oneOf(serverToClient).onFrame(frame);
+        }});
+
+        encoder.gameReady("foo", new GameParameters(Collections.emptyList(), new StayAliveRules(2.2)));
+        encoder.gameStarted();
+        encoder.onFrame(frame);
     }
 
     @Test

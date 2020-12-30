@@ -7,7 +7,7 @@ import net.digihippo.cryptnet.roadmap.UnitVector;
 
 public class FrameWriter
 {
-    static void write(FrameCollector.Frame frame, ByteBuf byteBuf)
+    public static void write(FrameCollector.Frame frame, ByteBuf byteBuf)
     {
         byteBuf.writeInt(frame.frameCounter);
         byteBuf.writeBoolean(frame.victory);
