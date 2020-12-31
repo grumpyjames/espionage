@@ -121,9 +121,7 @@ public class ProtocolV1
             @Override
             public void gameStarted()
             {
-                messageSender.withByteBuf(byteBuf -> {
-                    byteBuf.writeByte(1);
-                });
+                messageSender.withByteBuf(byteBuf -> byteBuf.writeByte(1));
             }
 
             @Override
@@ -160,7 +158,8 @@ public class ProtocolV1
             int sentryCount = buffer.readInt();
             double initialSentryDistance = buffer.readDouble();
             double sentrySpeed = buffer.readDouble();
-            StayAliveRules rules = new StayAliveRules(sentryCount, initialSentryDistance, sentrySpeed);
+            int gameDuration = buffer.readInt();
+            StayAliveRules rules = new StayAliveRules(sentryCount, initialSentryDistance, sentrySpeed, gameDuration);
             return new GameParameters(paths, rules);
         }
         else
@@ -240,12 +239,14 @@ public class ProtocolV1
                 writeLatLn(s.head.location, buffer);
                 last = s;
             }
+            assert last != null;
             writeLatLn(last.tail.location, buffer);
         });
         writeString(gameParameters.rules.gameType(), buffer);
         buffer.writeInt(gameParameters.rules.sentryCount());
         buffer.writeDouble(gameParameters.rules.initialSentryDistance());
         buffer.writeDouble(gameParameters.rules.sentrySpeed());
+        buffer.writeInt(gameParameters.rules.gameDuration());
     }
 
     private static void writeString(String gameId, ByteBuf byteBuf)

@@ -10,15 +10,18 @@ public class StayAliveRules implements Rules
     private final int sentryCount;
     private final double initialSentryDistance;
     private final double sentrySpeed;
+    private final int gameDurationMillis;
 
     public StayAliveRules(
             int sentryCount,
             double initialSentryDistance,
-            double sentrySpeed)
+            double sentrySpeed,
+            int gameDurationMillis)
     {
         this.sentryCount = sentryCount;
         this.initialSentryDistance = initialSentryDistance;
         this.sentrySpeed = sentrySpeed;
+        this.gameDurationMillis = gameDurationMillis;
     }
 
     @Override
@@ -45,7 +48,7 @@ public class StayAliveRules implements Rules
             LatLn playerLocation,
             List<LatLn> sentryLocations)
     {
-        if (gameDurationMillis >= 30_000)
+        if (gameDurationMillis >= this.gameDurationMillis)
         {
             return State.Victory;
         }
@@ -62,6 +65,12 @@ public class StayAliveRules implements Rules
     }
 
     @Override
+    public int gameDuration()
+    {
+        return gameDurationMillis;
+    }
+
+    @Override
     public String gameType()
     {
         return "StayAlive";
@@ -74,6 +83,7 @@ public class StayAliveRules implements Rules
                 "sentryCount=" + sentryCount +
                 ", initialSentryDistance=" + initialSentryDistance +
                 ", sentrySpeed=" + sentrySpeed +
+                ", gameDurationMillis=" + gameDurationMillis +
                 '}';
     }
 
@@ -85,12 +95,14 @@ public class StayAliveRules implements Rules
         StayAliveRules that = (StayAliveRules) o;
         return sentryCount == that.sentryCount &&
                 Double.compare(that.initialSentryDistance, initialSentryDistance) == 0 &&
-                Double.compare(that.sentrySpeed, sentrySpeed) == 0;
+                Double.compare(that.sentrySpeed, sentrySpeed) == 0 &&
+                gameDurationMillis == that.gameDurationMillis;
     }
 
     @Override
     public int hashCode()
     {
-        return Objects.hash(sentryCount, initialSentryDistance, sentrySpeed);
+        return Objects.hash(sentryCount, initialSentryDistance, sentrySpeed, gameDurationMillis);
     }
+
 }

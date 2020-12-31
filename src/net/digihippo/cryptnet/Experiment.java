@@ -375,7 +375,7 @@ public class Experiment
                     }
                 }),
                 paths,
-                new StayAliveRules(4, 100, 1.2)
+                new StayAliveRules(4, 100, 1.2, 30_000)
         );
 
         SwingUtilities.invokeLater(() ->

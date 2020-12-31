@@ -16,6 +16,8 @@ public interface Rules
 
     State gameState(long timeMillis, LatLn playerLocation, List<LatLn> sentryLocations);
 
+    int gameDuration();
+
     enum State
     {
         GameOver,

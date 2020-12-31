@@ -44,13 +44,25 @@ public class NettyServer {
         }
     }
 
+    interface VectorSource
+    {
+        Collection<Way> fetchWays(LatLn.BoundingBox boundingBox) throws IOException;
+    }
+
     private static final class GamePrep
     {
         private final ExecutorService executor;
+        private final VectorSource vectorSource;
+        private final StayAliveRules rules;
 
-        private GamePrep(ExecutorService executor)
+        private GamePrep(
+                ExecutorService executor,
+                VectorSource vectorSource,
+                StayAliveRules rules)
         {
             this.executor = executor;
+            this.vectorSource = vectorSource;
+            this.rules = rules;
         }
 
         void prepareGame(LatLn latln, BiConsumer<Model, FrameDispatcher> modelReady)
@@ -60,14 +72,13 @@ public class NettyServer {
                 try
                 {
                     LatLn.BoundingBox boundingBox = latln.boundingBox(1_000);
-                    Collection<Way> ways = OsmSource.fetchWays(boundingBox);
+                    Collection<Way> ways = vectorSource.fetchWays(boundingBox);
                     FrameDispatcher dispatcher = new FrameDispatcher();
                     Model model = Model.createModel(
                             Paths.from(ways),
-                            new StayAliveRules(4, 250, 1.3),
+                            rules,
                             new Random(),
                             new FrameCollector(dispatcher));
-                    System.out.println("Model is ready!");
                     modelReady.accept(model, dispatcher);
                 }
                 catch (IOException e)
@@ -100,9 +111,13 @@ public class NettyServer {
         }
     }
 
-    public static Stoppable runServer(final int port) throws Exception {
+    public static Stoppable runServer(
+            int port,
+            VectorSource vectorSource,
+            StayAliveRules rules) throws Exception
+    {
         ExecutorService gamePrepThread = Executors.newSingleThreadExecutor(new NamedThreadFactory("game-prep"));
-        GamePrep gamePrep = new GamePrep(gamePrepThread);
+        GamePrep gamePrep = new GamePrep(gamePrepThread, vectorSource, rules);
 
         ScheduledExecutorService pulseThread =
                 Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("pulse"));
@@ -123,7 +138,6 @@ public class NettyServer {
                     public void initChannel(SocketChannel ch)
                     {
                         int clientId = clientCounter.getAndIncrement();
-                        System.out.println("Client " + clientId + " connected");
                         ch.pipeline()
                                 .addLast(
                                         new LengthFieldBasedFrameDecoder(1024, 0, 4),
@@ -148,7 +162,6 @@ public class NettyServer {
                     public void initChannel(Channel ch)
                     {
                         int clientId = clientCounter.getAndIncrement();
-                        System.out.println("Client " + clientId + " connected");
                         ch.pipeline().addLast(new UdpHandler(gameIndex));
                     }
                 });
@@ -173,7 +186,7 @@ public class NettyServer {
             port = Integer.parseInt(args[0]);
         }
 
-        Stoppable stoppable = NettyServer.runServer(port);
+        Stoppable stoppable = NettyServer.runServer(port, OsmSource::fetchWays, new StayAliveRules(4, 250, 1.3, 30_000));
         Runtime.getRuntime().addShutdownHook(new Thread(stoppable::stop));
     }
 

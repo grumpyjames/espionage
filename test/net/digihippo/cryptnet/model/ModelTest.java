@@ -26,7 +26,7 @@ public class ModelTest
                 Paths.from(Way.ways(Way.way(
                         node(jackStrawsCastle),
                         node(zebraNearSpaniards)))),
-                new StayAliveRules(sentryCount, initialSentryDistance, sentrySpeed),
+                new StayAliveRules(sentryCount, initialSentryDistance, sentrySpeed, 30_000),
                 new Random(),
                 events);
     }
