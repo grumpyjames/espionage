@@ -186,7 +186,8 @@ public class NettyServer {
             port = Integer.parseInt(args[0]);
         }
 
-        Stoppable stoppable = NettyServer.runServer(port, OsmSource::fetchWays, new StayAliveRules(4, 250, 1.3, 30_000));
+        Stoppable stoppable =
+                NettyServer.runServer(port, OsmSource::fetchWays, new StayAliveRules(4, 250, 1.3, 30_000));
         Runtime.getRuntime().addShutdownHook(new Thread(stoppable::stop));
     }
 

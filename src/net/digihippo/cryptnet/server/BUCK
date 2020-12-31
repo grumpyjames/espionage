@@ -13,3 +13,11 @@ java_library(
   ],
   visibility = [ 'PUBLIC' ]
 )
+
+java_binary(
+  name = 'espionage-server',
+  deps = [
+    ':server'
+  ],
+  main_class = 'net.digihippo.cryptnet.server.NettyServer'
+)
