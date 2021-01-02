@@ -1,7 +1,6 @@
 package net.digihippo.cryptnet.server;
 
 import io.netty.buffer.ByteBuf;
-import net.digihippo.cryptnet.format.FrameWriter;
 import net.digihippo.cryptnet.model.*;
 import net.digihippo.cryptnet.roadmap.LatLn;
 import net.digihippo.cryptnet.roadmap.UnitVector;
@@ -129,7 +128,7 @@ public class ProtocolV1
             {
                 messageSender.withByteBuf(byteBuf -> {
                     byteBuf.writeByte(2);
-                    FrameWriter.write(frame, byteBuf);
+                    write(frame, byteBuf);
                 });
             }
         };
@@ -190,7 +189,7 @@ public class ProtocolV1
         return new LatLn(lat, lon);
     }
 
-    private static FrameCollector.Frame readFrame(ByteBuf buffer)
+    static FrameCollector.Frame readFrame(ByteBuf buffer)
     {
         int frameCounter = buffer.readInt();
         FrameCollector.Frame frame = new FrameCollector.Frame(frameCounter);
@@ -228,6 +227,25 @@ public class ProtocolV1
         return new UnitVector(dLat, dLon);
     }
 
+    static void write(FrameCollector.Frame frame, ByteBuf byteBuf)
+    {
+        byteBuf.writeInt(frame.frameCounter);
+        byteBuf.writeBoolean(frame.victory);
+        byteBuf.writeBoolean(frame.gameOver);
+        writeLatLn(frame.playerLocation, byteBuf);
+        byteBuf.writeInt(frame.joining.size());
+        frame.joining.forEach(jv -> {
+            writeLatLn(jv.location, byteBuf);
+            writeUnitVector(jv.orientation, byteBuf);
+            writeLatLn(jv.connectionLocation, byteBuf);
+        });
+        byteBuf.writeInt(frame.patrols.size());
+        frame.patrols.forEach(p -> {
+            writeLatLn(p.location, byteBuf);
+            writeUnitVector(p.orientation, byteBuf);
+        });
+    }
+
     private static void writeGameParameters(GameParameters gameParameters, ByteBuf buffer)
     {
         buffer.writeInt(gameParameters.paths.size());
@@ -260,5 +278,11 @@ public class ProtocolV1
     {
         byteBuf.writeDouble(location.lat);
         byteBuf.writeDouble(location.lon);
+    }
+
+    private static void writeUnitVector(UnitVector unitVector, ByteBuf byteBuf)
+    {
+        byteBuf.writeDouble(unitVector.dLat);
+        byteBuf.writeDouble(unitVector.dLon);
     }
 }

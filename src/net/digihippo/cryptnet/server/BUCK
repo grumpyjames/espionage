@@ -7,7 +7,6 @@ java_library(
     '//:netty-common',
     '//:netty-resolver',
     '//:netty-transport',
-    '//src/net/digihippo/cryptnet/format:format',
     '//src/net/digihippo/cryptnet/model:model',
     '//src/net/digihippo/cryptnet/roadmap:roadmap',
   ],
