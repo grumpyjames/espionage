@@ -6,15 +6,181 @@ import net.digihippo.cryptnet.model.StayAliveRules;
 import net.digihippo.cryptnet.roadmap.LatLn;
 import net.digihippo.cryptnet.roadmap.Node;
 import net.digihippo.cryptnet.roadmap.Way;
+import org.hamcrest.CoreMatchers;
+import org.hamcrest.FeatureMatcher;
+import org.hamcrest.Matcher;
 import org.junit.Test;
 
-import java.util.concurrent.CompletableFuture;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
+import static org.hamcrest.CoreMatchers.any;
 import static org.junit.Assert.assertTrue;
 
 public class ServerAndClientTest
 {
-    public static NettyServer.VectorSource fixedWays()
+    private final LinkedBlockingQueue<Event> events = new LinkedBlockingQueue<>();
+    private final MyServerToClient serverToClient = new MyServerToClient(events);
+
+    @Test
+    public void playOneGame() throws Exception
+    {
+        withClient(this::playAGame);
+    }
+
+    @Test
+    public void playTwoGamesConsecutively() throws Exception
+    {
+        withClient(c -> {
+            playAGame(c);
+            playAGame(c);
+        });
+    }
+
+    private void withClient(final Consumer<NettyClient> action) throws Exception
+    {
+        Stoppable server = NettyServer.runServer(7890, fixedWays(), new StayAliveRules(4, 250, 1.3, 100));
+        try
+        {
+            NettyClient client = NettyClient.connect(serverToClient);
+            try
+            {
+                action.accept(client);
+            }
+            finally
+            {
+                client.stop();
+            }
+        }
+        finally
+        {
+            server.stop();
+        }
+    }
+
+    private void playAGame(NettyClient client)
+    {
+        LatLn hampstead = LatLn.toRads(51.556615299043486, -0.17851485725770533);
+        client.onLocation(hampstead);
+        client.requestGame();
+        OnGameReady onGameReady = waitFor(events, any(OnGameReady.class));
+        client.startGame(onGameReady.gameId);
+
+        OnFrame frame = waitFor(events,
+                new FeatureMatcher<>(CoreMatchers.is(true), "finished", "finished")
+                {
+                    @Override
+                    protected Boolean featureValueOf(OnFrame onFrame)
+                    {
+                        return onFrame.frame.victory || onFrame.frame.gameOver;
+                    }
+                });
+
+        FrameCollector.Frame f = frame.frame;
+        assertTrue(f.victory);
+    }
+
+    private static <T extends Event> T waitFor(LinkedBlockingQueue<Event> events, Matcher<T> matcher)
+    {
+        long now = System.nanoTime();
+        long tooLate = now + TimeUnit.MILLISECONDS.toNanos(500);
+        final List<Event> allTheEvents = new ArrayList<>();
+        while (System.nanoTime() < tooLate)
+        {
+            ArrayList<Event> e = new ArrayList<>();
+            events.drainTo(e);
+            for (Event ev: e)
+            {
+                if (matcher.matches(ev))
+                {
+                    //noinspection unchecked
+                    return (T) ev;
+                }
+            }
+            allTheEvents.addAll(e);
+        }
+        throw new WaitTimeout("Did not receive event matching " + matcher + ". " +
+                "Saw events: \n\t" + allTheEvents.stream().map(Object::toString).collect(Collectors.joining("\n\t")));
+    }
+
+    interface Event {}
+
+    static class OnGameReady implements Event {
+        public final String gameId;
+        public final GameParameters gameParameters;
+
+        OnGameReady(String gameId, GameParameters gameParameters)
+        {
+            this.gameId = gameId;
+            this.gameParameters = gameParameters;
+        }
+    }
+    static class OnGameStarted implements Event {
+
+    }
+    static class OnFrame implements Event {
+        public final FrameCollector.Frame frame;
+
+        OnFrame(FrameCollector.Frame frame)
+        {
+            this.frame = frame;
+        }
+    }
+
+    private static class MyServerToClient implements ServerToClient
+    {
+        private final BlockingQueue<Event> queue;
+
+        public MyServerToClient(BlockingQueue<Event> queue)
+        {
+            this.queue = queue;
+        }
+
+        @Override
+        public void gameReady(String gameId, GameParameters gameParameters)
+        {
+            enqueue(new OnGameReady(gameId, gameParameters));
+        }
+
+        @Override
+        public void gameStarted()
+        {
+            enqueue(new OnGameStarted());
+        }
+
+        @Override
+        public void onFrame(FrameCollector.Frame frame)
+        {
+            enqueue(new OnFrame(frame));
+        }
+
+        private void enqueue(Event e)
+        {
+            try
+            {
+                queue.put(e);
+            }
+            catch (InterruptedException ie)
+            {
+                throw new RuntimeException(ie);
+            }
+        }
+    }
+
+    private static class WaitTimeout extends RuntimeException
+    {
+        public WaitTimeout(String msg)
+        {
+            super(msg);
+        }
+    }
+
+    public static VectorSource fixedWays()
     {
         return boundingBox ->
         {
@@ -61,59 +227,5 @@ public class ServerAndClientTest
                     heathSt
             );
         };
-    }
-
-    @Test
-    public void endToEnd() throws Exception
-    {
-        Stoppable server = NettyServer.runServer(7890, fixedWays(), new StayAliveRules(4, 250, 1.3, 100));
-        try
-        {
-            CompletableFuture<String> gameIdFut = new CompletableFuture<>();
-            CompletableFuture<FrameCollector.Frame> frameFut = new CompletableFuture<>();
-            NettyClient client = NettyClient.connect(new ServerToClient()
-            {
-                @Override
-                public void gameReady(String gameId, GameParameters gameParameters)
-                {
-                    gameIdFut.complete(gameId);
-                }
-
-                @Override
-                public void gameStarted()
-                {
-
-                }
-
-                @Override
-                public void onFrame(FrameCollector.Frame frame)
-                {
-                    if (frame.gameOver || frame.victory)
-                    {
-                        frameFut.complete(frame);
-                    }
-                }
-            });
-            try
-            {
-                LatLn hampstead = LatLn.toRads(51.556615299043486, -0.17851485725770533);
-                client.onLocation(hampstead);
-                client.requestGame();
-                String gameId = gameIdFut.get();
-                client.startGame(gameId);
-
-                FrameCollector.Frame f = frameFut.get();
-                assertTrue(f.victory);
-            }
-            finally
-            {
-
-                client.stop();
-            }
-        }
-        finally
-        {
-            server.stop();
-        }
     }
 }
