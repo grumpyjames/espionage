@@ -1,10 +1,12 @@
 package net.digihippo.cryptnet.format;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.UnpooledByteBufAllocator;
 import net.digihippo.cryptnet.model.FrameCollector;
 import net.digihippo.cryptnet.roadmap.LatLn;
 import net.digihippo.cryptnet.roadmap.UnitVector;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -12,7 +14,31 @@ import static org.junit.Assert.assertEquals;
 public class FrameWriterTest
 {
     @Test
+    @Ignore("this is handy for generating hex data for tests in other projects")
+    public void hexy()
+    {
+        FrameCollector.Frame frame = makeFrame();
+
+        ByteBuf buffer = UnpooledByteBufAllocator.DEFAULT.buffer();
+        FrameWriter.write(frame, buffer);
+
+        System.out.println(ByteBufUtil.hexDump(buffer));
+    }
+
+    @Test
     public void roundTrip()
+    {
+        FrameCollector.Frame frame = makeFrame();
+
+        ByteBuf buffer = UnpooledByteBufAllocator.DEFAULT.buffer();
+        FrameWriter.write(frame, buffer);
+
+        FrameCollector.Frame read = readFrame(buffer);
+
+        assertEquals(read, frame);
+    }
+
+    private FrameCollector.Frame makeFrame()
     {
         FrameCollector.Frame frame = new FrameCollector.Frame(2342);
         double latDegs = 43.5635644D;
@@ -42,13 +68,7 @@ public class FrameWriterTest
                 LatLn.toRads(66.269666D, 65.5259649D),
                 new UnitVector(0.001D, 0.0009D)
         ));
-
-        ByteBuf buffer = UnpooledByteBufAllocator.DEFAULT.buffer();
-        FrameWriter.write(frame, buffer);
-
-        FrameCollector.Frame read = readFrame(buffer);
-
-        assertEquals(read, frame);
+        return frame;
     }
 
     private FrameCollector.Frame readFrame(ByteBuf buffer)
