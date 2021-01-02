@@ -3,7 +3,6 @@ java_library(
   srcs = glob(['*.java']),
   deps = [
     '//src/net/digihippo/cryptnet/roadmap:roadmap',
-    '//src/net/digihippo/cryptnet/dimtwo:dimtwo',
     '//src/net/digihippo/cryptnet/model:model',
 
     '//:jackson',

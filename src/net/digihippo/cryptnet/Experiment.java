@@ -1,8 +1,10 @@
 package net.digihippo.cryptnet;
 
-import net.digihippo.cryptnet.dimtwo.Pixel;
 import net.digihippo.cryptnet.model.*;
-import net.digihippo.cryptnet.roadmap.*;
+import net.digihippo.cryptnet.roadmap.LatLn;
+import net.digihippo.cryptnet.roadmap.OsmSource;
+import net.digihippo.cryptnet.roadmap.Way;
+import net.digihippo.cryptnet.roadmap.WebMercator;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
@@ -16,7 +18,9 @@ import java.text.DecimalFormat;
 import java.util.Collection;
 import java.util.List;
 import java.util.Random;
-import java.util.concurrent.*;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.locks.LockSupport;
 
 public class Experiment
@@ -145,7 +149,7 @@ public class Experiment
 //            }
             if (f != null)
             {
-                f.patrols.forEach(sentry -> renderSentry(sentry.location, sentry.orientation, g));
+                f.patrols.forEach(sentry -> renderSentry(sentry.location, g));
                 f.joining.forEach(joiner -> renderJoiningSentry(g, joiner.location, joiner.connectionLocation));
 
                 renderPlayer(g, f.playerLocation);
@@ -189,32 +193,9 @@ public class Experiment
             g.setColor(Color.BLACK);
         }
 
-        private void renderSentry(LatLn location, UnitVector velocity, Graphics g)
+        private void renderSentry(LatLn location, Graphics g)
         {
             filledCircleAt(g, location, Color.CYAN);
-//            throw new UnsupportedOperationException();
-//            final double orientation = velocity.orientation();
-//            final Pixel tView = velocity.rotate(Math.PI / 12).times(10).round();
-//            int radius = 3;
-//            int tx1 = (int) Math.round(location.x + (radius * Math.cos(orientation + (Math.PI / 2))));
-//            int ty1 = (int) Math.round(location.y + (radius * Math.sin(orientation + (Math.PI / 2))));
-//            int tx2 = tView.x + tx1;
-//            int ty2 = tView.y + ty1;
-//
-//            final Pixel uView = velocity.rotate(-Math.PI / 12).times(10).round();
-//            int ux1 = (int) Math.round(location.x - (radius * Math.cos(orientation + (Math.PI / 2))));
-//            int uy1 = (int) Math.round(location.y - (radius * Math.sin(orientation + (Math.PI / 2))));
-//            int ux2 = uView.x + ux1;
-//            int uy2 = uView.y + uy1;
-//
-//            drawCircle(location, g, radius);
-//            g.drawLine(offsetX + tx1, offsetY + ty1, offsetX + tx2, offsetY + ty2);
-//            g.drawLine(offsetX + ux1, offsetY + uy1, offsetX + ux2, offsetY + uy2);
-        }
-
-        private void drawCircle(Pixel renderable, Graphics g, int radius)
-        {
-            g.drawOval(offsetX + renderable.x - radius, offsetY + renderable.y - radius, radius * 2, radius * 2);
         }
 
         private void drawLine(Graphics g, Segment segment)

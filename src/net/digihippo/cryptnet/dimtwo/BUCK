@@ -1,9 +1,0 @@
-java_library(
-  name = 'dimtwo',
-  srcs = glob(['*.java']),
-  deps = [
-    '//:jackson',
-    '//src/net/digihippo/cryptnet/compat:compat',
-  ],
-  visibility = [ 'PUBLIC' ],
-)

@@ -40,12 +40,7 @@ final class WayCollector
 
     private void indexEdge(Way way, long nodeId)
     {
-        Set<Way> ways = edgeNodeToWay.get(nodeId);
-        if (ways == null)
-        {
-            ways = new LinkedHashSet<>();
-            edgeNodeToWay.put(nodeId, ways);
-        }
+        Set<Way> ways = edgeNodeToWay.computeIfAbsent(nodeId, k -> new LinkedHashSet<>());
         ways.add(way);
     }
 

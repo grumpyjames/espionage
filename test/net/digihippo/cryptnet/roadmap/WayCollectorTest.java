@@ -60,7 +60,7 @@ public class WayCollectorTest
             reversed.add(list.get(i));
         }
 
-        return new TypeSafeMatcher<List<Long>>()
+        return new TypeSafeMatcher<>()
         {
             @Override
             protected boolean matchesSafely(List<Long> longs)
