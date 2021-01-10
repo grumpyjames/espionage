@@ -11,10 +11,13 @@ import io.netty.channel.socket.nio.NioDatagramChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 import io.netty.handler.codec.LengthFieldPrepender;
-import net.digihippo.cryptnet.model.*;
+import net.digihippo.cryptnet.model.StayAliveRules;
 import net.digihippo.cryptnet.roadmap.OsmSource;
 
-import java.util.concurrent.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 public class NettyServer {
@@ -88,7 +91,7 @@ public class NettyServer {
         }
 
         Stoppable stoppable =
-                NettyServer.runServer(port, OsmSource::fetchWays, new StayAliveRules(4, 250, 1.3, 30_000));
+                NettyServer.runServer(port, OsmSource::fetchWays, new StayAliveRules(7, 100, 1.5, 120_000));
         Runtime.getRuntime().addShutdownHook(new Thread(stoppable::stop));
     }
 
