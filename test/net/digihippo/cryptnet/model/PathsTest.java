@@ -5,7 +5,6 @@ import net.digihippo.cryptnet.roadmap.Node;
 import net.digihippo.cryptnet.roadmap.Way;
 import org.junit.Test;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 

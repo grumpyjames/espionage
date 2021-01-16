@@ -4,8 +4,8 @@ import net.digihippo.cryptnet.roadmap.LatLn;
 
 import java.util.List;
 
-public class Connection {
-    public final Segment segment;
+final class Connection {
+    final Segment segment;
 
     private Connection(Segment segment)
     {
@@ -38,29 +38,12 @@ public class Connection {
         return new Connection(segment);
     }
 
-    public LatLn snapVelocityFrom(LatLn location) {
-        // best.connectionPoint.minus(point.asDoublePoint()).over(5))
-        throw new UnsupportedOperationException();
-    }
-
-    public boolean endsNear(LatLn location) {
-        throw new UnsupportedOperationException();
-    }
-
-    public LatLn location() {
+    LatLn location() {
         return segment.tail.location;
     }
 
-    public Segment line() {
+    Segment line() {
         return segment;
-    }
-
-    public LatLn joinVelocity() {
-        throw new UnsupportedOperationException();
-    }
-
-    public Direction joinDirection() {
-        throw new UnsupportedOperationException();
     }
 
     void move(ModelActions modelActions, JoiningSentry joiningSentry, Model.Events events)

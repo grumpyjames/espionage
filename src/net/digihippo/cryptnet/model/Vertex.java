@@ -34,11 +34,6 @@ public class Vertex
         return this.location.sameAs(location);
     }
 
-    public double distanceTo(Vertex other)
-    {
-        return this.location.distanceTo(other.location);
-    }
-
     public double distanceTo(LatLn location)
     {
         return this.location.distanceTo(location);

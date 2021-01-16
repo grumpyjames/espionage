@@ -5,7 +5,7 @@ import net.digihippo.cryptnet.roadmap.LatLn;
 import java.util.ArrayList;
 import java.util.List;
 
-public class DeferredModelActions implements ModelActions
+class DeferredModelActions implements ModelActions
 {
     private final List<Patrol> incoming = new ArrayList<>();
     private final List<JoiningSentry> outgoing = new ArrayList<>();

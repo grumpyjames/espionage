@@ -1,9 +1,8 @@
 package net.digihippo.cryptnet.model;
 
-import net.digihippo.cryptnet.roadmap.LatLn;
 import net.digihippo.cryptnet.roadmap.UnitVector;
 
-public enum Direction {
+enum Direction {
     Forwards {
         @Override
         public UnitVector orient(UnitVector direction)
@@ -32,10 +31,6 @@ public enum Direction {
     };
 
     public abstract UnitVector orient(UnitVector direction);
-
-    public boolean turnsAt(Path path, int lineIndex, LatLn intersectionPoint) {
-        return false;
-    }
 
     public abstract Vertex pickBound(Segment segment);
 }

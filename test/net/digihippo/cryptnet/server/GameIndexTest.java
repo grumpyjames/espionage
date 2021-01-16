@@ -115,7 +115,6 @@ public class GameIndexTest
 
         clientToServer.requestGame();
         clientToServer.startGame(serverToClient.lastGameId);
-//                                "2021-01-16T14:50:01.011Z"
         gameIndex.tick(epochMilli("2021-01-16T14:50:02.111Z"));
 
         assertTrue(serverToClient.lastFrame.victory);

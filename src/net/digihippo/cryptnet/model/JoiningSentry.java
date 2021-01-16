@@ -2,13 +2,13 @@ package net.digihippo.cryptnet.model;
 
 import net.digihippo.cryptnet.roadmap.LatLn;
 
-public final class JoiningSentry
+final class JoiningSentry
 {
-    public final String identifier;
-    public final Connection connection;
-    public final double speed; // in m/tick (a tick is 40ms)
+    final String identifier;
+    final Connection connection;
+    final double speed; // in m/tick (a tick is 40ms)
 
-    public LatLn location;
+    LatLn location;
 
     JoiningSentry(
             String identifier,
