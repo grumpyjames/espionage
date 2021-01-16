@@ -4,13 +4,10 @@ import net.digihippo.cryptnet.model.*;
 import net.digihippo.cryptnet.roadmap.LatLn;
 import net.digihippo.cryptnet.roadmap.OsmSource;
 import net.digihippo.cryptnet.roadmap.Way;
-import net.digihippo.cryptnet.roadmap.WebMercator;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -18,113 +15,74 @@ import java.text.DecimalFormat;
 import java.util.Collection;
 import java.util.List;
 import java.util.Random;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.locks.LockSupport;
 
 public class Experiment
 {
-    private static Model startingModel(
-            Random random,
-            Model.Events events,
-            List<Path> paths,
-            Rules rules)
-    {
-        return Model.createModel(paths, rules, random, events);
-    }
-
-    interface Event
-    {
-        void enact(Model model);
-    }
-
-    private static class ClickEvent implements Event
-    {
-        private final LatLn location;
-
-        private ClickEvent(LatLn location)
-        {
-            this.location = location;
-        }
-
-        @Override
-        public void enact(Model model)
-        {
-            model.click(location);
-        }
-    }
-
-    private static class PrintEvent implements Event
-    {
-        @Override
-        public void enact(Model model)
-        {
-            System.out.println(model.toString());
-        }
-    }
 
     private static final class Viewer extends Component
     {
-        private final LatLn topLeft;
-        private final LatLn bottomRight;
         private final int width;
         private final int height;
 
-//        private final Model model;
-        private final int offsetX = 50;
-        private final int offsetY = 50;
-        private final BufferedImage[][] images;
-        private final BlockingQueue<FrameCollector.Frame> frames = new ArrayBlockingQueue<>(32);
         private final List<Path> paths;
+        private final BufferedImage sentinel;
+        private final BufferedImage player;
+
+        private FrameCollector.Frame frame;
+
+        private LatLn origin;
+        private double xPix;
+        private double yPix;
 
         @Override
         public Dimension getPreferredSize() {
-            return new Dimension(width + (2 * offsetX), height + (2 * offsetY));
+            return new Dimension(width, height);
+        }
+
+        @Override
+        public Color getBackground()
+        {
+            return Color.BLACK;
         }
 
         private Viewer(
-                final LatLn topLeft,
-                final LatLn bottomRight,
                 final int width,
                 final int height,
-                final BufferedImage[][] images,
-                final BlockingQueue<Event> events,
-                List<Path> paths)
+                List<Path> paths,
+                BufferedImage sentinel,
+                BufferedImage player)
         {
-            this.topLeft = topLeft;
-            this.bottomRight = bottomRight;
             this.width = width;
             this.height = height;
-            this.images = images;
             this.paths = paths;
-
-            addMouseListener(new EventQueueListener(events));
+            this.sentinel = sentinel;
+            this.player = player;
         }
 
         @Override
         public void paint(final Graphics g)
         {
-            FrameCollector.Frame f = frames.poll();
-
-            for (int i = 0; i < images.length; i++)
+            FrameCollector.Frame f = frame;
+            if (f == null)
             {
-                BufferedImage[] image = images[i];
-                for (int j = 0; j < image.length; j++)
-                {
-                    BufferedImage bufferedImage = image[j];
-
-                    g.drawImage(bufferedImage, offsetX + (i * 256), offsetY + (j * 256), null);
-                }
+                return;
             }
+
+            final double bearing = (3 * Math.PI / 2) + Math.atan((double) height/(double) width);
+
+            LatLn centre = f.playerLocation;
+
+            this.origin = centre.move(200, bearing);
+            this.xPix = (2 * (centre.lon - origin.lon) / (double) width);
+            this.yPix = (2 * (centre.lat - origin.lat) / (double) height);
 
             Graphics2D g2 = (Graphics2D)g;
             RenderingHints rh = new RenderingHints(
                     RenderingHints.KEY_TEXT_ANTIALIASING,
                     RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
             g2.setRenderingHints(rh);
-            g.drawString(toHumanCoords(topLeft), offsetX, offsetY);
-            g.drawString(toHumanCoords(bottomRight), offsetX + width, offsetY + height);
+            g2.setBackground(Color.BLACK);
 
             for (Path path : paths)
             {
@@ -133,35 +91,21 @@ public class Experiment
                     drawLine(g, line);
                 }
             }
-//            for (LatLn latLn: model.paths.locations()) {
-//                g.drawPolygon(
-//                    new int[] {
-//                        offsetX + point.x - 2,
-//                        offsetX + point.x + 2,
-//                        offsetX + point.x + 2,
-//                        offsetX + point.x - 2},
-//                    new int[] {
-//                        offsetY + point.y + 2,
-//                        offsetY + point.y + 2,
-//                        offsetY + point.y - 2,
-//                        offsetY + point.y - 2},
-//                    4);
-//            }
-            if (f != null)
+
+            f.patrols.forEach(sentry -> renderSentry(sentry.location, g));
+            f.joining.forEach(joiner -> renderJoiningSentry(g, joiner.location, joiner.connectionLocation));
+
+            renderPlayer(g, f.playerLocation);
+
+            if (f.victory)
             {
-                f.patrols.forEach(sentry -> renderSentry(sentry.location, g));
-                f.joining.forEach(joiner -> renderJoiningSentry(g, joiner.location, joiner.connectionLocation));
-
-                renderPlayer(g, f.playerLocation);
-
-                if (f.victory)
-                {
-                    g.drawString("Victory!", offsetX + (width / 2), offsetY + (height / 2));
-                }
-                if (f.gameOver)
-                {
-                    g.drawString("Game over!", offsetX + (width / 2), offsetY + (height / 2));
-                }
+                System.out.println("Victory?");
+                g.drawString("Victory!", (width / 2), (height / 2));
+            }
+            if (f.gameOver)
+            {
+                System.out.println("Game: Over?");
+                g.drawString("Game over!", (width / 2), (height / 2));
             }
         }
 
@@ -174,28 +118,47 @@ public class Experiment
 
         private void renderJoiningSentry(Graphics g, LatLn location, LatLn connectionLocation) {
             drawLine(g, location, connectionLocation, true);
-            filledCircleAt(g, location, Color.BLUE);
+            filledCircleAt(g, location);
         }
 
         private void renderPlayer(Graphics g, LatLn playerLocation) {
 
-            filledCircleAt(g, playerLocation, Color.MAGENTA);
+            int x1 = pix(dLon(playerLocation) / xPix);
+            int y1 = pix(dLat(playerLocation) / yPix);
+            g.drawImage(
+                    player,
+                    x1 - (player.getWidth() / 2),
+                    y1 - (player.getHeight() / 2),
+                    null
+            );
         }
 
-        private void filledCircleAt(Graphics g, LatLn latln, Color color)
+        private void filledCircleAt(Graphics g, LatLn latln)
         {
-            final int x1 = offsetX + toX(latln.lon);
-            final int y1 = offsetY + toY(latln.lat);
+            int x1 = pix(dLon(latln) / xPix);
+            int y1 = pix(dLat(latln) / yPix);
 
             g.drawOval(x1 - 4, y1 - 4, 4 * 2, 4 * 2);
-            g.setColor(color);
+            g.setColor(Color.BLUE);
             g.fillOval(x1 - 4, y1 - 4, 4 * 2, 4 * 2);
-            g.setColor(Color.BLACK);
+            g.setColor(Color.WHITE);
         }
 
         private void renderSentry(LatLn location, Graphics g)
         {
-            filledCircleAt(g, location, Color.CYAN);
+            int x1 = pix(dLon(location) / xPix);
+            int y1 = pix(dLat(location) / yPix);
+            g.drawImage(
+                    sentinel,
+                    x1 - (sentinel.getWidth() / 2),
+                    y1 - (sentinel.getHeight() / 2),
+                    null
+            );
+
+//            g.drawOval(x1 - 4, y1 - 4, 4 * 2, 4 * 2);
+//            g.setColor(Color.CYAN);
+//            g.fillOval(x1 - 4, y1 - 4, 4 * 2, 4 * 2);
+//            g.setColor(Color.WHITE);
         }
 
         private void drawLine(Graphics g, Segment segment)
@@ -207,183 +170,95 @@ public class Experiment
             drawLine(g, head, tail, false);
         }
 
+        double dLon(LatLn latln)
+        {
+            return latln.lon - origin.lon;
+        }
+
+        double dLat(LatLn latln)
+        {
+            return latln.lat - origin.lat;
+        }
+
+        int pix(double dPix)
+        {
+            return (int) Math.round(dPix);
+        }
+
         private void drawLine(Graphics g, LatLn head, LatLn tail, boolean debug)
         {
-            final int x1 = offsetX + toX(head.lon);
-            final int y1 = offsetY + toY(head.lat);
-            final int x2 = offsetX + toX(tail.lon);
-            final int y2 = offsetY + toY(tail.lat);
-            g.drawLine(x1, y1, x2, y2);
+            final int startX = pix(dLon(head) / xPix);
+            final int endX = pix(dLon(tail) / xPix);
+            final int startY = pix(dLat(head) / yPix);
+            final int endY = pix(dLat(tail) / yPix);
+
+            g.setColor(Color.WHITE);
+            g.drawLine(startX, startY, endX, endY);
 
             if (debug)
             {
-                g.drawString(toHumanCoords(head), x1, y1);
-                g.drawString(toHumanCoords(tail), x2, y2);
+                g.drawString(toHumanCoords(head), startX, startY);
+                g.drawString(toHumanCoords(tail), endX, endY);
             }
         }
 
-        private int toY(double latRads)
+        public void frame(FrameCollector.Frame frame)
         {
-            double y = WebMercator.y(latRads, 17, 256);
-            double originY = WebMercator.y(topLeft.lat, 17, 256);
-            return (int) (y - originY);
-        }
-
-        private int toX(double lonRads)
-        {
-            double x = WebMercator.x(lonRads, 17, 256);
-            double originX = WebMercator.x(topLeft.lon, 17, 256);
-
-            return (int) (x - originX);
-        }
-
-        private LatLn latLn(int x, int y)
-        {
-            int x1 = x - offsetX;
-            int y1 = y - offsetY;
-
-            double originY = WebMercator.y(topLeft.lat, 17, 256);
-            double clickY = originY + y1;
-            final double latRads = WebMercator.lat(clickY, 17, 256);
-
-            double originX = WebMercator.x(topLeft.lon, 17, 256);
-            double clickX = originX + x1;
-            final double lonRads = WebMercator.lon(clickX, 17, 256D);
-
-            return new LatLn(latRads, lonRads);
-        }
-
-        public void enqueueFrame(FrameCollector.Frame frame)
-        {
-            try
-            {
-                frames.put(frame);
-            } catch (InterruptedException e)
-            {
-                e.printStackTrace();
-            }
-        }
-
-        private class EventQueueListener implements MouseListener
-        {
-            private final BlockingQueue<Event> events;
-
-            EventQueueListener(BlockingQueue<Event> events)
-            {
-                this.events = events;
-            }
-
-            @Override
-            public void mouseReleased(MouseEvent e)
-            {
-                if (e.getY() >= offsetY)
-                {
-                    ClickEvent event = new ClickEvent(latLn(e.getX(), e.getY()));
-                    pushEvent(event, events);
-                }
-                else
-                {
-                    pushEvent(new PrintEvent(), events);
-                }
-            }
-
-            private void pushEvent(Event event, BlockingQueue<Event> events)
-            {
-                try
-                {
-                    events.put(event);
-                } catch (InterruptedException e1)
-                {
-                    Thread.currentThread().interrupt();
-                    throw new RuntimeException("Unable to enqueue event - interrupted");
-                }
-            }
-
-            @Override public void mouseClicked(MouseEvent e) {}
-            @Override public void mousePressed(MouseEvent e) {}
-            @Override public void mouseEntered(MouseEvent e) {}
-            @Override public void mouseExited(MouseEvent e) {}
+            this.frame = frame;
+            repaint();
         }
     }
 
-    public static void main(String[] args) throws IOException, InterruptedException
+    public static void main(String[] args) throws IOException
     {
-        int xTile = 65480;
-        int yTile = 43572;
-        // tile coords increase as latitude decreases
-        double latitudeMin = WebMercator.lat((yTile + 2) * 256, 17, 256D);
-        double latitudeMax = WebMercator.lat(yTile * 256, 17, 256D);
-
-        // tile coords increase with longitude
-        double longitudeMin = WebMercator.lon(xTile * 256, 17, 256D);
-        double longitudeMax = WebMercator.lon((xTile + 2) * 256, 17, 256D);
-
-        final Random random = new Random(238824982L);
-
-        final LatLn topLeft = new LatLn(Math.max(latitudeMin, latitudeMax), Math.min(longitudeMin, longitudeMax));
-        final LatLn bottomRight = new LatLn(Math.min(latitudeMin, latitudeMax), Math.max(longitudeMin, longitudeMax));
-
-        final BufferedImage[][] images =
-            new BufferedImage[2][2];
-        images[0][0] = readTile(xTile, yTile);
-        LockSupport.parkNanos(10_000_000);
-        images[1][0] = readTile(xTile + 1, yTile);
-        LockSupport.parkNanos(10_000_000);
-        images[0][1] = readTile(xTile, yTile + 1);
-        LockSupport.parkNanos(10_000_000);
-        images[1][1] = readTile(xTile + 1, yTile + 1);
-
-        final BlockingQueue<Event> events = new LinkedBlockingQueue<>();
-
-        Collection<Way> ways = OsmSource.fetchWays(latitudeMin, latitudeMax, longitudeMin, longitudeMax);
+        LatLn playerCentre = LatLn.toRads(54.77683523328153, -1.575421697852002);
+        Random random = new Random(238824982L);
+        Collection<Way> ways = OsmSource.fetchWays(playerCentre.boundingBox(500));
         List<Path> paths = Paths.from(ways);
-        final Viewer viewer = new Viewer(topLeft, bottomRight, 512, 512, images, events, paths);
-        final Model model = startingModel(
+        BufferedImage sentinel = ImageIO.read(new File("sentinel.png"));
+        BufferedImage player = ImageIO.read(new File("player.png"));
+        Viewer viewer = new Viewer(500, 1000, paths, sentinel, player);
+        Model model = Model.createModel(
+                paths,
+                new StayAliveRules(4, 100, 1.2, 30_000),
                 random,
                 new FrameCollector(new FrameConsumer()
-                {
-                    @Override
-                    public void gameStarted()
-                    {
+        {
+            @Override
+            public void gameStarted()
+            {
 
-                    }
+            }
 
-                    @Override
-                    public void onFrame(FrameCollector.Frame frame)
-                    {
-                        viewer.enqueueFrame(frame);
-                        SwingUtilities.invokeLater(viewer::repaint);
-                    }
-                }),
-                paths,
-                new StayAliveRules(4, 100, 1.2, 30_000)
-        );
+            @Override
+            public void onFrame(FrameCollector.Frame frame)
+            {
+                viewer.frame(frame);
+            }
+        }));
 
         SwingUtilities.invokeLater(() ->
         {
             JFrame f = new JFrame("Lines and intersections");
             f.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+            f.getContentPane().setBackground(Color.BLACK);
             f.add(viewer);
             f.pack();
             f.setVisible(true);
         });
 
-        // Accept one click to set the player location...
-        Event event = events.take();
-        event.enact(model);
-
-        model.startGame(System.currentTimeMillis());
-        while (true)
+        SwingUtilities.invokeLater(() ->
         {
-            model.time(System.currentTimeMillis());
+            model.setPlayerLocation(playerCentre);
+            model.startGame(System.currentTimeMillis());
+        });
+
+        while(true)
+        {
+            SwingUtilities.invokeLater(() -> model.time(System.currentTimeMillis()));
+            LockSupport.parkNanos(10_000_000);
         }
+
+
     }
-
-    private static BufferedImage readTile(int xTile, int yTile) throws IOException
-    {
-        String fileName = "osm/17/" + xTile + "/" + yTile + ".png";
-
-        return ImageIO.read(new File(fileName));
-    }
-
 }
