@@ -42,6 +42,12 @@ public final class NettyClient implements Stoppable, ClientToServer {
             {
                 System.out.println("Session established: " + sessionKey);
             }
+
+            @Override
+            public void error(String errorCode)
+            {
+                System.out.println("Error " + errorCode);
+            }
         });
 
         client.onLocation(new LatLn(0.67D, 0.32D));

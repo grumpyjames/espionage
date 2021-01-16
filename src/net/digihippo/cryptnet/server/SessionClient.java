@@ -2,6 +2,9 @@ package net.digihippo.cryptnet.server;
 
 import net.digihippo.cryptnet.roadmap.LatLn;
 
+import java.util.Optional;
+import java.util.function.Consumer;
+
 final class SessionClient implements GameIndex.LocalClientToServer
 {
     private final ServerToClient serverToClient;
@@ -26,48 +29,56 @@ final class SessionClient implements GameIndex.LocalClientToServer
     @Override
     public void resumeSession(String sessionId)
     {
-        this.session = this.gameIndex.resumeSession(sessionId, serverToClient);
+        Optional<GameIndex.Session> maybeSession = this.gameIndex.resumeSession(sessionId, serverToClient);
+        if (maybeSession.isPresent())
+        {
+            this.session = maybeSession.get();
+        }
+        else
+        {
+            serverToClient.error(ErrorCodes.NO_SUCH_SESSION.code());
+        }
     }
 
     @Override
     public void onLocation(LatLn location)
     {
-        if (this.session != null)
-        {
-            this.session.onLocation(location);
-        }
+        withSession(s -> s.onLocation(location));
     }
 
     @Override
     public void requestGame()
     {
-        if (this.session != null)
-        {
-            this.session.requestGame();
-        }
+        withSession(GameIndex.Session::requestGame);
     }
 
     @Override
     public void startGame(String gameId)
     {
-        if (this.session != null)
-        {
-            session.startGame(gameId);
-        }
+        withSession(s -> s.startGame(gameId));
     }
 
     @Override
     public void quit()
     {
-        if (this.session != null)
-        {
-            session.quit();
-        }
+        withSession(GameIndex.Session::quit);
     }
 
     @Override
     public void sessionEnded()
     {
-        session.ended();
+        withSession(GameIndex.Session::ended);
+    }
+
+    private void withSession(Consumer<GameIndex.Session> s)
+    {
+        if (this.session == null)
+        {
+            this.serverToClient.error(ErrorCodes.SESSION_NOT_ESTABLISHED.code());
+        }
+        else
+        {
+            s.accept(this.session);
+        }
     }
 }

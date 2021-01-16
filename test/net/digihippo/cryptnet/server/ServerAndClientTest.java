@@ -19,6 +19,7 @@ import java.util.concurrent.locks.LockSupport;
 import java.util.stream.Collectors;
 
 import static org.hamcrest.CoreMatchers.any;
+import static org.hamcrest.CoreMatchers.equalTo;
 import static org.junit.Assert.assertTrue;
 
 public class ServerAndClientTest
@@ -80,6 +81,18 @@ public class ServerAndClientTest
         OnFrame frame = waitFor(events, new GameCompleteFrame(), 1500);
         FrameCollector.Frame f = frame.frame;
         assertTrue(f.victory);
+    }
+
+    @Test
+    public void cannotStartAGameBeforeEstablishingASession() throws Exception
+    {
+        startServer(new StayAliveRules(4, 250, 1.3, 1000));
+
+        NettyClient nettyClient = newClient();
+
+        nettyClient.requestGame();
+
+        waitFor(events, errorCode("SNE"), 100);
     }
 
     private NettyClient newClient() throws Exception
@@ -166,6 +179,24 @@ public class ServerAndClientTest
         }
     }
 
+    private static final class ErrorCode implements Event
+    {
+        private final String errorCode;
+
+        public ErrorCode(String errorCode)
+        {
+            this.errorCode = errorCode;
+        }
+
+        @Override
+        public String toString()
+        {
+            return "ErrorCode{" +
+                    "errorCode='" + errorCode + '\'' +
+                    '}';
+        }
+    }
+
     private static final class MyServerToClient implements ServerToClient
     {
         private final BlockingQueue<Event> queue;
@@ -197,6 +228,12 @@ public class ServerAndClientTest
         public void sessionEstablished(String sessionKey)
         {
             enqueue(new SessionStarted(sessionKey));
+        }
+
+        @Override
+        public void error(String errorCode)
+        {
+            enqueue(new ErrorCode(errorCode));
         }
 
         private void enqueue(Event e)
@@ -232,5 +269,18 @@ public class ServerAndClientTest
         {
             return onFrame.frame.victory || onFrame.frame.gameOver;
         }
+    }
+
+    @SuppressWarnings("SameParameterValue")
+    private Matcher<ErrorCode> errorCode(String errorCode)
+    {
+        return new FeatureMatcher<>(equalTo(errorCode), "error code", "error")
+        {
+            @Override
+            protected String featureValueOf(ErrorCode errorCode)
+            {
+                return errorCode.errorCode;
+            }
+        };
     }
 }

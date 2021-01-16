@@ -12,4 +12,6 @@ public interface ServerToClient
     void onFrame(FrameCollector.Frame frame);
 
     void sessionEstablished(String sessionKey);
+
+    void error(String errorCode);
 }

@@ -7,25 +7,47 @@ import net.digihippo.cryptnet.roadmap.LatLn;
 import org.junit.Test;
 
 import java.time.Instant;
+import java.util.UUID;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.junit.Assert.*;
 
 public class GameIndexTest
 {
     private static final LatLn HAMPSTEAD = LatLn.toRads(51.556615299043486, -0.17851485725770533);
 
+    private final GameIndex gameIndex = new GameIndex(
+            Runnable::run,
+            FixedVectorSources.hampsteadWays(),
+            Runnable::run,
+            new StayAliveRules(8, 125, 1, 1000),
+            epochMilli("2021-01-16T14:50:01.011Z")
+            );
+
+    @Test
+    public void refuseResumptionOfInvalidSessionId()
+    {
+        MyServerToClient serverToClient = new MyServerToClient();
+        GameIndex.LocalClientToServer clientToServer = gameIndex.newClient(serverToClient);
+
+        clientToServer.resumeSession("n'existe pas");
+        assertThat(serverToClient.lastError, equalTo(ErrorCodes.NO_SUCH_SESSION.code()));
+    }
+
+    @Test
+    public void refuseResumptionOfValidButNotPresentSessionId()
+    {
+        MyServerToClient serverToClient = new MyServerToClient();
+        GameIndex.LocalClientToServer clientToServer = gameIndex.newClient(serverToClient);
+
+        clientToServer.resumeSession(UUID.randomUUID().toString());
+        assertThat(serverToClient.lastError, equalTo(ErrorCodes.NO_SUCH_SESSION.code()));
+    }
+
     @Test
     public void resumeThatGame()
     {
-        GameIndex gameIndex = new GameIndex(
-                Runnable::run,
-                FixedVectorSources.hampsteadWays(),
-                Runnable::run,
-                new StayAliveRules(8, 125, 1, 1000),
-                epochMilli("2021-01-16T14:50:01.011Z")
-                );
-        HmmServerToClient serverToClient = new HmmServerToClient();
+        MyServerToClient serverToClient = new MyServerToClient();
         GameIndex.LocalClientToServer clientToServer = gameIndex.newClient(serverToClient);
         clientToServer.newSession();
 
@@ -51,11 +73,12 @@ public class GameIndexTest
         assertTrue(serverToClient.lastFrame.victory || serverToClient.lastFrame.gameOver);
     }
 
-    private static final class HmmServerToClient implements ServerToClient
+    private static final class MyServerToClient implements ServerToClient
     {
-        public String lastGameId;
-        public String lastSessionId;
+        private String lastGameId;
+        private String lastSessionId;
         private FrameCollector.Frame lastFrame;
+        private String lastError;
 
         @Override
         public void gameReady(String gameId, GameParameters gameParameters)
@@ -79,6 +102,12 @@ public class GameIndexTest
         public void sessionEstablished(String sessionKey)
         {
             this.lastSessionId = sessionKey;
+        }
+
+        @Override
+        public void error(String errorCode)
+        {
+            this.lastError = errorCode;
         }
     }
 

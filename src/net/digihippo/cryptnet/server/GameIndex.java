@@ -8,7 +8,6 @@ import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.BiConsumer;
 
 final class GameIndex
 {
@@ -63,13 +62,24 @@ final class GameIndex
         return new SessionClient(serverToClient, this);
     }
 
-    Session resumeSession(String sessionId, ServerToClient serverToClient)
+    Optional<Session> resumeSession(String sessionId, ServerToClient serverToClient)
     {
-        Session session = sessions.get(UUID.fromString(sessionId));
+        try
+        {
+            Session session = sessions.get(UUID.fromString(sessionId));
+            if (session == null)
+            {
+                return Optional.empty();
+            }
 
-        session.resume(serverToClient);
+            session.resume(serverToClient);
 
-        return session;
+            return Optional.of(session);
+        }
+        catch (IllegalArgumentException illegalArgumentException)
+        {
+            return Optional.empty();
+        }
     }
 
     final class Session implements ServerToClient
@@ -87,6 +97,7 @@ final class GameIndex
             this.serverToClient = serverToClient;
         }
 
+        @SuppressWarnings("unused")
         public void startGame(String gameId)
         {
             if (model != null)
@@ -154,6 +165,12 @@ final class GameIndex
             serverToClient.sessionEstablished(sessionKey);
         }
 
+        @Override
+        public void error(String errorCode)
+        {
+            serverToClient.error(errorCode);
+        }
+
         public void ended()
         {
             if (this.model != null)
@@ -193,18 +210,24 @@ final class GameIndex
     private void requestGame(Session session)
     {
         final LatLn playerLocation = session.location;
-        prepareGame(playerLocation, (m, f) ->
-        {
-            String gameId = registerGame(m);
-            session.gameRequestComplete(gameId, m, f);
-            m.setPlayerLocation(playerLocation);
-            f.subscribe(session);
-        });
+        prepareGame(playerLocation, session);
+    }
+
+    private void gameReady(
+            Session session,
+            LatLn playerLocation,
+            Model model,
+            FrameDispatcher frameDispatcher)
+    {
+        String gameId = registerGame(model);
+        session.gameRequestComplete(gameId, model, frameDispatcher);
+        model.setPlayerLocation(playerLocation);
+        frameDispatcher.subscribe(session);
     }
 
     // This is a potentially blocking operation
     // It needs to happen off event loop, and then call back to the event loop with results.
-    private void prepareGame(LatLn latln, BiConsumer<Model, FrameDispatcher> modelReady)
+    private void prepareGame(LatLn latln, Session session)
     {
         offEventLoop.execute(() ->
         {
@@ -218,12 +241,13 @@ final class GameIndex
                         rules,
                         new Random(),
                         new FrameCollector(dispatcher));
-                onEventLoop.execute(() -> modelReady.accept(model, dispatcher));
+                onEventLoop.execute(() -> gameReady(session, latln, model, dispatcher));
             }
             catch (IOException e)
             {
-                // FIXME: tell the event loop about the failure
-                e.printStackTrace();
+                // TODO: We should record how often this is happening and why.
+                // Users will be frustrated if it happens continually without explanation
+                onEventLoop.execute(() -> session.error(ErrorCodes.GAME_REQUEST_FAILED.code()));
             }
         });
     }

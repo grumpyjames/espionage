@@ -68,6 +68,12 @@ public class ProtocolV1
                 serverToClient.sessionEstablished(sessionKey);
                 return;
             }
+            case 4:
+            {
+                String errorCode = readString(byteBuf);
+                serverToClient.error(errorCode);
+                return;
+            }
             default:
                 throw new UnsupportedOperationException("Method not found: " + methodIndex);
         }
@@ -165,6 +171,15 @@ public class ProtocolV1
                 messageSender.withByteBuf(byteBuf -> {
                     byteBuf.writeByte(3);
                     writeString(sessionKey, byteBuf);
+                });
+            }
+
+            @Override
+            public void error(String errorCode)
+            {
+                messageSender.withByteBuf(byteBuf -> {
+                    byteBuf.writeByte(4);
+                    writeString(errorCode, byteBuf);
                 });
             }
         };
