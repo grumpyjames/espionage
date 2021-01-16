@@ -4,6 +4,10 @@ import net.digihippo.cryptnet.roadmap.LatLn;
 
 public interface ClientToServer
 {
+    void newSession();
+
+    void resumeSession(String sessionId);
+
     void onLocation(LatLn location);
 
     void requestGame();

@@ -5,10 +5,7 @@ import net.digihippo.cryptnet.roadmap.LatLn;
 import net.digihippo.cryptnet.roadmap.Way;
 
 import java.io.IOException;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Random;
+import java.util.*;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
@@ -23,16 +20,22 @@ final class GameIndex
     private final Executor onEventLoop;
     private final StayAliveRules rules;
 
+    private final Map<UUID, Session> sessions = new HashMap<>();
+    private long currentTimeMillis;
+
+
     public GameIndex(
             Executor offEventLoop,
             VectorSource vectorSource,
             Executor onEventLoop,
-            StayAliveRules rules)
+            StayAliveRules rules,
+            long initialTimeMillis)
     {
         this.offEventLoop = offEventLoop;
         this.vectorSource = vectorSource;
         this.onEventLoop = onEventLoop;
         this.rules = rules;
+        this.currentTimeMillis = initialTimeMillis;
     }
 
     public String registerGame(Model model)
@@ -46,40 +49,63 @@ final class GameIndex
 
     public void tick(long timeMillis)
     {
+        this.currentTimeMillis = timeMillis;
         games.values().forEach(m -> m.time(timeMillis));
     }
 
-    public ClientToServer newClient(ServerToClient serverToClient)
+    interface LocalClientToServer extends ClientToServer
     {
-        return new BidirectionalClient(serverToClient, this);
+        void sessionEnded();
     }
 
-    private static final class BidirectionalClient implements ClientToServer, ServerToClient
+    public LocalClientToServer newClient(ServerToClient serverToClient)
     {
-        private final ServerToClient serverToClient;
-        private final GameIndex gameIndex;
-        private Model model = null;
-        private LatLn location = null;
+        return new SessionClient(serverToClient, this);
+    }
+
+    Session resumeSession(String sessionId, ServerToClient serverToClient)
+    {
+        Session session = sessions.get(UUID.fromString(sessionId));
+
+        session.resume(serverToClient);
+
+        return session;
+    }
+
+    final class Session implements ServerToClient
+    {
+        private ServerToClient serverToClient;
+
+        private Model model;
+        private FrameDispatcher frameDispatcher;
+        private LatLn location;
         private boolean gamePreparing = false;
 
-        public BidirectionalClient(
-                ServerToClient serverToClient,
-                GameIndex gameIndex)
+        private Session(
+                ServerToClient serverToClient)
         {
             this.serverToClient = serverToClient;
-            this.gameIndex = gameIndex;
         }
 
-        // Not sure - could be telling us the outbound API isn't quite right?
-        public void gameRequestComplete(String gameId, Model model)
+        public void startGame(String gameId)
+        {
+            if (model != null)
+            {
+                model.startGame(GameIndex.this.currentTimeMillis);
+            }
+        }
+
+        public void gameRequestComplete(
+                String gameId,
+                Model model,
+                FrameDispatcher frameDispatcher)
         {
             this.model = model;
+            this.frameDispatcher = frameDispatcher;
             this.gamePreparing = false;
             this.gameReady(gameId, model.parameters());
         }
 
-        // In -->
-        @Override
         public void onLocation(LatLn location)
         {
             if (model != null)
@@ -89,32 +115,15 @@ final class GameIndex
             this.location = location;
         }
 
-        @Override
         public void requestGame()
         {
             if (model == null && location != null && !gamePreparing)
             {
                 gamePreparing = true;
-                gameIndex.requestGame(this);
+                GameIndex.this.requestGame(this);
             }
         }
 
-        @Override
-        public void startGame(String gameId)
-        {
-            if (model != null)
-            {
-                model.startGame(System.currentTimeMillis());
-            }
-        }
-
-        @Override
-        public void quit()
-        {
-
-        }
-
-        // <-- out
         @Override
         public void gameReady(String gameId, GameParameters gameParameters)
         {
@@ -135,19 +144,61 @@ final class GameIndex
                 this.model = null;
                 this.gamePreparing = false;
             }
+
             serverToClient.onFrame(frame);
+        }
+
+        @Override
+        public void sessionEstablished(String sessionKey)
+        {
+            serverToClient.sessionEstablished(sessionKey);
+        }
+
+        public void ended()
+        {
+            if (this.model != null)
+            {
+                this.model.playerDisconnected();
+                this.frameDispatcher.unsubscribe(this);
+            }
+        }
+
+        public void resume(ServerToClient serverToClient)
+        {
+            this.serverToClient = serverToClient;
+            if (this.model != null)
+            {
+                this.model.playerRejoined();
+                this.frameDispatcher.subscribe(this);
+            }
+        }
+
+        public void quit()
+        {
+
         }
     }
 
-    private void requestGame(BidirectionalClient bidirectionalClient)
+    Session createSession(ServerToClient serverToClient)
     {
-        final LatLn playerLocation = bidirectionalClient.location;
+        UUID sessionKey = UUID.randomUUID();
+        Session session = new Session(serverToClient);
+
+        sessions.put(sessionKey, session);
+        serverToClient.sessionEstablished(sessionKey.toString());
+
+        return session;
+    }
+
+    private void requestGame(Session session)
+    {
+        final LatLn playerLocation = session.location;
         prepareGame(playerLocation, (m, f) ->
         {
             String gameId = registerGame(m);
-            bidirectionalClient.gameRequestComplete(gameId, m);
+            session.gameRequestComplete(gameId, m, f);
             m.setPlayerLocation(playerLocation);
-            f.subscribe(bidirectionalClient);
+            f.subscribe(session);
         });
     }
 

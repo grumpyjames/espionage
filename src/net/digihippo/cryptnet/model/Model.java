@@ -3,7 +3,9 @@ package net.digihippo.cryptnet.model;
 import net.digihippo.cryptnet.roadmap.LatLn;
 import net.digihippo.cryptnet.roadmap.UnitVector;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
 import java.util.stream.Collectors;
 
 public final class Model
@@ -22,12 +24,33 @@ public final class Model
     private Player player = null;
     private long time;
     private long nextTick;
-    private boolean gameOn = false;
     private long startTime;
+
+    enum GameState
+    {
+        BEFORE_START,
+        PLAYING,
+        PAUSED,
+        UNPAUSED,
+        COMPLETE
+    }
+
+    private GameState gameState = GameState.BEFORE_START;
+
 
     public GameParameters parameters()
     {
         return new GameParameters(paths, rules);
+    }
+
+    public void playerDisconnected()
+    {
+        this.gameState = GameState.PAUSED;
+    }
+
+    public void playerRejoined()
+    {
+        this.gameState = GameState.UNPAUSED;
     }
 
     public interface Events
@@ -85,7 +108,7 @@ public final class Model
         this.startTime = timeMillis;
         this.time = timeMillis;
         this.nextTick = this.time + MILLISECONDS_PER_TICK;
-        this.gameOn = true;
+        this.gameState = GameState.PLAYING;
         double bearingFraction = (2d * Math.PI) / (rules.sentryCount());
         for (int i = 0; i < rules.sentryCount(); i++)
         {
@@ -96,9 +119,20 @@ public final class Model
         this.events.gameStarted();
     }
 
+    boolean gameOn()
+    {
+        return this.gameState == GameState.PLAYING;
+    }
+
     public void time(long timeMillis)
     {
-        while (gameOn && this.nextTick < timeMillis)
+        if (gameState == GameState.UNPAUSED)
+        {
+            this.nextTick = timeMillis + MILLISECONDS_PER_TICK;
+            this.gameState = GameState.PLAYING;
+        }
+
+        while (gameOn() && this.nextTick < timeMillis)
         {
             events.frameStart(frameCounter);
             this.tick();
@@ -111,12 +145,12 @@ public final class Model
                 case GameOver:
                     events.gameOver();
                     events.frameEnd(frameCounter);
-                    this.gameOn = false;
+                    this.gameState = GameState.COMPLETE;
                     return;
                 case Victory:
                     events.victory();
                     events.frameEnd(frameCounter);
-                    this.gameOn = false;
+                    this.gameState = GameState.COMPLETE;
                     return;
                 case Continue:
                 default:

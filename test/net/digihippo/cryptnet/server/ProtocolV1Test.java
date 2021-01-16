@@ -31,7 +31,7 @@ public class ProtocolV1Test
     public void dispatchLocation()
     {
         ByteBuf buffer = UnpooledByteBufAllocator.DEFAULT.buffer();
-        buffer.writeByte(0);
+        buffer.writeByte(2);
         buffer.writeDouble(0.45D);
         buffer.writeDouble(0.56D);
 
@@ -56,11 +56,15 @@ public class ProtocolV1Test
         });
 
         mockery.checking(new Expectations() {{
+            oneOf(clientToServer).newSession();
+            oneOf(clientToServer).resumeSession("fiddlydee");
             oneOf(clientToServer).onLocation(new LatLn(0.45D, 0.56D));
             oneOf(clientToServer).requestGame();
             oneOf(clientToServer).startGame("foo");
             oneOf(clientToServer).quit();
         }});
+        encoder.newSession();
+        encoder.resumeSession("fiddlydee");
         encoder.onLocation(new LatLn(0.45D, 0.56D));
         encoder.requestGame();
         encoder.startGame("foo");
@@ -83,11 +87,13 @@ public class ProtocolV1Test
         frame.playerLocation = new LatLn(0.34, 0.11);
 
         mockery.checking(new Expectations() {{
+            oneOf(serverToClient).sessionEstablished("wooohooo");
             oneOf(serverToClient).gameReady("foo", new GameParameters(Collections.emptyList(), new StayAliveRules(1, 2, 2.2, 30_000)));
             oneOf(serverToClient).gameStarted();
             oneOf(serverToClient).onFrame(frame);
         }});
 
+        encoder.sessionEstablished("wooohooo");
         encoder.gameReady("foo", new GameParameters(Collections.emptyList(), new StayAliveRules(1, 2, 2.2, 30_000)));
         encoder.gameStarted();
         encoder.onFrame(frame);
@@ -97,8 +103,7 @@ public class ProtocolV1Test
     public void dispatchRequestGame()
     {
         ByteBuf buffer = UnpooledByteBufAllocator.DEFAULT.buffer();
-        // length, followed by header
-        buffer.writeByte(1);
+        buffer.writeByte(3);
         mockery.checking(new Expectations() {{
             oneOf(clientToServer).requestGame();
         }});
@@ -113,7 +118,7 @@ public class ProtocolV1Test
         ByteBuf buffer = UnpooledByteBufAllocator.DEFAULT.buffer();
         String gameId = "game11";
         byte[] gameIdBytes = gameId.getBytes(StandardCharsets.UTF_8);
-        buffer.writeByte(2);
+        buffer.writeByte(4);
         buffer.writeShort(gameIdBytes.length);
         buffer.writeBytes(gameIdBytes);
 
@@ -129,7 +134,7 @@ public class ProtocolV1Test
     public void dispatchQuit()
     {
         ByteBuf buffer = UnpooledByteBufAllocator.DEFAULT.buffer();
-        buffer.writeByte(3);
+        buffer.writeByte(5);
 
         mockery.checking(new Expectations() {{
             oneOf(clientToServer).quit();

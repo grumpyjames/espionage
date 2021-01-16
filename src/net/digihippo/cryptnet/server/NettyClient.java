@@ -36,17 +36,17 @@ public final class NettyClient implements Stoppable, ClientToServer {
             {
                 System.out.println("Frame " + frame);
             }
+
+            @Override
+            public void sessionEstablished(String sessionKey)
+            {
+                System.out.println("Session established: " + sessionKey);
+            }
         });
 
         client.onLocation(new LatLn(0.67D, 0.32D));
         client.requestGame();
         client.stop();
-    }
-
-    private NettyClient(EventLoopGroup workerGroup, ClientToServer clientToServer)
-    {
-        this.workerGroup = workerGroup;
-        this.clientToServer = clientToServer;
     }
 
     public static NettyClient connect(ServerToClient serverToClient) throws InterruptedException
@@ -81,6 +81,16 @@ public final class NettyClient implements Stoppable, ClientToServer {
         }));
     }
 
+    public void newSession()
+    {
+        clientToServer.newSession();
+    }
+
+    public void resumeSession(String sessionId)
+    {
+        clientToServer.resumeSession(sessionId);
+    }
+
     @Override
     public void onLocation(LatLn location)
     {
@@ -109,6 +119,12 @@ public final class NettyClient implements Stoppable, ClientToServer {
     public void stop()
     {
         workerGroup.shutdownGracefully();
+    }
+
+    private NettyClient(EventLoopGroup workerGroup, ClientToServer clientToServer)
+    {
+        this.workerGroup = workerGroup;
+        this.clientToServer = clientToServer;
     }
 
     private static class EspionageHandler extends ChannelInboundHandlerAdapter {

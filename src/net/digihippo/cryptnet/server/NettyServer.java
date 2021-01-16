@@ -37,7 +37,7 @@ public class NettyServer {
 
         ExecutorService gamePrepThread = Executors.newSingleThreadExecutor(new NamedThreadFactory("game-prep"));
         GameIndex gameIndex =
-                new GameIndex(gamePrepThread, vectorSource, workerGroup, rules);
+                new GameIndex(gamePrepThread, vectorSource, workerGroup, rules, System.currentTimeMillis());
 
         ServerBootstrap publicBootstrap = new ServerBootstrap();
         publicBootstrap.group(bossGroup, workerGroup)
@@ -46,7 +46,7 @@ public class NettyServer {
                     @Override
                     public void initChannel(SocketChannel ch)
                     {
-                        ClientToServer clientToServer = gameIndex.newClient(
+                        GameIndex.LocalClientToServer clientToServer = gameIndex.newClient(
                                 ProtocolV1.serverToClient(new ChannelMessageSender(ch)));
                         ch.pipeline()
                                 .addLast(
@@ -120,11 +120,11 @@ public class NettyServer {
 
     private static class ClientHandler
             extends ChannelInboundHandlerAdapter {
-        private final ClientToServer inbound;
+        private final GameIndex.LocalClientToServer inbound;
         private final ProtocolV1 protocolV1;
 
         public ClientHandler(
-                ClientToServer inbound,
+                GameIndex.LocalClientToServer inbound,
                 ProtocolV1 protocolV1)
         {
             this.inbound = inbound;
@@ -143,6 +143,19 @@ public class NettyServer {
         public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
             cause.printStackTrace();
             ctx.close();
+        }
+
+        @Override
+        public void channelInactive(ChannelHandlerContext ctx) throws Exception
+        {
+            inbound.sessionEnded();
+            super.channelInactive(ctx);
+        }
+
+        @Override
+        public void channelUnregistered(ChannelHandlerContext ctx) throws Exception
+        {
+            super.channelUnregistered(ctx);
         }
     }
 

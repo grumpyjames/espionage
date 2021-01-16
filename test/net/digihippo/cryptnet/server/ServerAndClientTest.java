@@ -4,11 +4,10 @@ import net.digihippo.cryptnet.model.FrameCollector;
 import net.digihippo.cryptnet.model.GameParameters;
 import net.digihippo.cryptnet.model.StayAliveRules;
 import net.digihippo.cryptnet.roadmap.LatLn;
-import net.digihippo.cryptnet.roadmap.Node;
-import net.digihippo.cryptnet.roadmap.Way;
 import org.hamcrest.CoreMatchers;
 import org.hamcrest.FeatureMatcher;
 import org.hamcrest.Matcher;
+import org.junit.After;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -16,7 +15,7 @@ import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Consumer;
+import java.util.concurrent.locks.LockSupport;
 import java.util.stream.Collectors;
 
 import static org.hamcrest.CoreMatchers.any;
@@ -24,71 +23,94 @@ import static org.junit.Assert.assertTrue;
 
 public class ServerAndClientTest
 {
+    private static final LatLn HAMPSTEAD = LatLn.toRads(51.556615299043486, -0.17851485725770533);
+
     private final LinkedBlockingQueue<Event> events = new LinkedBlockingQueue<>();
     private final MyServerToClient serverToClient = new MyServerToClient(events);
+    private final List<Stoppable> stoppables = new ArrayList<>();
+
+    public void startServer(StayAliveRules rules) throws Exception
+    {
+        stoppables.add(NettyServer.runServer(7890, FixedVectorSources.hampsteadWays(), rules));
+    }
+
+    @After
+    public void stopEverything()
+    {
+        stoppables.forEach(Stoppable::stop);
+    }
 
     @Test
     public void playOneGame() throws Exception
     {
-        withClient(this::playAGame);
+        startServer(new StayAliveRules(4, 250, 1.3, 100));
+        NettyClient nettyClient = newClient();
+        playAGame(nettyClient);
     }
 
     @Test
     public void playTwoGamesConsecutively() throws Exception
     {
-        withClient(c -> {
-            playAGame(c);
-            playAGame(c);
-        });
+        startServer(new StayAliveRules(4, 250, 1.3, 100));
+        NettyClient nettyClient = newClient();
+        playAGame(nettyClient);
+        playAGame(nettyClient);
     }
 
-    private void withClient(final Consumer<NettyClient> action) throws Exception
+    @Test
+    public void disconnectionCausesGamePauseAndResumesOnReconnection() throws Exception
     {
-        Stoppable server = NettyServer.runServer(7890, fixedWays(), new StayAliveRules(4, 250, 1.3, 100));
-        try
-        {
-            NettyClient client = NettyClient.connect(serverToClient);
-            try
-            {
-                action.accept(client);
-            }
-            finally
-            {
-                client.stop();
-            }
-        }
-        finally
-        {
-            server.stop();
-        }
+        startServer(new StayAliveRules(4, 250, 1.3, 1000));
+
+        NettyClient nettyClient = newClient();
+        nettyClient.newSession();
+        SessionStarted sessionStarted = waitFor(events, any(SessionStarted.class), 500);
+        nettyClient.onLocation(HAMPSTEAD);
+        nettyClient.requestGame();
+        OnGameReady onGameReady = waitFor(events, any(OnGameReady.class), 500);
+        nettyClient.startGame(onGameReady.gameId);
+        nettyClient.stop();
+
+        LockSupport.parkNanos(TimeUnit.SECONDS.toNanos(1));
+        // Need to wait a couple of seconds here to prove the game pauses.
+        // Might be a test for a level lower?
+
+        NettyClient freshClient = newClient();
+        freshClient.resumeSession(sessionStarted.sessionId);
+        OnFrame frame = waitFor(events, new GameCompleteFrame(), 1500);
+        FrameCollector.Frame f = frame.frame;
+        assertTrue(f.victory);
+    }
+
+    private NettyClient newClient() throws Exception
+    {
+        NettyClient client = NettyClient.connect(serverToClient);
+        stoppables.add(client);
+
+        return client;
     }
 
     private void playAGame(NettyClient client)
     {
-        LatLn hampstead = LatLn.toRads(51.556615299043486, -0.17851485725770533);
-        client.onLocation(hampstead);
+        client.newSession();
+        client.onLocation(HAMPSTEAD);
         client.requestGame();
-        OnGameReady onGameReady = waitFor(events, any(OnGameReady.class));
+        OnGameReady onGameReady = waitFor(events, any(OnGameReady.class), 500);
         client.startGame(onGameReady.gameId);
 
-        OnFrame frame = waitFor(events,
-                new FeatureMatcher<>(CoreMatchers.is(true), "finished", "finished")
-                {
-                    @Override
-                    protected Boolean featureValueOf(OnFrame onFrame)
-                    {
-                        return onFrame.frame.victory || onFrame.frame.gameOver;
-                    }
-                });
+        OnFrame frame = waitFor(events, new GameCompleteFrame(), 500);
 
         FrameCollector.Frame f = frame.frame;
         assertTrue(f.victory);
     }
 
-    private static <T extends Event> T waitFor(LinkedBlockingQueue<Event> events, Matcher<T> matcher)
+    private static <T extends Event> T waitFor(
+            LinkedBlockingQueue<Event> events,
+            Matcher<T> matcher,
+            int millisecondTimeout)
     {
         long now = System.nanoTime();
-        long tooLate = now + TimeUnit.MILLISECONDS.toNanos(500);
+        long tooLate = now + TimeUnit.MILLISECONDS.toNanos(millisecondTimeout);
         final List<Event> allTheEvents = new ArrayList<>();
         while (System.nanoTime() < tooLate)
         {
@@ -110,7 +132,7 @@ public class ServerAndClientTest
 
     interface Event {}
 
-    static class OnGameReady implements Event {
+    private static final class OnGameReady implements Event {
         public final String gameId;
         public final GameParameters gameParameters;
 
@@ -120,10 +142,12 @@ public class ServerAndClientTest
             this.gameParameters = gameParameters;
         }
     }
-    static class OnGameStarted implements Event {
+
+    private static final class OnGameStarted implements Event {
 
     }
-    static class OnFrame implements Event {
+
+    private static final class OnFrame implements Event {
         public final FrameCollector.Frame frame;
 
         OnFrame(FrameCollector.Frame frame)
@@ -132,7 +156,17 @@ public class ServerAndClientTest
         }
     }
 
-    private static class MyServerToClient implements ServerToClient
+    private static final class SessionStarted implements Event
+    {
+        public final String sessionId;
+
+        private SessionStarted(String sessionId)
+        {
+            this.sessionId = sessionId;
+        }
+    }
+
+    private static final class MyServerToClient implements ServerToClient
     {
         private final BlockingQueue<Event> queue;
 
@@ -159,6 +193,12 @@ public class ServerAndClientTest
             enqueue(new OnFrame(frame));
         }
 
+        @Override
+        public void sessionEstablished(String sessionKey)
+        {
+            enqueue(new SessionStarted(sessionKey));
+        }
+
         private void enqueue(Event e)
         {
             try
@@ -180,52 +220,17 @@ public class ServerAndClientTest
         }
     }
 
-    public static VectorSource fixedWays()
+    private static class GameCompleteFrame extends FeatureMatcher<OnFrame, Boolean>
     {
-        return boundingBox ->
+        public GameCompleteFrame()
         {
-            Node hampstead = Node.node(0, LatLn.toRads(51.5566285998552, -0.17851675163245212));
-            Way hollyRise = Way.way(
-                    hampstead,
-                    Node.node(1, LatLn.toRads(51.5572764631672, -0.17934676084403262)),
-                    Node.node(2, LatLn.toRads(51.55775043524266, -0.17966703613763157)),
-                    Node.node(3, LatLn.toRads(51.55791309908667, -0.17979334191299526))
-            );
-            Node perrinsLaneWest = Node.node(6, LatLn.toRads(51.555170172455234, -0.17828669469775046));
-            Way fitzjohn = Way.way(
-                    hampstead,
-                    Node.node(4, LatLn.toRads(51.555975117976885, -0.1787468085463757)),
-                    Node.node(5, LatLn.toRads(51.55561331495947, -0.17858441543318676)),
-                    perrinsLaneWest
-            );
-            Node perrinsLaneEast = Node.node(8, LatLn.toRads(51.55584329859152, -0.17684320041674095));
-            Way perrinsLane = Way.way(
-                    perrinsLaneWest,
-                    Node.node(7, LatLn.toRads(51.555725502236776, -0.17691537513079147)),
-                    perrinsLaneEast
-            );
+            super(CoreMatchers.is(true), "finished", "finished");
+        }
 
-            Way rosslyn = Way.way(
-                    hampstead,
-                    Node.node(8, LatLn.toRads(51.55619668583993, -0.1777814717122849)),
-                    perrinsLaneEast
-            );
-
-            Way heathSt = Way.way(
-                    hampstead,
-                    Node.node(9, LatLn.toRads(51.55724929237607, -0.17825671007556068)),
-                    Node.node(10, LatLn.toRads(51.55791677865633, -0.17860405088692857)),
-                    Node.node(11, LatLn.toRads(51.558623518174926, -0.17862660548848852))
-            );
-
-
-            return Way.ways(
-                    hollyRise,
-                    fitzjohn,
-                    perrinsLane,
-                    rosslyn,
-                    heathSt
-            );
-        };
+        @Override
+        protected Boolean featureValueOf(OnFrame onFrame)
+        {
+            return onFrame.frame.victory || onFrame.frame.gameOver;
+        }
     }
 }

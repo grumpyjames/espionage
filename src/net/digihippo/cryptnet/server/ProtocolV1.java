@@ -17,15 +17,21 @@ public class ProtocolV1
         switch (methodIndex)
         {
             case 0:
-                clientToServer.onLocation(readLatLn(byteBuf));
+                clientToServer.newSession();
                 return;
             case 1:
-                clientToServer.requestGame();
+                clientToServer.resumeSession(readString(byteBuf));
                 return;
             case 2:
-                clientToServer.startGame(readString(byteBuf));
+                clientToServer.onLocation(readLatLn(byteBuf));
                 return;
             case 3:
+                clientToServer.requestGame();
+                return;
+            case 4:
+                clientToServer.startGame(readString(byteBuf));
+                return;
+            case 5:
                 clientToServer.quit();
                 return;
             default:
@@ -56,6 +62,12 @@ public class ProtocolV1
                 serverToClient.onFrame(frame);
                 return;
             }
+            case 3:
+            {
+                String sessionKey = readString(byteBuf);
+                serverToClient.sessionEstablished(sessionKey);
+                return;
+            }
             default:
                 throw new UnsupportedOperationException("Method not found: " + methodIndex);
         }
@@ -71,10 +83,25 @@ public class ProtocolV1
         return new ClientToServer()
         {
             @Override
+            public void newSession()
+            {
+                sender.withByteBuf(byteBuf -> byteBuf.writeByte(0));
+            }
+
+            @Override
+            public void resumeSession(String sessionId)
+            {
+                sender.withByteBuf(byteBuf -> {
+                    byteBuf.writeByte(1);
+                    writeString(sessionId, byteBuf);
+                });
+            }
+
+            @Override
             public void onLocation(LatLn location)
             {
                 sender.withByteBuf(byteBuf -> {
-                    byteBuf.writeByte(0);
+                    byteBuf.writeByte(2);
                     writeLatLn(location, byteBuf);
                 });
             }
@@ -82,7 +109,7 @@ public class ProtocolV1
             @Override
             public void requestGame()
             {
-                sender.withByteBuf(byteBuf -> byteBuf.writeByte(1));
+                sender.withByteBuf(byteBuf -> byteBuf.writeByte(3));
             }
 
             @Override
@@ -90,7 +117,7 @@ public class ProtocolV1
             {
                 sender.withByteBuf(byteBuf ->
                 {
-                    byteBuf.writeByte(2);
+                    byteBuf.writeByte(4);
                     writeString(gameId, byteBuf);
                 });
             }
@@ -98,7 +125,7 @@ public class ProtocolV1
             @Override
             public void quit()
             {
-                sender.withByteBuf(byteBuf -> byteBuf.writeByte(3));
+                sender.withByteBuf(byteBuf -> byteBuf.writeByte(5));
             }
         };
     }
@@ -129,6 +156,15 @@ public class ProtocolV1
                 messageSender.withByteBuf(byteBuf -> {
                     byteBuf.writeByte(2);
                     write(frame, byteBuf);
+                });
+            }
+
+            @Override
+            public void sessionEstablished(String sessionKey)
+            {
+                messageSender.withByteBuf(byteBuf -> {
+                    byteBuf.writeByte(3);
+                    writeString(sessionKey, byteBuf);
                 });
             }
         };

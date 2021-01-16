@@ -10,4 +10,6 @@ public interface ServerToClient
     void gameStarted();
 
     void onFrame(FrameCollector.Frame frame);
+
+    void sessionEstablished(String sessionKey);
 }
