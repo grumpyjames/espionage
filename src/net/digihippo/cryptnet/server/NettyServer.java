@@ -37,7 +37,7 @@ public class NettyServer {
 
         ExecutorService gamePrepThread = Executors.newSingleThreadExecutor(new NamedThreadFactory("game-prep"));
         GameIndex gameIndex =
-                new GameIndex(new GamePreparationService(gamePrepThread, vectorSource, rules, workerGroup));
+                new GameIndex(gamePrepThread, vectorSource, workerGroup, rules);
 
         ServerBootstrap publicBootstrap = new ServerBootstrap();
         publicBootstrap.group(bossGroup, workerGroup)

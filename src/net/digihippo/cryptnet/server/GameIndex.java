@@ -1,23 +1,38 @@
 package net.digihippo.cryptnet.server;
 
-import net.digihippo.cryptnet.model.FrameCollector;
-import net.digihippo.cryptnet.model.GameParameters;
-import net.digihippo.cryptnet.model.Model;
+import net.digihippo.cryptnet.model.*;
 import net.digihippo.cryptnet.roadmap.LatLn;
+import net.digihippo.cryptnet.roadmap.Way;
 
+import java.io.IOException;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
+import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BiConsumer;
 
 final class GameIndex
 {
     private final AtomicInteger gameId = new AtomicInteger(0);
     private final Map<String, Model> games = new HashMap<>();
-    private final GamePreparationService gamePreparationService;
 
-    public GameIndex(GamePreparationService gamePreparationService)
+    private final Executor offEventLoop;
+    private final VectorSource vectorSource;
+    private final Executor onEventLoop;
+    private final StayAliveRules rules;
+
+    public GameIndex(
+            Executor offEventLoop,
+            VectorSource vectorSource,
+            Executor onEventLoop,
+            StayAliveRules rules)
     {
-        this.gamePreparationService = gamePreparationService;
+        this.offEventLoop = offEventLoop;
+        this.vectorSource = vectorSource;
+        this.onEventLoop = onEventLoop;
+        this.rules = rules;
     }
 
     public String registerGame(Model model)
@@ -127,12 +142,38 @@ final class GameIndex
     private void requestGame(BidirectionalClient bidirectionalClient)
     {
         final LatLn playerLocation = bidirectionalClient.location;
-        gamePreparationService.prepareGame(playerLocation, (m, f) ->
+        prepareGame(playerLocation, (m, f) ->
         {
             String gameId = registerGame(m);
             bidirectionalClient.gameRequestComplete(gameId, m);
             m.setPlayerLocation(playerLocation);
             f.subscribe(bidirectionalClient);
+        });
+    }
+
+    // This is a potentially blocking operation
+    // It needs to happen off event loop, and then call back to the event loop with results.
+    private void prepareGame(LatLn latln, BiConsumer<Model, FrameDispatcher> modelReady)
+    {
+        offEventLoop.execute(() ->
+        {
+            try
+            {
+                LatLn.BoundingBox boundingBox = latln.boundingBox(1_000);
+                Collection<Way> ways = vectorSource.fetchWays(boundingBox);
+                FrameDispatcher dispatcher = new FrameDispatcher();
+                Model model = Model.createModel(
+                        Paths.from(ways),
+                        rules,
+                        new Random(),
+                        new FrameCollector(dispatcher));
+                onEventLoop.execute(() -> modelReady.accept(model, dispatcher));
+            }
+            catch (IOException e)
+            {
+                // FIXME: tell the event loop about the failure
+                e.printStackTrace();
+            }
         });
     }
 }
