@@ -95,6 +95,20 @@ public class ServerAndClientTest
         waitFor(events, errorCode("SNE"), 100);
     }
 
+    @Test
+    public void loseOneGame() throws Exception
+    {
+        startServer(new StayAliveRules(4, 10, 4, 2500));
+        NettyClient nettyClient = newClient();
+        nettyClient.newSession();
+        nettyClient.onLocation(HAMPSTEAD);
+        nettyClient.requestGame();
+        OnGameReady onGameReady = waitFor(events, any(OnGameReady.class), 500);
+        nettyClient.startGame(onGameReady.gameId);
+
+        waitFor(events, new GameOverFrame(), 2500);
+    }
+
     private NettyClient newClient() throws Exception
     {
         NettyClient client = NettyClient.connect(serverToClient);
@@ -254,6 +268,20 @@ public class ServerAndClientTest
         public WaitTimeout(String msg)
         {
             super(msg);
+        }
+    }
+
+    private static class GameOverFrame extends FeatureMatcher<OnFrame, Boolean>
+    {
+        public GameOverFrame()
+        {
+            super(CoreMatchers.is(true), "gameOver", "game over");
+        }
+
+        @Override
+        protected Boolean featureValueOf(OnFrame onFrame)
+        {
+            return onFrame.frame.gameOver;
         }
     }
 

@@ -12,16 +12,20 @@ import net.digihippo.cryptnet.model.FrameCollector;
 import net.digihippo.cryptnet.model.GameParameters;
 import net.digihippo.cryptnet.roadmap.LatLn;
 
+import java.util.concurrent.CompletableFuture;
+
 public final class NettyClient implements Stoppable, ClientToServer {
     private final EventLoopGroup workerGroup;
     private final ClientToServer clientToServer;
 
     public static void main(String[] args) throws Exception {
+        final CompletableFuture<String> gameIdFut = new CompletableFuture<>();
         NettyClient client = NettyClient.connect(new ServerToClient()
         {
             @Override
             public void gameReady(String gameId, GameParameters gameParameters)
             {
+                gameIdFut.complete(gameId);
                 System.out.println("Game " + gameId + " is ready with parameters " + gameParameters);
             }
 
@@ -34,7 +38,7 @@ public final class NettyClient implements Stoppable, ClientToServer {
             @Override
             public void onFrame(FrameCollector.Frame frame)
             {
-                System.out.println("Frame " + frame);
+                System.out.println("Frame " + frame.gameOver + ", " + frame.victory);
             }
 
             @Override
@@ -50,8 +54,10 @@ public final class NettyClient implements Stoppable, ClientToServer {
             }
         });
 
+        client.newSession();
         client.onLocation(new LatLn(0.67D, 0.32D));
         client.requestGame();
+        client.startGame(gameIdFut.get());
         client.stop();
     }
 

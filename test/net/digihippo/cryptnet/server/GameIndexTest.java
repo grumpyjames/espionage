@@ -16,13 +16,19 @@ public class GameIndexTest
 {
     private static final LatLn HAMPSTEAD = LatLn.toRads(51.556615299043486, -0.17851485725770533);
 
-    private final GameIndex gameIndex = new GameIndex(
-            Runnable::run,
-            FixedVectorSources.hampsteadWays(),
-            Runnable::run,
-            new StayAliveRules(8, 125, 1, 1000),
-            epochMilli("2021-01-16T14:50:01.011Z")
-            );
+    private final StayAliveRules rules = new StayAliveRules(8, 125, 1, 1000);
+    private GameIndex gameIndex = newGameIndex(rules);
+
+    private GameIndex newGameIndex(StayAliveRules rules)
+    {
+        return new GameIndex(
+                Runnable::run,
+                FixedVectorSources.hampsteadWays(),
+                Runnable::run,
+                rules,
+                epochMilli("2021-01-16T14:50:01.011Z")
+                );
+    }
 
     @Test
     public void refuseResumptionOfInvalidSessionId()
@@ -71,6 +77,54 @@ public class GameIndexTest
 
         gameIndex.tick(epochMilli("2021-01-16T14:50:04.319Z"));
         assertTrue(serverToClient.lastFrame.victory || serverToClient.lastFrame.gameOver);
+    }
+
+    @Test
+    public void stopTickingOldGamesAfterVictory()
+    {
+        gameIndex = newGameIndex(new StayAliveRules(1, 10, 1, 10_000));
+
+        MyServerToClient serverToClient = new MyServerToClient();
+        GameIndex.LocalClientToServer clientToServer = gameIndex.newClient(serverToClient);
+        clientToServer.newSession();
+
+        clientToServer.onLocation(HAMPSTEAD);
+
+        clientToServer.requestGame();
+        clientToServer.startGame(serverToClient.lastGameId);
+
+        gameIndex.tick(epochMilli("2021-01-16T14:50:05.111Z"));
+
+        assertTrue(serverToClient.lastFrame.gameOver);
+
+        serverToClient.lastFrame = null;
+
+        gameIndex.tick(epochMilli("2021-01-16T14:50:10.111Z"));
+
+        assertNull(serverToClient.lastFrame);
+    }
+
+    @Test
+    public void stopTickingOldGamesAfterLoss()
+    {
+        MyServerToClient serverToClient = new MyServerToClient();
+        GameIndex.LocalClientToServer clientToServer = gameIndex.newClient(serverToClient);
+        clientToServer.newSession();
+
+        clientToServer.onLocation(HAMPSTEAD);
+
+        clientToServer.requestGame();
+        clientToServer.startGame(serverToClient.lastGameId);
+//                                "2021-01-16T14:50:01.011Z"
+        gameIndex.tick(epochMilli("2021-01-16T14:50:02.111Z"));
+
+        assertTrue(serverToClient.lastFrame.victory);
+
+        serverToClient.lastFrame = null;
+
+        gameIndex.tick(epochMilli("2021-01-16T14:50:02.111Z"));
+
+        assertNull(serverToClient.lastFrame);
     }
 
     private static final class MyServerToClient implements ServerToClient

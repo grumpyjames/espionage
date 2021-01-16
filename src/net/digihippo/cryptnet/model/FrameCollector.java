@@ -97,7 +97,8 @@ public final class FrameCollector implements Model.Events
     public static final class Frame
     {
         public final int frameCounter;
-        public boolean gameOver, victory;
+        public boolean gameOver;
+        public boolean victory;
         public LatLn playerLocation;
         public List<JoiningView> joining = new ArrayList<>();
         public List<PatrolView> patrols = new ArrayList<>();

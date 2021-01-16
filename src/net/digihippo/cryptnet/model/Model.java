@@ -25,6 +25,7 @@ public final class Model
     private long time;
     private long nextTick;
     private long startTime;
+    private int frameCounter = 0;
 
     enum GameState
     {
@@ -119,11 +120,6 @@ public final class Model
         this.events.gameStarted();
     }
 
-    boolean gameOn()
-    {
-        return this.gameState == GameState.PLAYING;
-    }
-
     public void time(long timeMillis)
     {
         if (gameState == GameState.UNPAUSED)
@@ -132,7 +128,7 @@ public final class Model
             this.gameState = GameState.PLAYING;
         }
 
-        while (gameOn() && this.nextTick < timeMillis)
+        while (this.gameState == GameState.PLAYING && this.nextTick < timeMillis)
         {
             events.frameStart(frameCounter);
             this.tick();
@@ -144,14 +140,12 @@ public final class Model
             {
                 case GameOver:
                     events.gameOver();
-                    events.frameEnd(frameCounter);
                     this.gameState = GameState.COMPLETE;
-                    return;
+                    break;
                 case Victory:
                     events.victory();
-                    events.frameEnd(frameCounter);
                     this.gameState = GameState.COMPLETE;
-                    return;
+                    break;
                 case Continue:
                 default:
                     // carry on
@@ -165,8 +159,6 @@ public final class Model
         this.time = timeMillis;
     }
 
-    int frameCounter = 0;
-
     public void tick()
     {
         DeferredModelActions modelActions = new DeferredModelActions();
@@ -179,16 +171,6 @@ public final class Model
         for (Patrol patrol : patrols)
         {
             patrol.tick(random, events);
-
-            if (player != null)
-            {
-                double distanceToPlayer =
-                        patrol.location.distanceTo(player.position);
-                if (distanceToPlayer < 5)
-                {
-                    events.gameOver();
-                }
-            }
         }
         if (player != null)
         {

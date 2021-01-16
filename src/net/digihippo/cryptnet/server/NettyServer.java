@@ -91,7 +91,14 @@ public class NettyServer {
         }
 
         Stoppable stoppable =
-                NettyServer.runServer(port, OsmSource::fetchWays, new StayAliveRules(7, 100, 1.5, 120_000));
+                NettyServer.runServer(
+                        port,
+                        OsmSource::fetchWays,
+                        new StayAliveRules(
+                                Integer.getInteger("sentry.count"),
+                                Double.parseDouble(System.getProperty("sentry.distance")),
+                                Double.parseDouble(System.getProperty("sentry.speed")),
+                                Integer.getInteger("game.duration.millis")));
         Runtime.getRuntime().addShutdownHook(new Thread(stoppable::stop));
     }
 
