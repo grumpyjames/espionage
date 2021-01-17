@@ -1,6 +1,9 @@
 package net.digihippo.cryptnet;
 
-import net.digihippo.cryptnet.model.*;
+import net.digihippo.cryptnet.model.Model;
+import net.digihippo.cryptnet.model.Path;
+import net.digihippo.cryptnet.model.Paths;
+import net.digihippo.cryptnet.model.StayAliveRules;
 import net.digihippo.cryptnet.roadmap.LatLn;
 import net.digihippo.cryptnet.roadmap.OsmSource;
 import net.digihippo.cryptnet.roadmap.Way;
@@ -26,7 +29,7 @@ public class Experiment
                 paths,
                 new StayAliveRules(7, 150, 10, 30_000),
                 random,
-                new FrameCollector(viewer));
+                viewer);
 
         SwingUtilities.invokeLater(() ->
         {

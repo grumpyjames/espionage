@@ -56,9 +56,9 @@ public final class Model
             List<Path> paths,
             StayAliveRules rules,
             Random random,
-            FrameCollector frameCollector)
+            GameEvents gameEvents)
     {
-        return new Model(paths, rules, random, frameCollector);
+        return new Model(paths, rules, random, new FrameCollector(gameEvents));
     }
 
     private Model(

@@ -5,6 +5,7 @@ import net.digihippo.cryptnet.model.GameEvents;
 import net.digihippo.cryptnet.model.Path;
 import net.digihippo.cryptnet.model.StayAliveRules;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -12,9 +13,14 @@ final class FrameDispatcher implements GameEvents
 {
     private final Set<ServerToClient> clients = new HashSet<>();
 
-    public void subscribe(ServerToClient client)
+    public void subscribe(ServerToClient... subscribers)
     {
-        clients.add(client);
+        Collections.addAll(clients, subscribers);
+    }
+
+    public void unsubscribe(ServerToClient subscriber)
+    {
+        clients.remove(subscriber);
     }
 
     @Override
@@ -45,10 +51,5 @@ final class FrameDispatcher implements GameEvents
     public void onFrame(Frame frame)
     {
         clients.forEach(c -> c.onFrame(frame));
-    }
-
-    public void unsubscribe(ServerToClient session)
-    {
-        clients.remove(session);
     }
 }

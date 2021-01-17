@@ -28,7 +28,7 @@ public class ModelTest
                         node(zebraNearSpaniards)))),
                 new StayAliveRules(sentryCount, initialSentryDistance, sentrySpeed, gameDurationMillis),
                 new Random(),
-                new FrameCollector(events));
+                events);
     }
 
     private final Clock clock = at("2020-12-27T13:00:00.000Z");

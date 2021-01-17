@@ -235,9 +235,9 @@ final class GameIndex
             FrameDispatcher frameDispatcher)
     {
         String gameId = registerGame(model);
-        ServerToClient journal = Journal.forGame(baseDirectory, gameId, currentTimeMillis);
-        frameDispatcher.subscribe(session);
-        frameDispatcher.subscribe(journal);
+        frameDispatcher.subscribe(
+                session,
+                Journal.forGame(baseDirectory, gameId, currentTimeMillis));
         model.setPlayerLocation(playerLocation);
         model.transmitGameReady(gameId);
 
@@ -259,7 +259,7 @@ final class GameIndex
                         Paths.from(ways),
                         rules,
                         new Random(),
-                        new FrameCollector(dispatcher));
+                        dispatcher);
                 onEventLoop.execute(() -> gameReady(session, latln, model, dispatcher));
             }
             catch (IOException e)

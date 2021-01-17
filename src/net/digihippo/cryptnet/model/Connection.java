@@ -53,7 +53,6 @@ final class Connection {
             return Optional.of(new Patrol(
                     joiningSentry.identifier,
                     joiningSentry.speed,
-                    link.path,
                     link.segment,
                     link.segment.direction(),
                     this.segment.tail.location,
