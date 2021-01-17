@@ -3,7 +3,7 @@ package net.digihippo.cryptnet.model;
 import net.digihippo.cryptnet.roadmap.LatLn;
 import net.digihippo.cryptnet.roadmap.UnitVector;
 
-public final class FrameCollector implements Model.Events
+public final class FrameCollector
 {
     private final GameEvents consumer;
 
@@ -14,43 +14,36 @@ public final class FrameCollector implements Model.Events
 
     private Frame frame;
 
-    @Override
     public void rules(StayAliveRules rules)
     {
         consumer.rules(rules);
     }
 
-    @Override
     public void path(Path path)
     {
         consumer.path(path);
     }
 
-    @Override
     public void gameReady(String gameId)
     {
         consumer.gameReady(gameId);
     }
 
-    @Override
     public void gameStarted()
     {
         consumer.gameStarted();
     }
 
-    @Override
     public void frameStart(int frameCounter)
     {
         frame = new Frame(frameCounter);
     }
 
-    @Override
     public void playerPositionChanged(LatLn location)
     {
         frame.playerLocation = location;
     }
 
-    @Override
     public void patrolPositionChanged(
             String patrolIdentifier,
             LatLn location,
@@ -59,7 +52,6 @@ public final class FrameCollector implements Model.Events
         frame.patrols.add(new PatrolView(location, orientation));
     }
 
-    @Override
     public void joiningPatrolPositionChanged(
             String identifier,
             LatLn movedTo,
@@ -69,19 +61,16 @@ public final class FrameCollector implements Model.Events
         frame.joining.add(new JoiningView(movedTo, direction, joiningLocation));
     }
 
-    @Override
     public void gameOver()
     {
         frame.gameOver = true;
     }
 
-    @Override
     public void victory()
     {
         frame.victory = true;
     }
 
-    @Override
     public void frameEnd(int frameCounter)
     {
         this.consumer.onFrame(frame);

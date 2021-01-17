@@ -6,7 +6,7 @@ import net.digihippo.cryptnet.roadmap.UnitVector;
 import java.util.Random;
 
 final class Patrol {
-    private final String identifier;
+    final String identifier;
     private final double speed; // in m/tick (a tick is 40ms)
 
     Path path;
@@ -33,11 +33,7 @@ final class Patrol {
         this.direction = direction;
     }
 
-    void tick(
-            final Random random,
-            final Model.Events events) {
+    void tick(final Random random) {
         this.path.move(this, random, this.speed);
-
-        events.patrolPositionChanged(this.identifier, this.location, this.velocity);
     }
 }

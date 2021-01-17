@@ -1,7 +1,6 @@
 package net.digihippo.cryptnet.model;
 
 import net.digihippo.cryptnet.roadmap.LatLn;
-import net.digihippo.cryptnet.roadmap.UnitVector;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.TypeSafeMatcher;
@@ -93,7 +92,7 @@ public class PathTest
         long requiredMoves = (long) Math.ceil(distanceToVertex / metresPerTick);
         for (int i = 0; i < requiredMoves; i++)
         {
-            pat.tick(random, new NoOp());
+            pat.tick(random);
         }
         assertThat(pat.location.distanceTo(vertex), lessThan(metresPerTick));
         assertThat(pat.location.distanceTo(vertex), greaterThan(0));
@@ -149,74 +148,5 @@ public class PathTest
         }
 
         return new Path(segmentList);
-    }
-
-    private static class NoOp implements Model.Events
-    {
-        @Override
-        public void rules(StayAliveRules rules)
-        {
-
-        }
-
-        @Override
-        public void path(Path path)
-        {
-
-        }
-
-        @Override
-        public void gameReady(String gameId)
-        {
-
-        }
-
-        @Override
-        public void gameStarted()
-        {
-
-        }
-
-        @Override
-        public void frameStart(int frameCounter)
-        {
-
-        }
-
-        @Override
-        public void playerPositionChanged(LatLn location)
-        {
-
-        }
-
-        @Override
-        public void patrolPositionChanged(String patrolIdentifier, LatLn location, UnitVector orientation)
-        {
-
-        }
-
-        @Override
-        public void joiningPatrolPositionChanged(String identifier, LatLn movedTo, UnitVector direction, LatLn joiningLocation)
-        {
-
-        }
-
-        @Override
-        public void gameOver()
-        {
-
-        }
-
-        @Override
-        public void victory()
-        {
-
-        }
-
-        @Override
-        public void frameEnd(int frameCounter)
-        {
-
-        }
     }
 }

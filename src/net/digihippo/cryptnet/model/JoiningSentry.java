@@ -2,6 +2,8 @@ package net.digihippo.cryptnet.model;
 
 import net.digihippo.cryptnet.roadmap.LatLn;
 
+import java.util.Optional;
+
 final class JoiningSentry
 {
     final String identifier;
@@ -22,9 +24,8 @@ final class JoiningSentry
         this.speed = speed;
     }
 
-    void tick(
-        final ModelActions modelActions, Model.Events events)
+    Optional<Patrol> tick()
     {
-        this.connection.move(modelActions, this, events);
+        return this.connection.move(this);
     }
 }

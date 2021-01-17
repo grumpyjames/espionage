@@ -28,7 +28,7 @@ public class ModelTest
                         node(zebraNearSpaniards)))),
                 new StayAliveRules(sentryCount, initialSentryDistance, sentrySpeed, gameDurationMillis),
                 new Random(),
-                events);
+                new FrameCollector(events));
     }
 
     private final Clock clock = at("2020-12-27T13:00:00.000Z");
@@ -58,49 +58,10 @@ public class ModelTest
         return new Clock(parsed.toEpochMilli());
     }
 
-    private static final class TestEvents implements Model.Events
+    private static final class TestEvents implements GameEvents
     {
         private boolean victory = false;
         private boolean gameOver = false;
-
-        @Override
-        public void playerPositionChanged(LatLn location)
-        {
-
-        }
-
-        @Override
-        public void patrolPositionChanged(String patrolIdentifier, LatLn location, UnitVector orientation)
-        {
-
-        }
-
-        @Override
-        public void joiningPatrolPositionChanged(
-                String identifier,
-                LatLn movedTo,
-                UnitVector direction,
-                LatLn joiningLocation)
-        {
-        }
-
-        @Override
-        public void gameOver()
-        {
-            this.gameOver = true;
-        }
-
-        @Override
-        public void victory()
-        {
-            this.victory = true;
-        }
-
-        @Override
-        public void frameEnd(int frameCounter)
-        {
-
-        }
 
         @Override
         public void rules(StayAliveRules rules)
@@ -127,9 +88,10 @@ public class ModelTest
         }
 
         @Override
-        public void frameStart(int frameCounter)
+        public void onFrame(Frame frame)
         {
-
+            this.gameOver = frame.gameOver;
+            this.victory = frame.victory;
         }
     }
 

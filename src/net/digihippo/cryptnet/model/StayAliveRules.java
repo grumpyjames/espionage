@@ -5,7 +5,7 @@ import net.digihippo.cryptnet.roadmap.LatLn;
 import java.util.List;
 import java.util.Objects;
 
-public class StayAliveRules implements Rules
+public class StayAliveRules
 {
     private final int sentryCount;
     private final double initialSentryDistance;
@@ -24,25 +24,21 @@ public class StayAliveRules implements Rules
         this.gameDurationMillis = gameDurationMillis;
     }
 
-    @Override
     public int sentryCount()
     {
         return sentryCount;
     }
 
-    @Override
     public double initialSentryDistance()
     {
         return initialSentryDistance;
     }
 
-    @Override
     public double sentrySpeed()
     {
         return sentrySpeed;
     }
 
-    @Override
     public State gameState(
             long gameDurationMillis,
             LatLn playerLocation,
@@ -64,13 +60,11 @@ public class StayAliveRules implements Rules
         return State.Continue;
     }
 
-    @Override
     public int gameDuration()
     {
         return gameDurationMillis;
     }
 
-    @Override
     public String gameType()
     {
         return "StayAlive";

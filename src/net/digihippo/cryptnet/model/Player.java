@@ -14,10 +14,4 @@ final class Player
         this.segment = segment;
         this.position = position;
     }
-
-    void tick(Model.Events events)
-    {
-        events.playerPositionChanged(position);
-    }
-
 }

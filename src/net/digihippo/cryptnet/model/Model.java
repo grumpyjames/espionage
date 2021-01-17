@@ -1,11 +1,8 @@
 package net.digihippo.cryptnet.model;
 
 import net.digihippo.cryptnet.roadmap.LatLn;
-import net.digihippo.cryptnet.roadmap.UnitVector;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public final class Model
@@ -18,7 +15,7 @@ public final class Model
     private final List<Path> paths;
     private final StayAliveRules rules;
     private final Random random;
-    private final Events events;
+    private final FrameCollector frameCollector;
 
     private int sentryIndex = 0;
     private Player player = null;
@@ -40,9 +37,9 @@ public final class Model
 
     public void transmitGameReady(String gameId)
     {
-        events.rules(rules);
-        paths.forEach(events::path);
-        events.gameReady(gameId);
+        frameCollector.rules(rules);
+        paths.forEach(frameCollector::path);
+        frameCollector.gameReady(gameId);
     }
 
     public void playerDisconnected()
@@ -55,58 +52,25 @@ public final class Model
         this.gameState = GameState.UNPAUSED;
     }
 
-    public interface Events
-    {
-        void rules(StayAliveRules rules);
-
-        void path(Path path);
-
-        void gameReady(String gameId);
-
-        void gameStarted();
-
-        void frameStart(int frameCounter);
-
-        void playerPositionChanged(
-                LatLn location);
-
-        void patrolPositionChanged(
-                String patrolIdentifier,
-                LatLn location,
-                UnitVector orientation);
-
-        void joiningPatrolPositionChanged(
-                String identifier,
-                LatLn movedTo,
-                UnitVector direction,
-                LatLn joiningLocation);
-
-        void gameOver();
-
-        void victory();
-
-        void frameEnd(int frameCounter);
-    }
-
     public static Model createModel(
             List<Path> paths,
             StayAliveRules rules,
             Random random,
-            Events events)
+            FrameCollector frameCollector)
     {
-        return new Model(paths, rules, random, events);
+        return new Model(paths, rules, random, frameCollector);
     }
 
     private Model(
             List<Path> paths,
             StayAliveRules rules,
             Random random,
-            Events events)
+            FrameCollector frameCollector)
     {
         this.paths = paths;
         this.rules = rules;
         this.random = random;
-        this.events = events;
+        this.frameCollector = frameCollector;
     }
 
     public void startGame(long timeMillis)
@@ -122,7 +86,7 @@ public final class Model
             LatLn sentryLocation = player.position.move(rules.initialSentryDistance(), bearing);
             addSentry(sentryLocation);
         }
-        this.events.gameStarted();
+        this.frameCollector.gameStarted();
     }
 
     public void time(long timeMillis)
@@ -135,27 +99,27 @@ public final class Model
 
         while (this.gameState == GameState.PLAYING && this.nextTick < timeMillis)
         {
-            events.frameStart(frameCounter);
+            frameCollector.frameStart(frameCounter);
             this.tick();
-            Rules.State state = this.rules.gameState(
+            State state = this.rules.gameState(
                     this.nextTick - this.startTime,
                     this.player.position,
                     this.patrols.stream().map(p -> p.location).collect(Collectors.toList()));
             switch (state)
             {
                 case GameOver:
-                    events.gameOver();
+                    frameCollector.gameOver();
                     this.gameState = GameState.COMPLETE;
                     break;
                 case Victory:
-                    events.victory();
+                    frameCollector.victory();
                     this.gameState = GameState.COMPLETE;
                     break;
                 case Continue:
                 default:
                     // carry on
             }
-            events.frameEnd(frameCounter);
+            frameCollector.frameEnd(frameCounter);
 
             frameCounter++;
             this.nextTick += MILLISECONDS_PER_TICK;
@@ -166,23 +130,51 @@ public final class Model
 
     public void tick()
     {
-        DeferredModelActions modelActions = new DeferredModelActions();
+        tickPatrols();
+        tickJoiningSentries();
+        tickPlayer();
+    }
 
-        for (JoiningSentry sentry : joiningSentries)
-        {
-            sentry.tick(modelActions, events);
-        }
-
-        for (Patrol patrol : patrols)
-        {
-            patrol.tick(random, events);
-        }
+    private void tickPlayer()
+    {
         if (player != null)
         {
-            player.tick(events);
+            frameCollector.playerPositionChanged(player.position);
         }
+    }
 
-        modelActions.enact(this, events);
+    private void tickPatrols()
+    {
+        for (Patrol patrol: patrols)
+        {
+            patrol.tick(random);
+            frameCollector.patrolPositionChanged(patrol.identifier, patrol.location, patrol.velocity);
+        }
+    }
+
+    private void tickJoiningSentries()
+    {
+        for (Iterator<JoiningSentry> iterator = joiningSentries.iterator(); iterator.hasNext(); )
+        {
+            JoiningSentry sentry = iterator.next();
+            Optional<Patrol> maybePatrol = sentry.tick();
+            if (maybePatrol.isPresent())
+            {
+                iterator.remove();
+                Patrol newPatrol = maybePatrol.get();
+                patrols.add(newPatrol);
+                frameCollector.patrolPositionChanged(newPatrol.identifier, newPatrol.location, newPatrol.velocity);
+            }
+            else
+            {
+                frameCollector.joiningPatrolPositionChanged(
+                        sentry.identifier,
+                        sentry.location,
+                        sentry.connection.segment.direction(),
+                        sentry.connection.location()
+                );
+            }
+        }
     }
 
     void addSentry(final LatLn location)
@@ -203,15 +195,5 @@ public final class Model
         this.player = new Player(
                 null,
                 latLn);
-    }
-
-    void removeJoining(List<JoiningSentry> outgoing)
-    {
-        this.joiningSentries.removeAll(outgoing);
-    }
-
-    void addPatrols(List<Patrol> incoming)
-    {
-        this.patrols.addAll(incoming);
     }
 }

@@ -3,6 +3,7 @@ package net.digihippo.cryptnet.model;
 import net.digihippo.cryptnet.roadmap.LatLn;
 
 import java.util.List;
+import java.util.Optional;
 
 final class Connection {
     final Segment segment;
@@ -42,35 +43,28 @@ final class Connection {
         return segment.tail.location;
     }
 
-    Segment line() {
-        return segment;
-    }
-
-    void move(ModelActions modelActions, JoiningSentry joiningSentry, Model.Events events)
+    Optional<Patrol> move(JoiningSentry joiningSentry)
     {
         double distance = this.segment.tail.distanceTo(joiningSentry.location);
-        final LatLn movedTo;
         if (distance < joiningSentry.speed)
         {
-            movedTo = this.segment.tail.location;
             // FIXME:                                            v random required
             final Vertex.Link link = this.segment.tail.links.get(0);
-            modelActions.joined(
-                    joiningSentry,
-                    movedTo,
-                    link);
+            return Optional.of(new Patrol(
+                    joiningSentry.identifier,
+                    joiningSentry.speed,
+                    link.path,
+                    link.segment,
+                    link.segment.direction(),
+                    this.segment.tail.location,
+                    link.end == Vertex.End.Head ? Direction.Forwards : Direction.Backwards
+            ));
         }
         else
         {
-            movedTo = this.segment.direction().applyWithScalar(joiningSentry.location, joiningSentry.speed);
-            events.joiningPatrolPositionChanged(
-                    joiningSentry.identifier,
-                    movedTo,
-                    this.segment.direction(),
-                    joiningSentry.connection.location()
-            );
+            joiningSentry.location =
+                    this.segment.direction().applyWithScalar(joiningSentry.location, joiningSentry.speed);
+            return Optional.empty();
         }
-
-        joiningSentry.location = movedTo;
     }
 }
