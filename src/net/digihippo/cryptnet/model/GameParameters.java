@@ -4,12 +4,12 @@ import java.util.List;
 import java.util.Objects;
 
 // Things that are constant for the duration of a game
-public class GameParameters
+public final class GameParameters
 {
     public final List<Path> paths;
-    public final Rules rules;
+    public final StayAliveRules rules;
 
-    public GameParameters(List<Path> paths, Rules rules)
+    GameParameters(List<Path> paths, StayAliveRules rules)
     {
         this.paths = paths;
         this.rules = rules;

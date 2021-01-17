@@ -1,13 +1,18 @@
 package net.digihippo.cryptnet.server;
 
 import net.digihippo.cryptnet.model.FrameCollector;
-import net.digihippo.cryptnet.model.GameParameters;
+import net.digihippo.cryptnet.model.Path;
 import net.digihippo.cryptnet.model.StayAliveRules;
 import net.digihippo.cryptnet.roadmap.LatLn;
+import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 
+import java.io.File;
 import java.time.Instant;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.junit.Assert.*;
@@ -16,18 +21,14 @@ public class GameIndexTest
 {
     private static final LatLn HAMPSTEAD = LatLn.toRads(51.556615299043486, -0.17851485725770533);
 
+    public final @Rule TemporaryFolder temporaryFolder = new TemporaryFolder();
     private final StayAliveRules rules = new StayAliveRules(8, 125, 1, 1000);
-    private GameIndex gameIndex = newGameIndex(rules);
+    private GameIndex gameIndex;
 
-    private GameIndex newGameIndex(StayAliveRules rules)
+    @Before
+    public void setup()
     {
-        return new GameIndex(
-                Runnable::run,
-                FixedVectorSources.hampsteadWays(),
-                Runnable::run,
-                rules,
-                epochMilli("2021-01-16T14:50:01.011Z")
-                );
+        newGameIndex(rules);
     }
 
     @Test
@@ -80,9 +81,9 @@ public class GameIndexTest
     }
 
     @Test
-    public void stopTickingOldGamesAfterVictory()
+    public void stopTickingOldGamesAfterLoss()
     {
-        gameIndex = newGameIndex(new StayAliveRules(1, 10, 1, 10_000));
+        newGameIndex(new StayAliveRules(1, 10, 1, 10_000));
 
         MyServerToClient serverToClient = new MyServerToClient();
         GameIndex.LocalClientToServer clientToServer = gameIndex.newClient(serverToClient);
@@ -105,7 +106,7 @@ public class GameIndexTest
     }
 
     @Test
-    public void stopTickingOldGamesAfterLoss()
+    public void stopTickingOldGamesAfterVictory()
     {
         MyServerToClient serverToClient = new MyServerToClient();
         GameIndex.LocalClientToServer clientToServer = gameIndex.newClient(serverToClient);
@@ -126,6 +127,45 @@ public class GameIndexTest
         assertNull(serverToClient.lastFrame);
     }
 
+    @Test
+    public void journallingIsGood()
+    {
+        AtomicInteger frameCount = new AtomicInteger();
+        MyServerToClient serverToClient = new MyServerToClient();
+        DelegatingServerToClient frameCounter = new FrameCounter(serverToClient, frameCount);
+
+        GameIndex.LocalClientToServer clientToServer = gameIndex.newClient(frameCounter);
+        clientToServer.newSession();
+
+        clientToServer.onLocation(HAMPSTEAD);
+
+        clientToServer.requestGame();
+        clientToServer.startGame(serverToClient.lastGameId);
+        gameIndex.tick(epochMilli("2021-01-16T14:50:02.111Z"));
+
+        assertTrue(serverToClient.lastFrame.victory);
+
+        //noinspection ConstantConditions
+        File journal = temporaryFolder.getRoot().listFiles()[0];
+        AtomicInteger journalFrameCount = new AtomicInteger();
+        DelegatingServerToClient journalFrameCounter = new FrameCounter(serverToClient, journalFrameCount);
+        Journal.playJournal(journal, journalFrameCounter);
+
+        assertEquals(frameCount.get(), journalFrameCount.get());
+    }
+
+    private void newGameIndex(StayAliveRules rules)
+    {
+        this.gameIndex = new GameIndex(
+                Runnable::run,
+                FixedVectorSources.hampsteadWays(),
+                Runnable::run,
+                rules,
+                temporaryFolder.getRoot(),
+                epochMilli("2021-01-16T14:50:01.011Z")
+        );
+    }
+
     private static final class MyServerToClient implements ServerToClient
     {
         private String lastGameId;
@@ -134,7 +174,7 @@ public class GameIndexTest
         private String lastError;
 
         @Override
-        public void gameReady(String gameId, GameParameters gameParameters)
+        public void gameReady(String gameId)
         {
             this.lastGameId = gameId;
         }
@@ -158,6 +198,18 @@ public class GameIndexTest
         }
 
         @Override
+        public void rules(StayAliveRules rules)
+        {
+
+        }
+
+        @Override
+        public void path(Path path)
+        {
+
+        }
+
+        @Override
         public void error(String errorCode)
         {
             this.lastError = errorCode;
@@ -167,5 +219,23 @@ public class GameIndexTest
     private static long epochMilli(String instant)
     {
         return Instant.parse(instant).toEpochMilli();
+    }
+
+    private static class FrameCounter extends DelegatingServerToClient
+    {
+        private final AtomicInteger frameCount;
+
+        public FrameCounter(MyServerToClient serverToClient, AtomicInteger frameCount)
+        {
+            super(serverToClient);
+            this.frameCount = frameCount;
+        }
+
+        @Override
+        public void onFrame(FrameCollector.Frame frame)
+        {
+            frameCount.incrementAndGet();
+            super.onFrame(frame);
+        }
     }
 }

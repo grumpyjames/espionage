@@ -4,6 +4,7 @@ import net.digihippo.cryptnet.model.*;
 import net.digihippo.cryptnet.roadmap.LatLn;
 import net.digihippo.cryptnet.roadmap.Way;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.Executor;
@@ -18,6 +19,7 @@ final class GameIndex
     private final VectorSource vectorSource;
     private final Executor onEventLoop;
     private final StayAliveRules rules;
+    private final File baseDirectory;
 
     private final Map<UUID, Session> sessions = new HashMap<>();
     private long currentTimeMillis;
@@ -28,12 +30,14 @@ final class GameIndex
             VectorSource vectorSource,
             Executor onEventLoop,
             StayAliveRules rules,
+            File baseDirectory,
             long initialTimeMillis)
     {
         this.offEventLoop = offEventLoop;
         this.vectorSource = vectorSource;
         this.onEventLoop = onEventLoop;
         this.rules = rules;
+        this.baseDirectory = baseDirectory;
         this.currentTimeMillis = initialTimeMillis;
     }
 
@@ -114,7 +118,9 @@ final class GameIndex
             this.model = model;
             this.frameDispatcher = frameDispatcher;
             this.gamePreparing = false;
-            this.gameReady(gameId, model.parameters());
+            this.rules(model.parameters().rules);
+            model.parameters().paths.forEach(this::path);
+            this.gameReady(gameId);
         }
 
         public void onLocation(LatLn location)
@@ -136,9 +142,21 @@ final class GameIndex
         }
 
         @Override
-        public void gameReady(String gameId, GameParameters gameParameters)
+        public void gameReady(String gameId)
         {
-            serverToClient.gameReady(gameId, gameParameters);
+            serverToClient.gameReady(gameId);
+        }
+
+        @Override
+        public void rules(StayAliveRules rules)
+        {
+            serverToClient.rules(rules);
+        }
+
+        @Override
+        public void path(Path path)
+        {
+            serverToClient.path(path);
         }
 
         @Override
@@ -220,9 +238,17 @@ final class GameIndex
             FrameDispatcher frameDispatcher)
     {
         String gameId = registerGame(model);
+        ServerToClient journal = Journal.forGame(baseDirectory, gameId, currentTimeMillis);
+        GameParameters parameters = model.parameters();
+        journal.rules(parameters.rules);
+        parameters.paths.forEach(journal::path);
+        journal.gameReady(gameId);
+
         session.gameRequestComplete(gameId, model, frameDispatcher);
+
         model.setPlayerLocation(playerLocation);
         frameDispatcher.subscribe(session);
+        frameDispatcher.subscribe(journal);
     }
 
     // This is a potentially blocking operation

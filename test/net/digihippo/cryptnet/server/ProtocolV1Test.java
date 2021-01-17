@@ -3,9 +3,7 @@ package net.digihippo.cryptnet.server;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.UnpooledByteBufAllocator;
-import net.digihippo.cryptnet.model.FrameCollector;
-import net.digihippo.cryptnet.model.GameParameters;
-import net.digihippo.cryptnet.model.StayAliveRules;
+import net.digihippo.cryptnet.model.*;
 import net.digihippo.cryptnet.roadmap.LatLn;
 import net.digihippo.cryptnet.roadmap.UnitVector;
 import org.jmock.Expectations;
@@ -86,15 +84,22 @@ public class ProtocolV1Test
         final FrameCollector.Frame frame = new FrameCollector.Frame(1);
         frame.playerLocation = new LatLn(0.34, 0.11);
 
+        Path path = new Path(Collections.singletonList(
+                new Segment(new Vertex(LatLn.toRads(45.2323, 32.22)), new Vertex(LatLn.toRads(34.222, 44.333)))));
+
         mockery.checking(new Expectations() {{
             oneOf(serverToClient).sessionEstablished("wooohooo");
-            oneOf(serverToClient).gameReady("foo", new GameParameters(Collections.emptyList(), new StayAliveRules(1, 2, 2.2, 30_000)));
+            oneOf(serverToClient).rules(new StayAliveRules(1, 2, 4, 5));
+            oneOf(serverToClient).path(path);
+            oneOf(serverToClient).gameReady("foo");
             oneOf(serverToClient).gameStarted();
             oneOf(serverToClient).onFrame(frame);
         }});
 
         encoder.sessionEstablished("wooohooo");
-        encoder.gameReady("foo", new GameParameters(Collections.emptyList(), new StayAliveRules(1, 2, 2.2, 30_000)));
+        encoder.rules(new StayAliveRules(1, 2, 4, 5));
+        encoder.path(path);
+        encoder.gameReady("foo");
         encoder.gameStarted();
         encoder.onFrame(frame);
     }

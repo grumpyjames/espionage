@@ -9,7 +9,8 @@ import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 import io.netty.handler.codec.LengthFieldPrepender;
 import net.digihippo.cryptnet.model.FrameCollector;
-import net.digihippo.cryptnet.model.GameParameters;
+import net.digihippo.cryptnet.model.Path;
+import net.digihippo.cryptnet.model.StayAliveRules;
 import net.digihippo.cryptnet.roadmap.LatLn;
 
 import java.util.concurrent.CompletableFuture;
@@ -19,14 +20,26 @@ public final class NettyClient implements Stoppable, ClientToServer {
     private final ClientToServer clientToServer;
 
     public static void main(String[] args) throws Exception {
-        final CompletableFuture<String> gameIdFut = new CompletableFuture<>();
+        CompletableFuture<String> gameIdFut = new CompletableFuture<>();
         NettyClient client = NettyClient.connect(new ServerToClient()
         {
             @Override
-            public void gameReady(String gameId, GameParameters gameParameters)
+            public void rules(StayAliveRules rules)
+            {
+
+            }
+
+            @Override
+            public void path(Path path)
+            {
+
+            }
+
+            @Override
+            public void gameReady(String gameId)
             {
                 gameIdFut.complete(gameId);
-                System.out.println("Game " + gameId + " is ready with parameters " + gameParameters);
+                System.out.println("Game " + gameId + " is ready");
             }
 
             @Override
@@ -55,9 +68,11 @@ public final class NettyClient implements Stoppable, ClientToServer {
         });
 
         client.newSession();
-        client.onLocation(new LatLn(0.67D, 0.32D));
+        client.onLocation(LatLn.toRads(51.51515231220578, -0.13276222473699156));
         client.requestGame();
         client.startGame(gameIdFut.get());
+
+        Thread.sleep(120_000);
         client.stop();
     }
 
@@ -76,7 +91,7 @@ public final class NettyClient implements Stoppable, ClientToServer {
             public void initChannel(SocketChannel ch)
             {
                 ch.pipeline().addLast(
-                        new LengthFieldBasedFrameDecoder(65536, 0, 4),
+                        new LengthFieldBasedFrameDecoder(2048, 0, 4),
                         new LengthFieldPrepender(4, false),
                         new EspionageHandler(serverToClient));
 

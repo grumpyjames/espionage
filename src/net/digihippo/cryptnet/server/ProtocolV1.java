@@ -46,29 +46,39 @@ public class ProtocolV1
         {
             case 0:
             {
-                String gameId = readString(byteBuf);
-                GameParameters gameParameters = readGameParameters(byteBuf);
-                serverToClient.gameReady(gameId, gameParameters);
+                String sessionKey = readString(byteBuf);
+                serverToClient.sessionEstablished(sessionKey);
                 return;
             }
             case 1:
             {
-                serverToClient.gameStarted();
+                StayAliveRules stayAliveRules = readRules(byteBuf);
+                serverToClient.rules(stayAliveRules);
                 return;
             }
             case 2:
+            {
+                serverToClient.path(readPath(byteBuf));
+                return;
+            }
+            case 3:
+            {
+                String gameId = readString(byteBuf);
+                serverToClient.gameReady(gameId);
+                return;
+            }
+            case 4:
+            {
+                serverToClient.gameStarted();
+                return;
+            }
+            case 5:
             {
                 FrameCollector.Frame frame = readFrame(byteBuf);
                 serverToClient.onFrame(frame);
                 return;
             }
-            case 3:
-            {
-                String sessionKey = readString(byteBuf);
-                serverToClient.sessionEstablished(sessionKey);
-                return;
-            }
-            case 4:
+            case 6:
             {
                 String errorCode = readString(byteBuf);
                 serverToClient.error(errorCode);
@@ -141,36 +151,53 @@ public class ProtocolV1
         return new ServerToClient()
         {
             @Override
-            public void gameReady(String gameId, GameParameters gameParameters)
+            public void sessionEstablished(String sessionKey)
             {
                 messageSender.withByteBuf(byteBuf -> {
                     byteBuf.writeByte(0);
+                    writeString(sessionKey, byteBuf);
+                });
+            }
+
+            @Override
+            public void rules(StayAliveRules rules)
+            {
+                messageSender.withByteBuf(byteBuf -> {
+                    byteBuf.writeByte(1);
+                    writeRules(rules, byteBuf);
+                });
+            }
+
+            @Override
+            public void path(Path path)
+            {
+                messageSender.withByteBuf(byteBuf -> {
+                    byteBuf.writeByte(2);
+                    writePath(path, byteBuf);
+                });
+            }
+
+            @Override
+            public void gameReady(String gameId)
+            {
+                messageSender.withByteBuf(byteBuf -> {
+                    byteBuf.writeByte(3);
                     writeString(gameId, byteBuf);
-                    writeGameParameters(gameParameters, byteBuf);
                 });
             }
 
             @Override
             public void gameStarted()
             {
-                messageSender.withByteBuf(byteBuf -> byteBuf.writeByte(1));
+                messageSender.withByteBuf(byteBuf -> byteBuf.writeByte(4));
             }
 
             @Override
             public void onFrame(FrameCollector.Frame frame)
             {
                 messageSender.withByteBuf(byteBuf -> {
-                    byteBuf.writeByte(2);
+                    byteBuf.writeByte(5);
                     write(frame, byteBuf);
-                });
-            }
-
-            @Override
-            public void sessionEstablished(String sessionKey)
-            {
-                messageSender.withByteBuf(byteBuf -> {
-                    byteBuf.writeByte(3);
-                    writeString(sessionKey, byteBuf);
                 });
             }
 
@@ -178,7 +205,7 @@ public class ProtocolV1
             public void error(String errorCode)
             {
                 messageSender.withByteBuf(byteBuf -> {
-                    byteBuf.writeByte(4);
+                    byteBuf.writeByte(6);
                     writeString(errorCode, byteBuf);
                 });
             }
@@ -193,29 +220,18 @@ public class ProtocolV1
         return new String(gameIdBytes, StandardCharsets.UTF_8);
     }
 
-    private static GameParameters readGameParameters(ByteBuf buffer)
+    private static StayAliveRules readRules(ByteBuf buffer)
     {
-        int pathCount = buffer.readInt();
-        ArrayList<Path> paths = new ArrayList<>(pathCount);
-        for (int i = 0; i < pathCount; i++)
-        {
-            paths.add(readPath(buffer));
-        }
-
         String ruleName = readString(buffer);
-        if (ruleName.equals("StayAlive"))
+        if (!ruleName.equals("StayAlive"))
         {
-            int sentryCount = buffer.readInt();
-            double initialSentryDistance = buffer.readDouble();
-            double sentrySpeed = buffer.readDouble();
-            int gameDuration = buffer.readInt();
-            StayAliveRules rules = new StayAliveRules(sentryCount, initialSentryDistance, sentrySpeed, gameDuration);
-            return new GameParameters(paths, rules);
+            throw new UnsupportedOperationException("Unsupported rule type: " + ruleName);
         }
-        else
-        {
-            throw new IllegalStateException("Unsupported game type: " + ruleName);
-        }
+        int sentryCount = buffer.readInt();
+        double initialSentryDistance = buffer.readDouble();
+        double sentrySpeed = buffer.readDouble();
+        int gameDuration = buffer.readInt();
+        return new StayAliveRules(sentryCount, initialSentryDistance, sentrySpeed, gameDuration);
     }
 
     private static Path readPath(ByteBuf buffer)
@@ -297,25 +313,26 @@ public class ProtocolV1
         });
     }
 
-    private static void writeGameParameters(GameParameters gameParameters, ByteBuf buffer)
+    private static void writePath(Path path, ByteBuf buffer)
     {
-        buffer.writeInt(gameParameters.paths.size());
-        gameParameters.paths.forEach(p -> {
-            buffer.writeInt(p.segments().size() + 1);
-            Segment last = null;
-            for (Segment s : p.segments())
-            {
-                writeLatLn(s.head.location, buffer);
-                last = s;
-            }
-            assert last != null;
-            writeLatLn(last.tail.location, buffer);
-        });
-        writeString(gameParameters.rules.gameType(), buffer);
-        buffer.writeInt(gameParameters.rules.sentryCount());
-        buffer.writeDouble(gameParameters.rules.initialSentryDistance());
-        buffer.writeDouble(gameParameters.rules.sentrySpeed());
-        buffer.writeInt(gameParameters.rules.gameDuration());
+        buffer.writeInt(path.segments().size() + 1);
+        Segment last = null;
+        for (Segment s : path.segments())
+        {
+            writeLatLn(s.head.location, buffer);
+            last = s;
+        }
+        assert last != null;
+        writeLatLn(last.tail.location, buffer);
+    }
+
+    private static void writeRules(StayAliveRules rules, ByteBuf buffer)
+    {
+        writeString(rules.gameType(), buffer);
+        buffer.writeInt(rules.sentryCount());
+        buffer.writeDouble(rules.initialSentryDistance());
+        buffer.writeDouble(rules.sentrySpeed());
+        buffer.writeInt(rules.gameDuration());
     }
 
     private static void writeString(String gameId, ByteBuf byteBuf)

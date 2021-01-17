@@ -1,14 +1,16 @@
 package net.digihippo.cryptnet.server;
 
 import net.digihippo.cryptnet.model.FrameCollector;
-import net.digihippo.cryptnet.model.GameParameters;
+import net.digihippo.cryptnet.model.Path;
 import net.digihippo.cryptnet.model.StayAliveRules;
 import net.digihippo.cryptnet.roadmap.LatLn;
 import org.hamcrest.CoreMatchers;
 import org.hamcrest.FeatureMatcher;
 import org.hamcrest.Matcher;
 import org.junit.After;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -26,13 +28,18 @@ public class ServerAndClientTest
 {
     private static final LatLn HAMPSTEAD = LatLn.toRads(51.556615299043486, -0.17851485725770533);
 
+    public final @Rule TemporaryFolder temporaryFolder = new TemporaryFolder();
     private final LinkedBlockingQueue<Event> events = new LinkedBlockingQueue<>();
     private final MyServerToClient serverToClient = new MyServerToClient(events);
     private final List<Stoppable> stoppables = new ArrayList<>();
 
     public void startServer(StayAliveRules rules) throws Exception
     {
-        stoppables.add(NettyServer.runServer(7890, FixedVectorSources.hampsteadWays(), rules));
+        stoppables.add(NettyServer.runServer(
+                7890,
+                FixedVectorSources.hampsteadWays(),
+                rules,
+                temporaryFolder.getRoot()));
     }
 
     @After
@@ -161,12 +168,10 @@ public class ServerAndClientTest
 
     private static final class OnGameReady implements Event {
         public final String gameId;
-        public final GameParameters gameParameters;
 
-        OnGameReady(String gameId, GameParameters gameParameters)
+        OnGameReady(String gameId)
         {
             this.gameId = gameId;
-            this.gameParameters = gameParameters;
         }
     }
 
@@ -221,9 +226,9 @@ public class ServerAndClientTest
         }
 
         @Override
-        public void gameReady(String gameId, GameParameters gameParameters)
+        public void gameReady(String gameId)
         {
-            enqueue(new OnGameReady(gameId, gameParameters));
+            enqueue(new OnGameReady(gameId));
         }
 
         @Override
@@ -242,6 +247,18 @@ public class ServerAndClientTest
         public void sessionEstablished(String sessionKey)
         {
             enqueue(new SessionStarted(sessionKey));
+        }
+
+        @Override
+        public void rules(StayAliveRules rules)
+        {
+
+        }
+
+        @Override
+        public void path(Path path)
+        {
+
         }
 
         @Override

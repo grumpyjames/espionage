@@ -14,6 +14,7 @@ import io.netty.handler.codec.LengthFieldPrepender;
 import net.digihippo.cryptnet.model.StayAliveRules;
 import net.digihippo.cryptnet.roadmap.OsmSource;
 
+import java.io.File;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -25,7 +26,8 @@ public class NettyServer {
     public static Stoppable runServer(
             int port,
             VectorSource vectorSource,
-            StayAliveRules rules) throws Exception
+            StayAliveRules rules,
+            File baseDirectory) throws Exception
     {
         ScheduledExecutorService pulseThread =
                 Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("pulse"));
@@ -37,7 +39,13 @@ public class NettyServer {
 
         ExecutorService gamePrepThread = Executors.newSingleThreadExecutor(new NamedThreadFactory("game-prep"));
         GameIndex gameIndex =
-                new GameIndex(gamePrepThread, vectorSource, workerGroup, rules, System.currentTimeMillis());
+                new GameIndex(
+                        gamePrepThread,
+                        vectorSource,
+                        workerGroup,
+                        rules,
+                        baseDirectory,
+                        System.currentTimeMillis());
 
         ServerBootstrap publicBootstrap = new ServerBootstrap();
         publicBootstrap.group(bossGroup, workerGroup)
@@ -98,7 +106,8 @@ public class NettyServer {
                                 Integer.getInteger("sentry.count"),
                                 Double.parseDouble(System.getProperty("sentry.distance")),
                                 Double.parseDouble(System.getProperty("sentry.speed")),
-                                Integer.getInteger("game.duration.millis")));
+                                Integer.getInteger("game.duration.millis")),
+                        new File(System.getProperty("java.io.tmpdir")));
         Runtime.getRuntime().addShutdownHook(new Thread(stoppable::stop));
     }
 

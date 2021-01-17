@@ -16,7 +16,7 @@ public final class Model
     private final List<JoiningSentry> joiningSentries = new ArrayList<>();
     private final List<Patrol> patrols = new ArrayList<>();
     private final List<Path> paths;
-    private final Rules rules;
+    private final StayAliveRules rules;
     private final Random random;
     private final Events events;
 
@@ -85,7 +85,7 @@ public final class Model
 
     public static Model createModel(
             List<Path> paths,
-            Rules rules,
+            StayAliveRules rules,
             Random random,
             Events events)
     {
@@ -94,7 +94,7 @@ public final class Model
 
     private Model(
             List<Path> paths,
-            Rules rules,
+            StayAliveRules rules,
             Random random,
             Events events)
     {
