@@ -33,7 +33,7 @@ public final class Model
         PLAYING,
         PAUSED,
         UNPAUSED,
-        COMPLETE;
+        COMPLETE
     }
 
     private GameState gameState = GameState.BEFORE_START;
@@ -198,16 +198,6 @@ public final class Model
                         rules.sentrySpeed() / TICKS_PER_SECOND));
     }
 
-    public void snapPlayerLocationToNearestVertex(final LatLn latLn)
-    {
-        Connection connection =
-            Connection.nearestConnection(paths, latLn);
-
-        this.player = new Player(
-                connection.line(),
-                connection.location());
-    }
-
     public void setPlayerLocation(final LatLn latLn)
     {
         this.player = new Player(
@@ -223,13 +213,5 @@ public final class Model
     void addPatrols(List<Patrol> incoming)
     {
         this.patrols.addAll(incoming);
-    }
-
-    public void click(LatLn location)
-    {
-        if (player == null)
-        {
-            snapPlayerLocationToNearestVertex(location);
-        }
     }
 }
