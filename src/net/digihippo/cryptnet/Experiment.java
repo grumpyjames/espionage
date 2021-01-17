@@ -17,7 +17,7 @@ public class Experiment
 {
     public static void main(String[] args) throws IOException
     {
-        LatLn playerCentre = LatLn.toRads(54.77683523328153, -1.575421697852002);
+        LatLn playerCentre = LatLn.toRads(51.56341665913728, -0.16248070596880343);
         Random random = new Random(238824982L);
         Collection<Way> ways = OsmSource.fetchWays(playerCentre.boundingBox(500));
         List<Path> paths = Paths.from(ways);
@@ -25,7 +25,7 @@ public class Experiment
         paths.forEach(viewer::path);
         Model model = Model.createModel(
                 paths,
-                new StayAliveRules(4, 100, 1.2, 30_000),
+                new StayAliveRules(7, 150, 10, 30_000),
                 random,
                 new FrameCollector(new FrameConsumer()
         {

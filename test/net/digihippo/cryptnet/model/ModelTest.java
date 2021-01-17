@@ -20,13 +20,13 @@ public class ModelTest
     private final LatLn zebraNearSpaniards = LatLn.toRads(51.56899086921811, -0.17475457002941547);
     private Model model;
 
-    private Model createModel(int sentryCount, double initialSentryDistance, double sentrySpeed)
+    private Model createModel(int sentryCount, double initialSentryDistance, double sentrySpeed, int gameDurationMillis)
     {
         return Model.createModel(
                 Paths.from(Way.ways(Way.way(
                         node(jackStrawsCastle),
                         node(zebraNearSpaniards)))),
-                new StayAliveRules(sentryCount, initialSentryDistance, sentrySpeed, 30_000),
+                new StayAliveRules(sentryCount, initialSentryDistance, sentrySpeed, gameDurationMillis),
                 new Random(),
                 events);
     }
@@ -119,7 +119,7 @@ public class ModelTest
     @Test
     public void simplestPossibleVictory()
     {
-        model = createModel(0, 1, 1.2);
+        model = createModel(0, 1, 1.2, 30_000);
         model.setPlayerLocation(LatLn.toRads(51.5664837824125, -0.17661640054047678));
 
         model.startGame(clock.timeMillis);
@@ -134,7 +134,7 @@ public class ModelTest
     @Test
     public void simplestPossibleDefeat()
     {
-        model = createModel(1, 0.1, 1.2);
+        model = createModel(1, 0.1, 1.2, 30_000);
         model.setPlayerLocation(LatLn.toRads(51.5629829089533, -0.1793216022757321));
 
         model.startGame(clock.timeMillis);
@@ -146,7 +146,7 @@ public class ModelTest
     @Test
     public void playerEscapes()
     {
-        model = createModel(1, 10, 0.8);
+        model = createModel(1, 10, 0.8, 30_000);
 
         LatLn initialLocation = LatLn.toRads(51.5629829089533, -0.1793216022757321);
         model.setPlayerLocation(initialLocation);
@@ -169,7 +169,10 @@ public class ModelTest
     @Test
     public void playerIsSlowlyCaught()
     {
-        model = createModel(1, 10, 1.8);
+        double sentrySpeedPerSecond = 1.8;
+        int initialSentryDistance = 10;
+        int gameDuration = 76_000;
+        model = createModel(1, initialSentryDistance, sentrySpeedPerSecond, gameDuration);
 
         LatLn initialLocation = LatLn.toRads(51.5629829089533, -0.1793216022757321);
         model.setPlayerLocation(initialLocation);
@@ -177,13 +180,22 @@ public class ModelTest
         UnitVector thisWay = zebraNearSpaniards.directionFrom(jackStrawsCastle);
 
         model.startGame(clock.timeMillis);
-        for (int i = 0; i < 30_040; i++)
+        double playerSpeedMetresPerSecond = 6d * 1000d / (60d * 60d); //6km/h -> 1.67m/s -> 0.00167m/ms
+        double playerSpeedMetresPerTick = playerSpeedMetresPerSecond / 25d;
+        double sentrySpeedMetresPerTick = sentrySpeedPerSecond / 25d;
+        double gainedPerTick = sentrySpeedMetresPerTick - playerSpeedMetresPerTick;
+
+        double requiredTicks = Math.ceil(initialSentryDistance / gainedPerTick);
+        if (requiredTicks * 40 > gameDuration)
         {
-            double playerSpeedKmh = 6; //6km/h -> 1.67m/s -> 0.00167m/ms
-            double playerSpeedMetresPerMilli = (playerSpeedKmh * 1000) / (60 * 60 * 1000);
-            LatLn latLn = thisWay.applyWithScalar(initialLocation, i * playerSpeedMetresPerMilli);
+            throw new IllegalArgumentException("Game duration must be at least " + (requiredTicks * 40) + "ms");
+        }
+
+        for (int i = 0; i < requiredTicks; i++)
+        {
+            LatLn latLn = thisWay.applyWithScalar(initialLocation, i * playerSpeedMetresPerTick);
             model.setPlayerLocation(latLn);
-            model.time(clock.forward(1, ChronoUnit.MILLIS));
+            model.time(clock.forward(40, ChronoUnit.MILLIS));
         }
 
         assertTrue(events.gameOver);

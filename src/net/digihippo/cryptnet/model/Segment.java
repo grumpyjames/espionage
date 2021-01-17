@@ -10,6 +10,7 @@ public class Segment {
     public final Vertex tail;
 
     public Segment(Vertex head, Vertex tail) {
+        assert !head.equals(tail);
         this.head = head;
         this.tail = tail;
     }

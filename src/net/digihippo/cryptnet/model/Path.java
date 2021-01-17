@@ -47,29 +47,32 @@ public final class Path {
         return segments;
     }
 
-    void move(Patrol patrol, Random random) {
-        // Thoughts:
-        // If we know the segment, all we really need to know
-        // is the patrol's speed and direction along this path.
-        // The path can have prior knowledge of intersections and
-        // its own boundaries, and can act accordingly, reorienting the
-        // patrol as necessary.
-        // We will probably require a random here to choose between possible
-        // options.
+    // Thoughts:
+    // If we know the segment, all we really need to know
+    // is the patrol's speed and direction along this path.
+    // The path can have prior knowledge of intersections and
+    // its own boundaries, and can act accordingly, reorienting the
+    // patrol as necessary.
+    // We will probably require a random here to choose between possible
+    // options.
+    void move(Patrol patrol, Random random, double distanceToMove)
+    {
         Segment segment = patrol.segment;
         UnitVector stepChange = patrol.direction.orient(segment.direction());
         Vertex lineEnd = patrol.direction.pickBound(patrol.segment);
-        LatLn newLocation = stepChange.applyWithScalar(patrol.location, patrol.speed);
-        if (lineEnd.location.distanceTo(newLocation) < 1.6)
+        if (lineEnd.location.distanceTo(patrol.location) < distanceToMove)
         {
             Vertex.Link link = lineEnd.pickLink(random);
             patrol.location = lineEnd.location;
             patrol.segment = link.segment;
             patrol.direction = link.end == Vertex.End.Head ? Direction.Forwards : Direction.Backwards;
+
+            double distanceRemaining = distanceToMove - lineEnd.location.distanceTo(patrol.location);
+            move(patrol, random, distanceRemaining);
         }
         else
         {
-            patrol.location = newLocation;
+            patrol.location = stepChange.applyWithScalar(patrol.location, distanceToMove);
         }
     }
 

@@ -33,7 +33,6 @@ public final class FixedVectorSources
 
             Way rosslyn = Way.way(
                     hampstead,
-                    Node.node(8, LatLn.toRads(51.55619668583993, -0.1777814717122849)),
                     perrinsLaneEast
             );
 

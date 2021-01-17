@@ -48,16 +48,9 @@ final class Connection {
 
     void move(ModelActions modelActions, JoiningSentry joiningSentry, Model.Events events)
     {
-        LatLn movedTo = this.segment.direction().applyWithScalar(joiningSentry.location, joiningSentry.speed);
-
-        double distance = this.segment.tail.distanceTo(movedTo);
-        events.joiningPatrolPositionChanged(
-                joiningSentry.identifier,
-                movedTo,
-                this.segment.direction(),
-                joiningSentry.connection.location()
-        );
-        if (distance < 5)
+        double distance = this.segment.tail.distanceTo(joiningSentry.location);
+        final LatLn movedTo;
+        if (distance < joiningSentry.speed)
         {
             movedTo = this.segment.tail.location;
             // FIXME:                                            v random required
@@ -66,7 +59,16 @@ final class Connection {
                     joiningSentry,
                     movedTo,
                     link);
-
+        }
+        else
+        {
+            movedTo = this.segment.direction().applyWithScalar(joiningSentry.location, joiningSentry.speed);
+            events.joiningPatrolPositionChanged(
+                    joiningSentry.identifier,
+                    movedTo,
+                    this.segment.direction(),
+                    joiningSentry.connection.location()
+            );
         }
 
         joiningSentry.location = movedTo;

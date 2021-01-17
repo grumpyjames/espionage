@@ -83,7 +83,7 @@ public class GameIndexTest
     @Test
     public void stopTickingOldGamesAfterLoss()
     {
-        newGameIndex(new StayAliveRules(1, 10, 1, 10_000));
+        newGameIndex(new StayAliveRules(1, 50, 20, 10_000));
 
         MyServerToClient serverToClient = new MyServerToClient();
         GameIndex.LocalClientToServer clientToServer = gameIndex.newClient(serverToClient);
@@ -94,7 +94,7 @@ public class GameIndexTest
         clientToServer.requestGame();
         clientToServer.startGame(serverToClient.lastGameId);
 
-        gameIndex.tick(epochMilli("2021-01-16T14:50:05.111Z"));
+        gameIndex.tick(epochMilli("2021-01-16T14:50:07.111Z"));
 
         assertTrue(serverToClient.lastFrame.gameOver);
 
