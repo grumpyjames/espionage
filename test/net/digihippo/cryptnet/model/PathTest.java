@@ -154,6 +154,24 @@ public class PathTest
     private static class NoOp implements Model.Events
     {
         @Override
+        public void rules(StayAliveRules rules)
+        {
+
+        }
+
+        @Override
+        public void path(Path path)
+        {
+
+        }
+
+        @Override
+        public void gameReady(String gameId)
+        {
+
+        }
+
+        @Override
         public void gameStarted()
         {
 

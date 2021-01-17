@@ -1,6 +1,5 @@
 package net.digihippo.cryptnet;
 
-import net.digihippo.cryptnet.model.Frame;
 import net.digihippo.cryptnet.model.*;
 import net.digihippo.cryptnet.roadmap.LatLn;
 import net.digihippo.cryptnet.roadmap.OsmSource;
@@ -23,25 +22,11 @@ public class Experiment
         Collection<Way> ways = OsmSource.fetchWays(playerCentre.boundingBox(500));
         List<Path> paths = Paths.from(ways);
         Viewer viewer = Viewer.newViewer();
-        paths.forEach(viewer::path);
         Model model = Model.createModel(
                 paths,
                 new StayAliveRules(7, 150, 10, 30_000),
                 random,
-                new FrameCollector(new FrameConsumer()
-        {
-            @Override
-            public void gameStarted()
-            {
-
-            }
-
-            @Override
-            public void onFrame(Frame frame)
-            {
-                viewer.onFrame(frame);
-            }
-        }));
+                new FrameCollector(viewer));
 
         SwingUtilities.invokeLater(() ->
         {
@@ -56,16 +41,16 @@ public class Experiment
         SwingUtilities.invokeLater(() ->
         {
             model.setPlayerLocation(playerCentre);
+            model.transmitGameReady("experimental");
             model.startGame(System.currentTimeMillis());
         });
 
-        while(true)
+        //noinspection InfiniteLoopStatement
+        while (true)
         {
             model.time(System.currentTimeMillis());
             LockSupport.parkNanos(10_000_000);
         }
-
-
     }
 
 }

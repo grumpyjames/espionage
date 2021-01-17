@@ -118,9 +118,6 @@ final class GameIndex
             this.model = model;
             this.frameDispatcher = frameDispatcher;
             this.gamePreparing = false;
-            this.rules(model.parameters().rules);
-            model.parameters().paths.forEach(this::path);
-            this.gameReady(gameId);
         }
 
         public void onLocation(LatLn location)
@@ -239,16 +236,12 @@ final class GameIndex
     {
         String gameId = registerGame(model);
         ServerToClient journal = Journal.forGame(baseDirectory, gameId, currentTimeMillis);
-        GameParameters parameters = model.parameters();
-        journal.rules(parameters.rules);
-        parameters.paths.forEach(journal::path);
-        journal.gameReady(gameId);
-
-        session.gameRequestComplete(gameId, model, frameDispatcher);
-
-        model.setPlayerLocation(playerLocation);
         frameDispatcher.subscribe(session);
         frameDispatcher.subscribe(journal);
+        model.setPlayerLocation(playerLocation);
+        model.transmitGameReady(gameId);
+
+        session.gameRequestComplete(gameId, model, frameDispatcher);
     }
 
     // This is a potentially blocking operation

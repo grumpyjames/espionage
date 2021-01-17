@@ -5,14 +5,32 @@ import net.digihippo.cryptnet.roadmap.UnitVector;
 
 public final class FrameCollector implements Model.Events
 {
-    private final FrameConsumer consumer;
+    private final GameEvents consumer;
 
-    public FrameCollector(FrameConsumer consumer)
+    public FrameCollector(GameEvents consumer)
     {
         this.consumer = consumer;
     }
 
     private Frame frame;
+
+    @Override
+    public void rules(StayAliveRules rules)
+    {
+        consumer.rules(rules);
+    }
+
+    @Override
+    public void path(Path path)
+    {
+        consumer.path(path);
+    }
+
+    @Override
+    public void gameReady(String gameId)
+    {
+        consumer.gameReady(gameId);
+    }
 
     @Override
     public void gameStarted()

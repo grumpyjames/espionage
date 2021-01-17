@@ -1,22 +1,10 @@
 package net.digihippo.cryptnet.server;
 
-import net.digihippo.cryptnet.model.Frame;
-import net.digihippo.cryptnet.model.Path;
-import net.digihippo.cryptnet.model.StayAliveRules;
+import net.digihippo.cryptnet.model.GameEvents;
 
-public interface ServerToClient
+public interface ServerToClient extends GameEvents
 {
     void sessionEstablished(String sessionKey);
-
-    void rules(StayAliveRules rules);
-
-    void path(Path path);
-
-    void gameReady(String gameId);
-
-    void gameStarted();
-
-    void onFrame(Frame frame);
 
     void error(String errorCode);
 }

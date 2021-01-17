@@ -33,15 +33,16 @@ public final class Model
         PLAYING,
         PAUSED,
         UNPAUSED,
-        COMPLETE
+        COMPLETE;
     }
 
     private GameState gameState = GameState.BEFORE_START;
 
-
-    public GameParameters parameters()
+    public void transmitGameReady(String gameId)
     {
-        return new GameParameters(paths, rules);
+        events.rules(rules);
+        paths.forEach(events::path);
+        events.gameReady(gameId);
     }
 
     public void playerDisconnected()
@@ -56,8 +57,12 @@ public final class Model
 
     public interface Events
     {
-        // This happens outside a frame.
-        // Do we actually need this event?
+        void rules(StayAliveRules rules);
+
+        void path(Path path);
+
+        void gameReady(String gameId);
+
         void gameStarted();
 
         void frameStart(int frameCounter);
