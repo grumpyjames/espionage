@@ -8,7 +8,7 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 import io.netty.handler.codec.LengthFieldPrepender;
-import net.digihippo.cryptnet.model.FrameCollector;
+import net.digihippo.cryptnet.model.Frame;
 import net.digihippo.cryptnet.model.Path;
 import net.digihippo.cryptnet.model.StayAliveRules;
 import net.digihippo.cryptnet.roadmap.LatLn;
@@ -49,7 +49,7 @@ public final class NettyClient implements Stoppable, ClientToServer {
             }
 
             @Override
-            public void onFrame(FrameCollector.Frame frame)
+            public void onFrame(Frame frame)
             {
                 System.out.println("Frame " + frame.gameOver + ", " + frame.victory);
             }

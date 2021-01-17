@@ -1,6 +1,6 @@
 package net.digihippo.cryptnet;
 
-import net.digihippo.cryptnet.model.FrameCollector;
+import net.digihippo.cryptnet.model.Frame;
 import net.digihippo.cryptnet.server.DelegatingServerToClient;
 import net.digihippo.cryptnet.server.Journal;
 
@@ -30,7 +30,7 @@ public class JournalViewer
                 new File("/tmp/game-game-2.log"),
                 new DelegatingServerToClient(viewer) {
                     @Override
-                    public void onFrame(FrameCollector.Frame frame)
+                    public void onFrame(Frame frame)
                     {
                         super.onFrame(frame);
                         LockSupport.parkNanos(39_000_000);

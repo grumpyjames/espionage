@@ -1,6 +1,6 @@
 package net.digihippo.cryptnet.server;
 
-import net.digihippo.cryptnet.model.FrameCollector;
+import net.digihippo.cryptnet.model.Frame;
 import net.digihippo.cryptnet.model.FrameConsumer;
 
 import java.util.HashSet;
@@ -22,7 +22,7 @@ final class FrameDispatcher implements FrameConsumer
     }
 
     @Override
-    public void onFrame(FrameCollector.Frame frame)
+    public void onFrame(Frame frame)
     {
         clients.forEach(c -> c.onFrame(frame));
     }

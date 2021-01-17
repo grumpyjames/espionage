@@ -166,7 +166,7 @@ final class GameIndex
         }
 
         @Override
-        public void onFrame(FrameCollector.Frame frame)
+        public void onFrame(Frame frame)
         {
             if (frame.gameOver || frame.victory)
             {

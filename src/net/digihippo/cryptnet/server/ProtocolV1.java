@@ -74,7 +74,7 @@ public class ProtocolV1
             }
             case 5:
             {
-                FrameCollector.Frame frame = readFrame(byteBuf);
+                Frame frame = readFrame(byteBuf);
                 serverToClient.onFrame(frame);
                 return;
             }
@@ -193,7 +193,7 @@ public class ProtocolV1
             }
 
             @Override
-            public void onFrame(FrameCollector.Frame frame)
+            public void onFrame(Frame frame)
             {
                 messageSender.withByteBuf(byteBuf -> {
                     byteBuf.writeByte(5);
@@ -256,10 +256,10 @@ public class ProtocolV1
         return new LatLn(lat, lon);
     }
 
-    static FrameCollector.Frame readFrame(ByteBuf buffer)
+    static Frame readFrame(ByteBuf buffer)
     {
         int frameCounter = buffer.readInt();
-        FrameCollector.Frame frame = new FrameCollector.Frame(frameCounter);
+        Frame frame = new Frame(frameCounter);
         frame.victory = buffer.readBoolean();
         frame.gameOver = buffer.readBoolean();
         frame.playerLocation = readLatLn(buffer);
@@ -270,7 +270,7 @@ public class ProtocolV1
             UnitVector dir = readUnitVector(buffer);
             LatLn connection = readLatLn(buffer);
 
-            FrameCollector.JoiningView jv = new FrameCollector.JoiningView(latLn, dir, connection);
+            JoiningView jv = new JoiningView(latLn, dir, connection);
             frame.joining.add(jv);
         }
 
@@ -280,7 +280,7 @@ public class ProtocolV1
             LatLn latLn = readLatLn(buffer);
             UnitVector dir = readUnitVector(buffer);
 
-            FrameCollector.PatrolView pv = new FrameCollector.PatrolView(latLn, dir);
+            PatrolView pv = new PatrolView(latLn, dir);
             frame.patrols.add(pv);
         }
 
@@ -294,7 +294,7 @@ public class ProtocolV1
         return new UnitVector(dLat, dLon);
     }
 
-    static void write(FrameCollector.Frame frame, ByteBuf byteBuf)
+    static void write(Frame frame, ByteBuf byteBuf)
     {
         byteBuf.writeInt(frame.frameCounter);
         byteBuf.writeBoolean(frame.victory);

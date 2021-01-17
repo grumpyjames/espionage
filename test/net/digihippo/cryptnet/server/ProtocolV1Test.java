@@ -81,7 +81,7 @@ public class ProtocolV1Test
             protocolV1.dispatch(buffer, serverToClient);
         });
 
-        final FrameCollector.Frame frame = new FrameCollector.Frame(1);
+        final Frame frame = new Frame(1);
         frame.playerLocation = new LatLn(0.34, 0.11);
 
         Path path = new Path(Collections.singletonList(
@@ -153,7 +153,7 @@ public class ProtocolV1Test
     @Ignore("this is handy for generating hex data for tests in other projects")
     public void hexy()
     {
-        FrameCollector.Frame frame = makeFrame();
+        Frame frame = makeFrame();
 
         ByteBuf buffer = UnpooledByteBufAllocator.DEFAULT.buffer();
         ProtocolV1.write(frame, buffer);
@@ -164,43 +164,43 @@ public class ProtocolV1Test
     @Test
     public void roundTrip()
     {
-        FrameCollector.Frame frame = makeFrame();
+        Frame frame = makeFrame();
 
         ByteBuf buffer = UnpooledByteBufAllocator.DEFAULT.buffer();
         ProtocolV1.write(frame, buffer);
 
-        FrameCollector.Frame read = ProtocolV1.readFrame(buffer);
+        Frame read = ProtocolV1.readFrame(buffer);
 
         assertEquals(read, frame);
     }
 
-    private FrameCollector.Frame makeFrame()
+    private Frame makeFrame()
     {
-        FrameCollector.Frame frame = new FrameCollector.Frame(2342);
+        Frame frame = new Frame(2342);
         double latDegs = 43.5635644D;
         double lonDegs = 12.23453436D;
         frame.playerLocation = LatLn.toRads(latDegs, lonDegs);
         frame.gameOver = true;
         frame.victory = false;
-        frame.joining.add(new FrameCollector.JoiningView(
+        frame.joining.add(new JoiningView(
                 LatLn.toRads(46.243466D, 45.5253443D),
                 new UnitVector(0.004D, 0.0001D),
                 LatLn.toRads(16.243466D, 15.53D)
         ));
-        frame.joining.add(new FrameCollector.JoiningView(
+        frame.joining.add(new JoiningView(
                 LatLn.toRads(76.273766D, 75.5253743D),
                 new UnitVector(0.001D, 0.0004D),
                 LatLn.toRads(26.243466D, 25.53D)
         ));
-        frame.patrols.add(new FrameCollector.PatrolView(
+        frame.patrols.add(new PatrolView(
                 LatLn.toRads(86.283866D, 85.5253843D),
                 new UnitVector(0.003D, 0.0002D)
         ));
-        frame.patrols.add(new FrameCollector.PatrolView(
+        frame.patrols.add(new PatrolView(
                 LatLn.toRads(66.263666D, 65.5253643D),
                 new UnitVector(0.002D, 0.0003D)
         ));
-        frame.patrols.add(new FrameCollector.PatrolView(
+        frame.patrols.add(new PatrolView(
                 LatLn.toRads(66.269666D, 65.5259649D),
                 new UnitVector(0.001D, 0.0009D)
         ));

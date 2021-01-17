@@ -1,6 +1,6 @@
 package net.digihippo.cryptnet;
 
-import net.digihippo.cryptnet.model.FrameCollector;
+import net.digihippo.cryptnet.model.Frame;
 import net.digihippo.cryptnet.model.Path;
 import net.digihippo.cryptnet.model.Segment;
 import net.digihippo.cryptnet.model.StayAliveRules;
@@ -24,7 +24,7 @@ final class Viewer extends Component implements ServerToClient
     private final BufferedImage sentinel;
     private final BufferedImage player;
 
-    private volatile FrameCollector.Frame frame;
+    private volatile Frame frame;
 
     private LatLn origin;
     private double xPix;
@@ -63,7 +63,7 @@ final class Viewer extends Component implements ServerToClient
     @Override
     public void paint(final Graphics g)
     {
-        FrameCollector.Frame f = frame;
+        Frame f = frame;
         if (f == null)
         {
             return;
@@ -229,7 +229,7 @@ final class Viewer extends Component implements ServerToClient
     }
 
     @Override
-    public void onFrame(FrameCollector.Frame frame)
+    public void onFrame(Frame frame)
     {
         this.frame = frame;
         repaint();

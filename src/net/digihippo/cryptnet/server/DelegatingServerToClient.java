@@ -1,6 +1,6 @@
 package net.digihippo.cryptnet.server;
 
-import net.digihippo.cryptnet.model.FrameCollector;
+import net.digihippo.cryptnet.model.Frame;
 import net.digihippo.cryptnet.model.Path;
 import net.digihippo.cryptnet.model.StayAliveRules;
 
@@ -44,7 +44,7 @@ public class DelegatingServerToClient implements ServerToClient
     }
 
     @Override
-    public void onFrame(FrameCollector.Frame frame)
+    public void onFrame(Frame frame)
     {
         delegate.onFrame(frame);
     }

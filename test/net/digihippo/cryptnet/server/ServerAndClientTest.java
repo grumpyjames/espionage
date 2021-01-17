@@ -1,6 +1,6 @@
 package net.digihippo.cryptnet.server;
 
-import net.digihippo.cryptnet.model.FrameCollector;
+import net.digihippo.cryptnet.model.Frame;
 import net.digihippo.cryptnet.model.Path;
 import net.digihippo.cryptnet.model.StayAliveRules;
 import net.digihippo.cryptnet.roadmap.LatLn;
@@ -86,7 +86,7 @@ public class ServerAndClientTest
         NettyClient freshClient = newClient();
         freshClient.resumeSession(sessionStarted.sessionId);
         OnFrame frame = waitFor(events, new GameCompleteFrame(), 1500);
-        FrameCollector.Frame f = frame.frame;
+        Frame f = frame.frame;
         assertTrue(f.victory);
     }
 
@@ -134,7 +134,7 @@ public class ServerAndClientTest
 
         OnFrame frame = waitFor(events, new GameCompleteFrame(), 500);
 
-        FrameCollector.Frame f = frame.frame;
+        Frame f = frame.frame;
         assertTrue(f.victory);
     }
 
@@ -180,9 +180,9 @@ public class ServerAndClientTest
     }
 
     private static final class OnFrame implements Event {
-        public final FrameCollector.Frame frame;
+        public final Frame frame;
 
-        OnFrame(FrameCollector.Frame frame)
+        OnFrame(Frame frame)
         {
             this.frame = frame;
         }
@@ -238,7 +238,7 @@ public class ServerAndClientTest
         }
 
         @Override
-        public void onFrame(FrameCollector.Frame frame)
+        public void onFrame(Frame frame)
         {
             enqueue(new OnFrame(frame));
         }

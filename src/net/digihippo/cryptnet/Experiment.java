@@ -1,5 +1,6 @@
 package net.digihippo.cryptnet;
 
+import net.digihippo.cryptnet.model.Frame;
 import net.digihippo.cryptnet.model.*;
 import net.digihippo.cryptnet.roadmap.LatLn;
 import net.digihippo.cryptnet.roadmap.OsmSource;
@@ -36,7 +37,7 @@ public class Experiment
             }
 
             @Override
-            public void onFrame(FrameCollector.Frame frame)
+            public void onFrame(Frame frame)
             {
                 viewer.onFrame(frame);
             }

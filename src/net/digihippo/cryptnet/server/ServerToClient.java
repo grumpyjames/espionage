@@ -1,6 +1,6 @@
 package net.digihippo.cryptnet.server;
 
-import net.digihippo.cryptnet.model.FrameCollector;
+import net.digihippo.cryptnet.model.Frame;
 import net.digihippo.cryptnet.model.Path;
 import net.digihippo.cryptnet.model.StayAliveRules;
 
@@ -16,7 +16,7 @@ public interface ServerToClient
 
     void gameStarted();
 
-    void onFrame(FrameCollector.Frame frame);
+    void onFrame(Frame frame);
 
     void error(String errorCode);
 }
