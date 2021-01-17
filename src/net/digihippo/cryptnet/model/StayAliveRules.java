@@ -2,7 +2,6 @@ package net.digihippo.cryptnet.model;
 
 import net.digihippo.cryptnet.roadmap.LatLn;
 
-import java.util.List;
 import java.util.Objects;
 
 public class StayAliveRules
@@ -42,15 +41,15 @@ public class StayAliveRules
     public State gameState(
             long gameDurationMillis,
             LatLn playerLocation,
-            List<LatLn> sentryLocations)
+            Iterable<Patrol> patrols)
     {
         if (gameDurationMillis >= this.gameDurationMillis)
         {
             return State.Victory;
         }
-        for (LatLn sentryLocation : sentryLocations)
+        for (Patrol patrol : patrols)
         {
-            double v = sentryLocation.distanceTo(playerLocation);
+            double v = patrol.location.distanceTo(playerLocation);
             if (v <= 2)
             {
                 return State.GameOver;

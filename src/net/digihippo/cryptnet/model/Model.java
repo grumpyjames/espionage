@@ -3,7 +3,6 @@ package net.digihippo.cryptnet.model;
 import net.digihippo.cryptnet.roadmap.LatLn;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 public final class Model
 {
@@ -104,7 +103,7 @@ public final class Model
             State state = this.rules.gameState(
                     this.nextTick - this.startTime,
                     this.player.position,
-                    this.patrols.stream().map(p -> p.location).collect(Collectors.toList()));
+                    this.patrols);
             switch (state)
             {
                 case GameOver:
