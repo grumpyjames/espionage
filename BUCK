@@ -13,6 +13,7 @@ prebuilt_jar(
 prebuilt_jar(
   name = 'jackson',
   binary_jar = 'lib/jackson-core-2.9.7.jar',
+  source_jar = 'lib/jackson-core-2.9.7-sources.jar',
   visibility = [ 'PUBLIC' ],
 )
 

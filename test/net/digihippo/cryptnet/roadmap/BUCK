@@ -3,9 +3,15 @@ java_test(
   srcs = glob(['*.java']),
   deps = [
     '//src/net/digihippo/cryptnet/compat:compat',
+    '//src/net/digihippo/cryptnet/lang:lang',
     '//src/net/digihippo/cryptnet/roadmap:roadmap',
     '//:junit',
     '//:hamcrest',
+    '//:jackson',
+  ],
+  resources = [
+    'overpass.json',
+    'overpass-empty.json',
   ],
   visibility = [ 'PUBLIC' ],
 )

@@ -1,10 +1,12 @@
-java_library(
-  name = 'roadmap',
+java_test(
+  name = 'json',
   srcs = glob(['*.java']),
   deps = [
     '//src/net/digihippo/cryptnet/compat:compat',
     '//src/net/digihippo/cryptnet/lang:lang',
     '//src/net/digihippo/cryptnet/json:json',
+    '//:junit',
+    '//:hamcrest',
     '//:jackson',
   ],
   visibility = [ 'PUBLIC' ],

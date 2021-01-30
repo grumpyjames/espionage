@@ -1,16 +1,17 @@
 package net.digihippo.cryptnet.roadmap;
 
-import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonToken;
+import net.digihippo.cryptnet.json.JsonParsers;
 
+import java.io.BufferedOutputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 
 import static net.digihippo.cryptnet.roadmap.WebMercator.*;
@@ -49,13 +50,17 @@ public class OsmSource
         System.out.println(overpassApiBody(51.50874245880335, 51.51045188624859, -0.1373291015625049, -0.13458251953125938));
 
         final byte[] bytes = new byte[1024];
-        try (final InputStream is = requestVectorData(51.50874245880335, 51.51045188624859, -0.1373291015625049, -0.13458251953125938))
+        try (
+                final InputStream is = requestVectorData(51.50874245880335, 51.50874245880335, -0.1373291015625049, -0.1373291015625049);
+                final BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream("/tmp/overpass.json"))
+                )
         {
             int read;
             while ((read = is.read(bytes, 0, bytes.length)) > 0)
             {
-                System.out.write(bytes, 0, read);
+                bos.write(bytes, 0, read);
             }
+            bos.flush();
         }
     }
 
@@ -77,52 +82,77 @@ public class OsmSource
 
         try (final InputStream inputStream = requestVectorData(latSt, latEnd, lonSt, lonEnd))
         {
-
-            JsonFactory jfactory = new JsonFactory();
-            JsonParser jParser = jfactory.createParser(inputStream);
-
             final WayCollector wayCollector = new WayCollector();
+            parseWays(inputStream, wayCollector);
 
-            // FIXME: infinite loop on empty 'elements'
-            while (true)
-            {
-                skipTo(jParser, "type");
-
-                String type = jParser.getText();
-                if ("way".equals(type))
-                {
-                    skipTo(jParser, "nodes");
-
-                    wayCollector.wayStart();
-                    while (jParser.nextToken() != JsonToken.END_ARRAY)
-                    {
-                        wayCollector.waypoint(jParser.getLongValue());
-                    }
-                    wayCollector.wayEnd();
-                }
-                else if ("node".equals(type))
-                {
-                    skipTo(jParser, "id");
-                    long nodeId = jParser.getLongValue();
-                    skipTo(jParser, "lat");
-                    double lat = Math.toRadians(jParser.getDoubleValue());
-                    skipTo(jParser, "lon");
-                    double lng = Math.toRadians(jParser.getDoubleValue());
-
-                    boolean done = wayCollector.node(nodeId, new LatLn(lat, lng));
-
-                    if (done)
-                    {
-                        break;
-                    }
-                }
-            }
-            jParser.close();
-
-            Collection<Way> ways = wayCollector.reducedWays();
-
-            return ways;
+            return wayCollector.reducedWays();
         }
+    }
+
+    static void parseWays(InputStream inputStream, WayCollector wayCollector) throws IOException
+    {
+        JsonParser jParser = JsonParsers.begin(inputStream);
+        JsonParsers.expectObjectKey(jParser, "elements", parser -> JsonParsers.expectArray(
+                jParser,
+                element -> JsonParsers.expectObjectKey(
+                        element,
+                        "type",
+                        typeEl -> inferTypeAndParse(typeEl, wayCollector))));
+
+        jParser.close();
+    }
+
+    private static final class NodeBuilder
+    {
+        long nodeId;
+        double latDegrees;
+        double lonDegrees;
+
+        public void onId(JsonParser jsonParser) throws IOException
+        {
+            nodeId = jsonParser.getLongValue();
+        }
+
+        public void onLat(JsonParser jsonParser) throws IOException
+        {
+            latDegrees = jsonParser.getDoubleValue();
+        }
+
+        public void onLon(JsonParser jsonParser) throws IOException
+        {
+            lonDegrees = jsonParser.getDoubleValue();
+        }
+
+        public void visit(WayCollector wayCollector)
+        {
+            wayCollector.node(nodeId, LatLn.toRads(latDegrees, lonDegrees));
+        }
+    }
+
+    private static void inferTypeAndParse(JsonParser jParser, WayCollector wayCollector) throws IOException
+    {
+        String type = jParser.getText();
+        if ("way".equals(type))
+        {
+            JsonParsers.expectObjectKey(jParser, "nodes", nodeEl -> parseNodes(nodeEl, wayCollector));
+            jParser.nextToken();
+        }
+        else if ("node".equals(type))
+        {
+            NodeBuilder nodeBuilder = new NodeBuilder();
+            JsonParsers.expectObjectKey(jParser, "id", nodeBuilder::onId);
+            JsonParsers.expectObjectKey(jParser, "lat", nodeBuilder::onLat);
+            JsonParsers.expectObjectKey(jParser, "lon", nodeBuilder::onLon);
+            nodeBuilder.visit(wayCollector);
+        }
+        JsonParsers.skipToObjectEnd(jParser);
+    }
+
+    private static void parseNodes(JsonParser nodeEl, WayCollector wayCollector) throws IOException
+    {
+        wayCollector.wayStart();
+        JsonParsers.expectArray(nodeEl, n -> wayCollector.waypoint(n.getLongValue()));
+        wayCollector.wayEnd();
     }
 
     private static InputStream requestVectorData(double latSt, double latEnd, double lonSt, double lonEnd) throws IOException
@@ -158,18 +188,9 @@ public class OsmSource
             "out skel qt;";
     }
 
-    private static void skipTo(JsonParser jParser, String fieldName) throws IOException
-    {
-        while (!fieldName.equals(jParser.currentName()))
-        {
-            jParser.nextFieldName();
-        }
 
-        jParser.nextToken();
-    }
-
-    private static String encode(String query) throws UnsupportedEncodingException
+    private static String encode(String query)
     {
-        return URLEncoder.encode(query, "UTF-8");
+        return URLEncoder.encode(query, StandardCharsets.UTF_8);
     }
 }
