@@ -1,11 +1,10 @@
 package net.digihippo.cryptnet.json;
 
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonToken;
 import org.junit.Test;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -17,23 +16,17 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-public class JsonParsersTest
+public class JsonAccessTest
 {
     @Test
     public void expectObjectKeyWhenTheKeyIsFirst() throws IOException
     {
-        JsonFactory jfactory = new JsonFactory();
-        JsonParser jParser = jfactory.createParser("{" +
-                "   \"thingy\": " +
-                "   {" +
-                "   }" +
-                "}");
-        jParser.nextToken();
+        JsonAccess access = beginJsonAccess("{\"thingy\": 1}");
 
         AtomicBoolean called = new AtomicBoolean(false);
-        JsonParsers.expectObjectKey(jParser, "thingy", jsonParser ->
+        access.expectObjectKey("thingy", inner ->
         {
-            assertThat(jsonParser.currentToken(), equalTo(JsonToken.START_OBJECT));
+            assertThat(inner.getLongValue(), equalTo(1L));
             called.set(true);
         });
 
@@ -43,20 +36,16 @@ public class JsonParsersTest
     @Test
     public void expectObjectKeyWhenTheKeyIsThirdInAFlatThing() throws IOException
     {
-        JsonFactory jfactory = new JsonFactory();
-        JsonParser jParser = jfactory.createParser("{" +
+        JsonAccess access = beginJsonAccess("{" +
                 "   \"one\": 1," +
                 "   \"two\": 2," +
-                "   \"thingy\": " +
-                "   {" +
-                "   }" +
+                "   \"thingy\": 5" +
                 "}");
-        jParser.nextToken();
 
         AtomicBoolean called = new AtomicBoolean(false);
-        JsonParsers.expectObjectKey(jParser, "thingy", jsonParser ->
+        access.expectObjectKey("thingy", jsonParser ->
         {
-            assertThat(jsonParser.currentToken(), equalTo(JsonToken.START_OBJECT));
+            assertThat(jsonParser.getLongValue(), equalTo(5L));
             called.set(true);
         });
 
@@ -66,21 +55,17 @@ public class JsonParsersTest
     @Test
     public void expectObjectKeyWhenTheKeyIsAfterADeeplyNestedThing() throws IOException
     {
-        JsonFactory jfactory = new JsonFactory();
-        JsonParser jParser = jfactory.createParser("{" +
+        JsonAccess access = beginJsonAccess("{" +
                 "   \"one\": {" +
                 "      \"two\": [2, 2]" +
                 "   }," +
-                "   \"thingy\": " +
-                "   {" +
-                "   }" +
+                "   \"thingy\": 6" +
                 "}");
-        jParser.nextToken();
 
         AtomicBoolean called = new AtomicBoolean(false);
-        JsonParsers.expectObjectKey(jParser, "thingy", jsonParser ->
+        access.expectObjectKey("thingy", jsonParser ->
         {
-            assertThat(jsonParser.currentToken(), equalTo(JsonToken.START_OBJECT));
+            assertThat(jsonParser.getLongValue(), equalTo(6L));
             called.set(true);
         });
 
@@ -90,8 +75,7 @@ public class JsonParsersTest
     @Test
     public void expectObjectKeyWhenTheKeyIsNotPresent() throws IOException
     {
-        JsonFactory jfactory = new JsonFactory();
-        JsonParser jParser = jfactory.createParser("{" +
+        JsonAccess access = beginJsonAccess("{" +
                 "   \"one\": {" +
                 "      \"two\": [2, 2]" +
                 "   }," +
@@ -99,14 +83,9 @@ public class JsonParsersTest
                 "   {" +
                 "   }" +
                 "}");
-        jParser.nextToken();
 
         AtomicBoolean called = new AtomicBoolean(false);
-        JsonParsers.expectObjectKey(jParser, "thingy", jsonParser ->
-        {
-            assertThat(jsonParser.currentToken(), equalTo(JsonToken.START_OBJECT));
-            called.set(true);
-        });
+        access.expectObjectKey("thingy", jsonParser -> called.set(true));
 
         assertFalse(called.get());
     }
@@ -114,12 +93,10 @@ public class JsonParsersTest
     @Test
     public void expectArray() throws IOException
     {
-        JsonFactory jfactory = new JsonFactory();
-        JsonParser jParser = jfactory.createParser("[1, 2, 3]");
-        jParser.nextToken();
+        JsonAccess jParser = beginJsonAccess("[1, 2, 3]");
 
         List<Long> elements = new ArrayList<>();
-        JsonParsers.expectArray(jParser, jsonParser -> elements.add(jsonParser.getLongValue()));
+        jParser.expectArray(jsonParser -> elements.add(jsonParser.getLongValue()));
 
         assertThat(elements, equalTo(Arrays.asList(1L, 2L, 3L)));
     }
@@ -127,13 +104,16 @@ public class JsonParsersTest
     @Test
     public void expectEmptyArray() throws IOException
     {
-        JsonFactory jfactory = new JsonFactory();
-        JsonParser jParser = jfactory.createParser("[]");
-        jParser.nextToken();
+        JsonAccess jParser = beginJsonAccess("[]");
 
         List<Long> elements = new ArrayList<>();
-        JsonParsers.expectArray(jParser, jsonParser -> elements.add(jsonParser.getLongValue()));
+        jParser.expectArray(jsonParser -> elements.add(jsonParser.getLongValue()));
 
         assertThat(elements, equalTo(Collections.emptyList()));
+    }
+
+    private static JsonAccess beginJsonAccess(String jsonStr) throws IOException
+    {
+        return JsonAccess.begin(new ByteArrayInputStream(jsonStr.getBytes(StandardCharsets.UTF_8)));
     }
 }

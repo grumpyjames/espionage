@@ -6,8 +6,7 @@ java_test(
     '//src/net/digihippo/cryptnet/lang:lang',
     '//src/net/digihippo/cryptnet/roadmap:roadmap',
     '//:junit',
-    '//:hamcrest',
-    '//:jackson',
+    '//:hamcrest'
   ],
   resources = [
     'overpass.json',

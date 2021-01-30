@@ -5,7 +5,6 @@ java_library(
     '//src/net/digihippo/cryptnet/compat:compat',
     '//src/net/digihippo/cryptnet/lang:lang',
     '//src/net/digihippo/cryptnet/json:json',
-    '//:jackson',
   ],
   visibility = [ 'PUBLIC' ],
 )

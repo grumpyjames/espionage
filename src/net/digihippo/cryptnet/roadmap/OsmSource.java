@@ -1,7 +1,6 @@
 package net.digihippo.cryptnet.roadmap;
 
-import com.fasterxml.jackson.core.JsonParser;
-import net.digihippo.cryptnet.json.JsonParsers;
+import net.digihippo.cryptnet.json.JsonAccess;
 
 import java.io.BufferedOutputStream;
 import java.io.FileOutputStream;
@@ -91,15 +90,16 @@ public class OsmSource
 
     static void parseWays(InputStream inputStream, WayCollector wayCollector) throws IOException
     {
-        JsonParser jParser = JsonParsers.begin(inputStream);
-        JsonParsers.expectObjectKey(jParser, "elements", parser -> JsonParsers.expectArray(
-                jParser,
-                element -> JsonParsers.expectObjectKey(
-                        element,
+        JsonAccess access = JsonAccess.begin(inputStream);
+        access.expectObjectKey(
+                "elements",
+                elements -> elements.expectArray(
+
+                    element -> element.expectObjectKey(
                         "type",
                         typeEl -> inferTypeAndParse(typeEl, wayCollector))));
 
-        jParser.close();
+        access.close();
     }
 
     private static final class NodeBuilder
@@ -108,17 +108,17 @@ public class OsmSource
         double latDegrees;
         double lonDegrees;
 
-        public void onId(JsonParser jsonParser) throws IOException
+        public void onId(JsonAccess jsonParser) throws IOException
         {
             nodeId = jsonParser.getLongValue();
         }
 
-        public void onLat(JsonParser jsonParser) throws IOException
+        public void onLat(JsonAccess jsonParser) throws IOException
         {
             latDegrees = jsonParser.getDoubleValue();
         }
 
-        public void onLon(JsonParser jsonParser) throws IOException
+        public void onLon(JsonAccess jsonParser) throws IOException
         {
             lonDegrees = jsonParser.getDoubleValue();
         }
@@ -129,29 +129,28 @@ public class OsmSource
         }
     }
 
-    private static void inferTypeAndParse(JsonParser jParser, WayCollector wayCollector) throws IOException
+    private static void inferTypeAndParse(JsonAccess jsonAccess, WayCollector wayCollector) throws IOException
     {
-        String type = jParser.getText();
+        String type = jsonAccess.getText();
         if ("way".equals(type))
         {
-            JsonParsers.expectObjectKey(jParser, "nodes", nodeEl -> parseNodes(nodeEl, wayCollector));
-            jParser.nextToken();
+            jsonAccess.expectObjectKey("nodes", nodeEl -> parseNodes(nodeEl, wayCollector));
         }
         else if ("node".equals(type))
         {
             NodeBuilder nodeBuilder = new NodeBuilder();
-            JsonParsers.expectObjectKey(jParser, "id", nodeBuilder::onId);
-            JsonParsers.expectObjectKey(jParser, "lat", nodeBuilder::onLat);
-            JsonParsers.expectObjectKey(jParser, "lon", nodeBuilder::onLon);
+            jsonAccess.expectObjectKey("id", nodeBuilder::onId);
+            jsonAccess.expectObjectKey("lat", nodeBuilder::onLat);
+            jsonAccess.expectObjectKey("lon", nodeBuilder::onLon);
             nodeBuilder.visit(wayCollector);
         }
-        JsonParsers.skipToObjectEnd(jParser);
+        jsonAccess.skipToObjectEnd();
     }
 
-    private static void parseNodes(JsonParser nodeEl, WayCollector wayCollector) throws IOException
+    private static void parseNodes(JsonAccess nodes, WayCollector wayCollector) throws IOException
     {
         wayCollector.wayStart();
-        JsonParsers.expectArray(nodeEl, n -> wayCollector.waypoint(n.getLongValue()));
+        nodes.expectArray(n -> wayCollector.waypoint(n.getLongValue()));
         wayCollector.wayEnd();
     }
 

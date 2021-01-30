@@ -2,9 +2,7 @@ java_library(
   name = 'model',
   srcs = glob(['*.java']),
   deps = [
-    '//src/net/digihippo/cryptnet/roadmap:roadmap',
-
-    '//:jackson',
+    '//src/net/digihippo/cryptnet/roadmap:roadmap'
   ],
   visibility = [ 'PUBLIC' ],
 )

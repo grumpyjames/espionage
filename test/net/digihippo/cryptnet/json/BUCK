@@ -6,8 +6,7 @@ java_test(
     '//src/net/digihippo/cryptnet/lang:lang',
     '//src/net/digihippo/cryptnet/json:json',
     '//:junit',
-    '//:hamcrest',
-    '//:jackson',
+    '//:hamcrest'
   ],
   visibility = [ 'PUBLIC' ],
 )

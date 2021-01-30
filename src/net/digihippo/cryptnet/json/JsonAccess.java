@@ -8,9 +8,16 @@ import net.digihippo.cryptnet.lang.IOConsumer;
 import java.io.IOException;
 import java.io.InputStream;
 
-public class JsonParsers
+public final class JsonAccess
 {
-    public static void skipToObjectEnd(JsonParser jParser) throws IOException
+    private final JsonParser jParser;
+
+    public JsonAccess(JsonParser jParser)
+    {
+        this.jParser = jParser;
+    }
+
+    public void skipToObjectEnd() throws IOException
     {
         int stackCount = 1;
         while (stackCount > 0)
@@ -27,10 +34,9 @@ public class JsonParsers
         }
     }
 
-    public static void expectObjectKey(
-            JsonParser jParser,
+    public void expectObjectKey(
             String fieldName,
-            IOConsumer<JsonParser> jsonParserConsumer) throws IOException
+            IOConsumer<JsonAccess> jsonParserConsumer) throws IOException
     {
         while (!fieldName.equals(jParser.currentName()) && jParser.hasCurrentToken())
         {
@@ -40,11 +46,11 @@ public class JsonParsers
         if (jParser.hasCurrentToken())
         {
             jParser.nextToken();
-            jsonParserConsumer.accept(jParser);
+            jsonParserConsumer.accept(this);
         }
     }
 
-    public static void expectArray(JsonParser jParser, IOConsumer<JsonParser> con) throws IOException
+    public void expectArray(IOConsumer<JsonAccess> con) throws IOException
     {
         if (jParser.getCurrentToken() != JsonToken.START_ARRAY)
         {
@@ -53,15 +59,35 @@ public class JsonParsers
 
         while (jParser.nextToken() != JsonToken.END_ARRAY)
         {
-            con.accept(jParser);
+            con.accept(this);
         }
     }
 
-    public static JsonParser begin(InputStream inputStream) throws IOException
+    public static JsonAccess begin(InputStream inputStream) throws IOException
     {
         JsonParser jParser = new JsonFactory().createParser(inputStream);
         jParser.nextToken();
 
-        return jParser;
+        return new JsonAccess(jParser);
+    }
+
+    public void close() throws IOException
+    {
+        jParser.close();
+    }
+
+    public String getText() throws IOException
+    {
+        return jParser.getText();
+    }
+
+    public long getLongValue() throws IOException
+    {
+        return jParser.getLongValue();
+    }
+
+    public double getDoubleValue() throws IOException
+    {
+        return jParser.getDoubleValue();
     }
 }

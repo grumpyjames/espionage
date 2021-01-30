@@ -2,7 +2,6 @@ java_library(
   name = 'cryptnet',
   srcs = glob(['*.java']),
   deps = [
-    '//:jackson',
     '//src/net/digihippo/cryptnet/model:model',
     '//src/net/digihippo/cryptnet/roadmap:roadmap',
 
