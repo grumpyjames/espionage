@@ -92,6 +92,8 @@ final class Viewer extends Component implements ServerToClient
             }
         }
 
+        g.drawString(Integer.toString(f.frameCounter), width - 100, 10);
+
         f.patrols.forEach(sentry -> renderSentry(sentry.location, g));
         f.joining.forEach(joiner -> renderJoiningSentry(g, joiner.location, joiner.connectionLocation));
 

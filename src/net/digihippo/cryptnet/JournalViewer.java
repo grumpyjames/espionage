@@ -27,7 +27,7 @@ public class JournalViewer
         });
 
         Journal.playJournal(
-                new File("/tmp/game-game-2.log"),
+                new File("/home/james/repos/espionage/2021-01-31T13:56:38.946Z-game-2.log"),
                 new DelegatingServerToClient(viewer) {
                     @Override
                     public void onFrame(Frame frame)

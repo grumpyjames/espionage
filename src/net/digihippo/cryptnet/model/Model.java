@@ -101,7 +101,7 @@ public final class Model
             frameCollector.frameStart(frameCounter);
             this.tick();
             State state = this.rules.gameState(
-                    this.nextTick - this.startTime,
+                    (1 + frameCounter) * MILLISECONDS_PER_TICK,
                     this.player.position,
                     this.patrols);
             switch (state)

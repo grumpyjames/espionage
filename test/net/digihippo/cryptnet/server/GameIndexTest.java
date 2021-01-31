@@ -54,6 +54,8 @@ public class GameIndexTest
     @Test
     public void resumeThatGame()
     {
+        gameIndex.tick(epochMilli("2021-01-16T14:50:02.000Z"));
+
         MyServerToClient serverToClient = new MyServerToClient();
         GameIndex.LocalClientToServer clientToServer = gameIndex.newClient(serverToClient);
         clientToServer.newSession();
@@ -63,21 +65,23 @@ public class GameIndexTest
         clientToServer.requestGame();
         clientToServer.startGame(serverToClient.lastGameId);
 
-        gameIndex.tick(epochMilli("2021-01-16T14:50:01.211Z"));
+        // 200 out of 1000ms played
+        gameIndex.tick(epochMilli("2021-01-16T14:50:02.200Z"));
 
         clientToServer.sessionEnded();
 
         // This is well past when the game should have ended by
-        gameIndex.tick(epochMilli("2021-01-16T14:50:03.211Z"));
+        gameIndex.tick(epochMilli("2021-01-16T14:50:04.000Z"));
 
         GameIndex.LocalClientToServer resumption = gameIndex.newClient(serverToClient);
         resumption.resumeSession(serverToClient.lastSessionId);
         resumption.resumeGame();
 
-        gameIndex.tick(epochMilli("2021-01-16T14:50:03.319Z"));
+        gameIndex.tick(epochMilli("2021-01-16T14:50:04.100Z"));
+        gameIndex.tick(epochMilli("2021-01-16T14:50:04.150Z"));
         assertFalse(serverToClient.lastFrame.victory || serverToClient.lastFrame.gameOver);
 
-        gameIndex.tick(epochMilli("2021-01-16T14:50:04.319Z"));
+        gameIndex.tick(epochMilli("2021-01-16T14:50:05.000Z"));
         assertTrue(serverToClient.lastFrame.victory || serverToClient.lastFrame.gameOver);
     }
 

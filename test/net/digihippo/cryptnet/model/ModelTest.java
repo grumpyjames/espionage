@@ -91,6 +91,10 @@ public class ModelTest
         public void onFrame(Frame frame)
         {
             this.gameOver = frame.gameOver;
+            if (frame.victory)
+            {
+                System.out.println(frame.frameCounter);
+            }
             this.victory = frame.victory;
         }
     }

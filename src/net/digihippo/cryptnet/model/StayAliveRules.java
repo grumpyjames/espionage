@@ -39,7 +39,7 @@ public class StayAliveRules
     }
 
     public State gameState(
-            long gameDurationMillis,
+            int gameDurationMillis,
             LatLn playerLocation,
             Iterable<Patrol> patrols)
     {
