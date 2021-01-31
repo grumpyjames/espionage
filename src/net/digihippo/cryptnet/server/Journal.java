@@ -44,7 +44,7 @@ public final class Journal
         playJournal(new File(args[0]), new ServerToClient()
         {
             @Override
-            public void sessionEstablished(String sessionKey)
+            public void sessionEstablished(String sessionKey, boolean gameInProgress)
             {
                 System.out.println(sessionKey);
             }
@@ -186,9 +186,9 @@ public final class Journal
         }
 
         @Override
-        public void sessionEstablished(String sessionKey)
+        public void sessionEstablished(String sessionKey, boolean gameInProgress)
         {
-            serverToClient.sessionEstablished(sessionKey);
+            serverToClient.sessionEstablished(sessionKey, gameInProgress);
         }
 
         @Override

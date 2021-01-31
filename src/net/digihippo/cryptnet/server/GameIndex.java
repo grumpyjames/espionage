@@ -88,6 +88,7 @@ final class GameIndex
 
     final class Session implements ServerToClient
     {
+        private final String sessionId;
         private ServerToClient serverToClient;
 
         private Model model;
@@ -96,8 +97,10 @@ final class GameIndex
         private boolean gamePreparing = false;
 
         private Session(
+                String sessionId,
                 ServerToClient serverToClient)
         {
+            this.sessionId = sessionId;
             this.serverToClient = serverToClient;
         }
 
@@ -175,9 +178,9 @@ final class GameIndex
         }
 
         @Override
-        public void sessionEstablished(String sessionKey)
+        public void sessionEstablished(String sessionKey, boolean gameInProgress)
         {
-            serverToClient.sessionEstablished(sessionKey);
+            serverToClient.sessionEstablished(sessionKey, gameInProgress);
         }
 
         @Override
@@ -198,6 +201,11 @@ final class GameIndex
         public void resume(ServerToClient serverToClient)
         {
             this.serverToClient = serverToClient;
+            serverToClient.sessionEstablished(sessionId, this.model != null);
+        }
+
+        public void resumeGame()
+        {
             if (this.model != null)
             {
                 this.model.playerRejoined();
@@ -214,10 +222,10 @@ final class GameIndex
     Session createSession(ServerToClient serverToClient)
     {
         UUID sessionKey = UUID.randomUUID();
-        Session session = new Session(serverToClient);
+        Session session = new Session(sessionKey.toString(), serverToClient);
 
         sessions.put(sessionKey, session);
-        serverToClient.sessionEstablished(sessionKey.toString());
+        serverToClient.sessionEstablished(sessionKey.toString(), false);
 
         return session;
     }

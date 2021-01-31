@@ -14,9 +14,9 @@ public class DelegatingServerToClient implements ServerToClient
     }
 
     @Override
-    public void sessionEstablished(String sessionKey)
+    public void sessionEstablished(String sessionKey, boolean gameInProgress)
     {
-        delegate.sessionEstablished(sessionKey);
+        delegate.sessionEstablished(sessionKey, gameInProgress);
     }
 
     @Override

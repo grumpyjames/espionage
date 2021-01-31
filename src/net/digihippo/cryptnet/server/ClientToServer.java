@@ -14,5 +14,7 @@ public interface ClientToServer
 
     void startGame(String gameId);
 
+    void resumeGame();
+
     void quit();
 }

@@ -55,7 +55,7 @@ public final class NettyClient implements Stoppable, ClientToServer {
             }
 
             @Override
-            public void sessionEstablished(String sessionKey)
+            public void sessionEstablished(String sessionKey, boolean gameInProgress)
             {
                 System.out.println("Session established: " + sessionKey);
             }
@@ -134,6 +134,12 @@ public final class NettyClient implements Stoppable, ClientToServer {
     public void startGame(String gameId)
     {
         clientToServer.startGame(gameId);
+    }
+
+    @Override
+    public void resumeGame()
+    {
+        clientToServer.resumeGame();
     }
 
     @Override

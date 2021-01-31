@@ -198,7 +198,7 @@ final class Viewer extends Component implements ServerToClient
     }
 
     @Override
-    public void sessionEstablished(String sessionKey)
+    public void sessionEstablished(String sessionKey, boolean gameInProgress)
     {
 
     }

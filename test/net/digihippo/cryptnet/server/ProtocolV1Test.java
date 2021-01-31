@@ -88,7 +88,7 @@ public class ProtocolV1Test
                 new Segment(new Vertex(LatLn.toRads(45.2323, 32.22)), new Vertex(LatLn.toRads(34.222, 44.333)))));
 
         mockery.checking(new Expectations() {{
-            oneOf(serverToClient).sessionEstablished("wooohooo");
+            oneOf(serverToClient).sessionEstablished("wooohooo", true);
             oneOf(serverToClient).rules(new StayAliveRules(1, 2, 4, 5));
             oneOf(serverToClient).path(path);
             oneOf(serverToClient).gameReady("foo");
@@ -96,7 +96,7 @@ public class ProtocolV1Test
             oneOf(serverToClient).onFrame(frame);
         }});
 
-        encoder.sessionEstablished("wooohooo");
+        encoder.sessionEstablished("wooohooo", true);
         encoder.rules(new StayAliveRules(1, 2, 4, 5));
         encoder.path(path);
         encoder.gameReady("foo");
@@ -139,7 +139,7 @@ public class ProtocolV1Test
     public void dispatchQuit()
     {
         ByteBuf buffer = UnpooledByteBufAllocator.DEFAULT.buffer();
-        buffer.writeByte(5);
+        buffer.writeByte(6);
 
         mockery.checking(new Expectations() {{
             oneOf(clientToServer).quit();

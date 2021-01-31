@@ -85,6 +85,11 @@ public class ServerAndClientTest
 
         NettyClient freshClient = newClient();
         freshClient.resumeSession(sessionStarted.sessionId);
+
+        waitFor(events, any(SessionStarted.class), 500);
+
+        freshClient.resumeGame();
+
         OnFrame frame = waitFor(events, new GameCompleteFrame(), 1500);
         Frame f = frame.frame;
         assertTrue(f.victory);
@@ -244,7 +249,7 @@ public class ServerAndClientTest
         }
 
         @Override
-        public void sessionEstablished(String sessionKey)
+        public void sessionEstablished(String sessionKey, boolean gameInProgress)
         {
             enqueue(new SessionStarted(sessionKey));
         }

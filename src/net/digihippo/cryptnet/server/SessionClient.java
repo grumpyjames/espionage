@@ -59,6 +59,12 @@ final class SessionClient implements GameIndex.LocalClientToServer
     }
 
     @Override
+    public void resumeGame()
+    {
+        withSession(s -> s.resumeGame());
+    }
+
+    @Override
     public void quit()
     {
         withSession(GameIndex.Session::quit);

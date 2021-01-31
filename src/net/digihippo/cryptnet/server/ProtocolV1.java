@@ -32,6 +32,9 @@ public class ProtocolV1
                 clientToServer.startGame(readString(byteBuf));
                 return;
             case 5:
+                clientToServer.resumeGame();
+                return;
+            case 6:
                 clientToServer.quit();
                 return;
             default:
@@ -47,7 +50,8 @@ public class ProtocolV1
             case 0:
             {
                 String sessionKey = readString(byteBuf);
-                serverToClient.sessionEstablished(sessionKey);
+                boolean gameInProgress = readBoolean(byteBuf);
+                serverToClient.sessionEstablished(sessionKey, gameInProgress);
                 return;
             }
             case 1:
@@ -139,9 +143,15 @@ public class ProtocolV1
             }
 
             @Override
-            public void quit()
+            public void resumeGame()
             {
                 sender.withByteBuf(byteBuf -> byteBuf.writeByte(5));
+            }
+
+            @Override
+            public void quit()
+            {
+                sender.withByteBuf(byteBuf -> byteBuf.writeByte(6));
             }
         };
     }
@@ -151,11 +161,12 @@ public class ProtocolV1
         return new ServerToClient()
         {
             @Override
-            public void sessionEstablished(String sessionKey)
+            public void sessionEstablished(String sessionKey, boolean gameInProgress)
             {
                 messageSender.withByteBuf(byteBuf -> {
                     byteBuf.writeByte(0);
                     writeString(sessionKey, byteBuf);
+                    writeBoolean(gameInProgress, byteBuf);
                 });
             }
 
@@ -210,6 +221,12 @@ public class ProtocolV1
                 });
             }
         };
+    }
+
+
+    private static boolean readBoolean(ByteBuf byteBuf)
+    {
+        return byteBuf.readBoolean();
     }
 
     private static String readString(ByteBuf byteBuf)
@@ -352,5 +369,10 @@ public class ProtocolV1
     {
         byteBuf.writeDouble(unitVector.dLat);
         byteBuf.writeDouble(unitVector.dLon);
+    }
+
+    private static void writeBoolean(boolean b, ByteBuf byteBuf)
+    {
+        byteBuf.writeBoolean(b);
     }
 }

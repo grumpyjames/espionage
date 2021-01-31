@@ -72,6 +72,7 @@ public class GameIndexTest
 
         GameIndex.LocalClientToServer resumption = gameIndex.newClient(serverToClient);
         resumption.resumeSession(serverToClient.lastSessionId);
+        resumption.resumeGame();
 
         gameIndex.tick(epochMilli("2021-01-16T14:50:03.319Z"));
         assertFalse(serverToClient.lastFrame.victory || serverToClient.lastFrame.gameOver);
@@ -192,7 +193,7 @@ public class GameIndexTest
         }
 
         @Override
-        public void sessionEstablished(String sessionKey)
+        public void sessionEstablished(String sessionKey, boolean gameInProgress)
         {
             this.lastSessionId = sessionKey;
         }
